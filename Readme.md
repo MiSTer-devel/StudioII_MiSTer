@@ -14,6 +14,7 @@ MiSTer FPGA core for the **RCA Studio II** (1977), with support for the Studio I
 ### Known issues / open verification
 
 - Visicom software can behave unexpectedly (visual glitches, hanging). The conditions for this are still under investigation. It is currently recommended to reload the core before loading Visicom games and to use .st2 files.
+- Studio III NTSC seems to have an errant horizontal line at the bottom of the drawn image. This is still under investigation.
 - Beeper frequency needs additional fine tuning. 
 - Direct video has not yet been tested at time of writing.
 - Not every game and mode has an automap profile, and not all known software is present in the hash table.
