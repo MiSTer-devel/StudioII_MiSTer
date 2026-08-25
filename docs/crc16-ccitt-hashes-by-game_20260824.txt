@@ -1,0 +1,343 @@
+RCA Studio II — CRC16-CCITT Hash Inventory
+Algorithm: CRC16-CCITT, polynomial 0x1021, initial value 0xFFFF, exact file bytes.
+Grouped by game identity; names follow the Fullset v12.1 ROM filenames.
+Multiple CRCs under one filename indicate distinct file or header revisions.
+by Elle Ball (meauxdal), August 24, 2026
+
+40th Anniversary Multi-Cart [39sf040] (auto) (2016) (FLiP)
+  5DCD  40th Anniversary Multi-Cart [39sf040] (auto) (2016) (FLiP).bin
+
+A Cheap Graphics Computer (1978) (Joseph Weisbecker)
+  BBC8  A Cheap Graphics Computer (1978) (Joseph Weisbecker).bin
+  EE76  A Cheap Graphics Computer (1978) (Joseph Weisbecker).st2
+
+am4kbas
+  54A6  am4kbas.bin
+
+Arithmetic Drill (Math Fun & Fun with Numbers) (Maths Drill) (CAS-110) (Japan) (1978) (Andrew Modla, Philip Baltzer)
+  9BCF  Arithmetic Drill (Math Fun & Fun with Numbers) (Maths Drill) (CAS-110) (Japan) (1978) (Andrew Modla, Philip Baltzer).bin
+  EBF4  Arithmetic Drill (Math Fun & Fun with Numbers) (Maths Drill) (CAS-110) (Japan) (1978) (Andrew Modla, Philip Baltzer).st2
+
+Asteroids (2013.03.29) (Paul Robson) (PD)
+  1973  Asteroids (2013.03.29) (Paul Robson) (PD).bin
+  2B4D  Asteroids (2013.03.29) (Paul Robson) (PD).st2
+
+Baseball-2K [AUD_2464_09_B41_ID07]
+  CC6D  Baseball-2K [AUD_2464_09_B41_ID07].bin
+  82E9  Baseball-2K [AUD_2464_09_B41_ID07].st2
+
+Basic Videomate 3 Game Package [AUD_2464_09_B41_ID05_02]
+  3505  Basic Videomate 3 Game Package [AUD_2464_09_B41_ID05_02].bin
+  2896  Basic Videomate 3 Game Package [AUD_2464_09_B41_ID05_02].st2
+
+Berzerk (2013.04.15) (Paul Robson) (PD)
+  787D  Berzerk (2013.04.15) (Paul Robson) (PD).bin
+  E080  Berzerk (2013.04.15) (Paul Robson) (PD).st2
+
+Biorhythm [AUD_2464_09_B41_ID08_01]
+  5D70  Biorhythm [AUD_2464_09_B41_ID08_01].bin
+  5E41  Biorhythm [AUD_2464_09_B41_ID08_01].st2
+
+[BIOS] Apollo 80 Programmable Video Game (Europe) (1978)
+  228D  [BIOS] Apollo 80 Programmable Video Game (Europe) (1978).bin
+
+[BIOS] RCA Studio II (USA) (1977)
+  B5BF  [BIOS] RCA Studio II (USA) (1977).bin
+  B5BF  boot0.rom
+
+[BIOS] RCA Studio II (USA) (Alt) (1977)
+  19E6  [BIOS] RCA Studio II (USA) (Alt) (1977).bin
+
+[BIOS] RCA Studio III (4KB) (1978)
+  ED56  [BIOS] RCA Studio III (4KB) (1978).bin
+
+[BIOS] RCA Studio III (NTSC) (1978)
+  39B5  [BIOS] RCA Studio III (NTSC) (1978).bin
+
+[BIOS] RCA Studio III (PAL) (1978)
+  BE1F  [BIOS] RCA Studio III (PAL) (1978).bin
+
+[BIOS] Victory MPT-02 (NTSC) (1978)
+  AE1C  [BIOS] Victory MPT-02 (NTSC) (1978).bin
+  AE1C  boot2.rom
+
+[BIOS] Victory MPT-02 (PAL) (1978)
+  228D  [BIOS] Victory MPT-02 (PAL) (1978).bin
+  228D  boot1.rom
+
+[BIOS] Visicom COM-100 (Japan) (1978)
+  C47C  [BIOS] Visicom COM-100 (Japan) (1978).bin
+  C47C  boot3.rom
+
+Climber v1.00 (2013.05.15) (Lee Romanow) (PD)
+  AD6A  Climber v1.00 (2013.05.15) (Lee Romanow) (PD).bin
+  1139  Climber v1.00 (2013.05.15) (Lee Romanow) (PD).st2
+
+Color Demo [AUD_2464_09_B41_ID09_01]
+  BCF3  Color Demo [AUD_2464_09_B41_ID09_01].bin
+  D346  Color Demo [AUD_2464_09_B41_ID09_01].st2
+
+Color Runs [AUD_2464_09_B41_ID16_02]
+  6D7D  Color Runs [AUD_2464_09_B41_ID16_02].bin
+  EF67  Color Runs [AUD_2464_09_B41_ID16_02].st2
+
+Colors Stars and Trek [AUD_2464_09_B41_ID09_02]
+  F498  Colors Stars and Trek [AUD_2464_09_B41_ID09_02].bin
+  61B8  Colors Stars and Trek [AUD_2464_09_B41_ID09_02].st2
+
+Combat (Paul Robson) (PD)
+  54C7  Combat v1 (2000.10.11) (Paul Robson) (PD).bin
+  4AA2  Combat v1 (2000.10.11) (Paul Robson) (PD).st2
+  4ADA  Combat v2 (2013.04.12) (Paul Robson) (PD).bin
+  D87F  Combat v2 (2013.04.12) (Paul Robson) (PD).st2
+  ABBA  Combat v3 (2016.09.15) (Paul Robson) (PD).bin
+  4009  Combat v3 (2016.09.15) (Paul Robson) (PD).st2
+
+Concentration + Match (Europe) (1978) (Richard Peterson)
+  7A43  Concentration + Match (Europe) (1978) (Richard Peterson).bin
+  0ECC  Concentration + Match (Europe) (1978) (Richard Peterson).st2
+
+Demonstration Cartridge (USA) (1977) (Andrew Modla)
+  B334  Demonstration Cartridge (USA) (1977) (Andrew Modla).bin
+  3EAF  Demonstration Cartridge (USA) (1977) (Andrew Modla).st2
+
+Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD)
+  3244  Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).bin
+  9562  Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).st2
+
+Flappy Pixel (2026.02.13) (FLiP) (PD)
+  6D1D  Flappy Pixel (2026.02.13) (FLiP) (PD).bin
+  D124  Flappy Pixel (2026.02.13) (FLiP) (PD).st2
+
+Gambler I (Blackjack) (CAS-140) (Japan) (1978) (Andrew Modla)
+  B7A7  Gambler I (Blackjack) (CAS-140) (Japan) (1978) (Andrew Modla).bin
+  5433  Gambler I (Blackjack) (CAS-140) (Japan) (1978) (Andrew Modla).st2
+
+Gambler II (Slot Machine and Dice) (Casino 2) (CAS-141) (Japan) (1978) (unknown)
+  F178  Gambler II (Slot Machine and Dice) (Casino 2) (CAS-141) (Japan) (1978) (unknown).bin
+  2F1A  Gambler II (Slot Machine and Dice) (Casino 2) (CAS-141) (Japan) (1978) (unknown).st2
+  C106  Gambler II (Slot Machine and Dice) (Casino 2) (CAS-141) (Japan) (1978) (unknown).st2
+
+Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker)
+  3505  Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker).bin
+  FC34  Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker).st2
+
+Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla)
+  FC72  Grand Pack (86677b) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
+  74AB  Grand Pack (87201) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
+  EF21  Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
+  815E  Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).st2
+
+Gunfight [AUD_2464_09_B41_ID17_02]
+  100F  Gunfight [AUD_2464_09_B41_ID17_02].bin
+  68C5  Gunfight [AUD_2464_09_B41_ID17_02].st2
+
+Hockey (Four Sports) (Paul Robson) (PD)
+  554B  Hockey v1 (Four Sports) (2000.09.16) (Paul Robson) (PD).bin
+  1154  Hockey v1 (Four Sports) (2000.09.16) (Paul Robson) (PD).st2
+  114A  Hockey v2 (Four Sports) (2013.04.12) (Paul Robson) (PD).bin
+  D5DE  Hockey v2 (Four Sports) (2013.04.12) (Paul Robson) (PD).st2
+  DE71  Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).bin
+  D753  Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).st2
+
+Inspiration (Fortunetelling & Biorhythm) (CAS-190) (Japan) (1978) (unknown, Jef Winsor)
+  C7C6  Inspiration (Fortunetelling & Biorhythm) (CAS-190) (Japan) (1978) (unknown, Jef Winsor).bin
+  E4C4  Inspiration (Fortunetelling & Biorhythm) (CAS-190) (Japan) (1978) (unknown, Jef Winsor).st2
+
+Invaders (Space Invaders) (Paul Robson) (PD)
+  ADAB  Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD).bin
+  6F69  Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD).st2
+  ADAB  Invaders v2 (Space Invaders) (2013.04.12) (Paul Robson) (PD).bin
+  0D1D  Invaders v2 (Space Invaders) (2013.04.12) (Paul Robson) (PD).st2
+  69AA  Invaders v3 (Space Invaders) (2016.09.17) (Paul Robson) (PD).bin
+  2D86  Invaders v3 (Space Invaders) (2016.09.17) (Paul Robson) (PD).st2
+
+Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD)
+  2DDB  Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD).bin
+  13A3  Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD).st2
+
+Kaboom (2013.03.22) (Paul Robson) (PD)
+  DFCF  Kaboom (2013.03.22) (Paul Robson) (PD).bin
+  8551  Kaboom (2013.03.22) (Paul Robson) (PD).st2
+
+New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01]
+  B555  New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01].bin
+  670D  New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01].st2
+
+noshaders (2018.08.25) (Realm Of Illusion) (PD)
+  D706  noshaders (2018.08.25) (Realm Of Illusion) (PD).bin
+  13B3  noshaders (2018.08.25) (Realm Of Illusion) (PD).st2
+
+Numbers [AUD_2464_09_B41_ID12_01]
+  FC89  Numbers [AUD_2464_09_B41_ID12_01].bin
+  0C89  Numbers [AUD_2464_09_B41_ID12_01].st2
+
+Outbreak v1.00 (2013.06.15) (Lee Romanow) (PD)
+  A83F  Outbreak v1.00 (2013.06.15) (Lee Romanow) (PD).bin
+  BE58  Outbreak v1.00 (2013.06.15) (Lee Romanow) (PD).st2
+
+Pacman (2013.03.26) (Paul Robson) (PD)
+  F4A1  Pacman (2013.03.26) (Paul Robson) (PD).bin
+  E00A  Pacman (2013.03.26) (Paul Robson) (PD).st2
+
+Paul's Printer [AUD_2464_09_B41_ID13_01]
+  31EC  Paul's Printer [AUD_2464_09_B41_ID13_01].bin
+  3690  Paul's Printer [AUD_2464_09_B41_ID13_01].st2
+
+Pinball (Europe) (1978) (Andrew Modla)
+  D3E2  Pinball (Europe) (1978) (Andrew Modla).bin
+  92BA  Pinball (Europe) (1978) (Andrew Modla).st2
+
+Print Snoopy [AUD_2464_09_B41_ID14_01]
+  1AFB  Print Snoopy [AUD_2464_09_B41_ID14_01].bin
+  A32E  Print Snoopy [AUD_2464_09_B41_ID14_01].st2
+
+Race (2020.08.07) (azya52) (PD)
+  5638  Race (2020.08.07) (azya52) (PD).bin
+  47EA  Race (2020.08.07) (azya52) (PD).st2
+
+RCA Test Cartridge - Tester 1 (1976) (Jack Wright)
+  7BB6  RCA Test Cartridge - Tester 1 (1976) (Jack Wright).bin
+  79C5  RCA Test Cartridge - Tester 1 (1976) (Jack Wright).st2
+
+Rocket v1.01 (2010.08.23) (Lee Romanow) (PD)
+  127F  Rocket v1.01 (2010.08.23) (Lee Romanow) (PD).bin
+  D2F0  Rocket v1.01 (2010.08.23) (Lee Romanow) (PD).st2
+
+Scramble (2013.04.13) (Paul Robson) (PD)
+  FAA9  Scramble (2013.04.13) (Paul Robson) (PD).bin
+  1280  Scramble (2013.04.13) (Paul Robson) (PD).st2
+
+Secret Number [AUD_2464_09_B41_ID08_02]
+  9784  Secret Number [AUD_2464_09_B41_ID08_02].bin
+  0704  Secret Number [AUD_2464_09_B41_ID08_02].st2
+  F806  Secret Number [AUD_2464_09_B41_ID08_02].st2
+
+Space Command (CAS-160) (Japan) (1978) (Jef Winsor)
+  12E8  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).bin
+  2BC5  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).st2
+  A7DF  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).st2
+
+Space Explorer (1978) (Thomas Lenihan)
+  0C03  Space Explorer (1978) (Thomas Lenihan).bin
+  92C7  Space Explorer (1978) (Thomas Lenihan).st2
+
+Space War (512 Bytes) [AUD_2464_09_B41_ID05_01]
+  F28A  Space War (512 Bytes) [AUD_2464_09_B41_ID05_01].bin
+  8B09  Space War (512 Bytes) [AUD_2464_09_B41_ID05_01].st2
+
+Speedway + Tag (Europe) (1978) (Joyce Weisbecker)
+  E153  Speedway + Tag (Europe) (1978) (Joyce Weisbecker).bin
+  9505  Speedway + Tag (Europe) (1978) (Joyce Weisbecker).st2
+
+Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown)
+  D4A0  Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown).bin
+  8D88  Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown).st2
+
+ST3CTA Test Cartridge - Tester 3 (unknown)
+  75E2  ST3CTA Test Cartridge - Tester 3 (unknown).bin
+  8CA7  ST3CTA Test Cartridge - Tester 3 (unknown).st2
+
+Star Wars (Europe) (1978) (Gooitzen van der Wal)
+  D13E  Star Wars (Europe) (1978) (Gooitzen van der Wal).bin
+  03E6  Star Wars (Europe) (1978) (Gooitzen van der Wal).st2
+
+Studio 2 Quiz [AUD_2464_09_B41_ID04_02]
+  3131  Studio 2 Quiz [AUD_2464_09_B41_ID04_02].bin
+  3131  Studio 2 Quiz [AUD_2464_09_B41_ID04_02].st2
+
+Studio II Programming Examples by Joseph Weisbecker - Move 1 (PD)
+  D8C2  Studio II Programming Examples by Joseph Weisbecker - Move 1 (PD).bin
+  A6EF  Studio II Programming Examples by Joseph Weisbecker - Move 1 (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Move 2 (PD)
+  FF76  Studio II Programming Examples by Joseph Weisbecker - Move 2 (PD).bin
+  61D7  Studio II Programming Examples by Joseph Weisbecker - Move 2 (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Move 3 (PD)
+  0856  Studio II Programming Examples by Joseph Weisbecker - Move 3 (PD).bin
+  396C  Studio II Programming Examples by Joseph Weisbecker - Move 3 (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Random 1 (PD)
+  51A6  Studio II Programming Examples by Joseph Weisbecker - Random 1 (PD).bin
+  173B  Studio II Programming Examples by Joseph Weisbecker - Random 1 (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Random 2 (PD)
+  4447  Studio II Programming Examples by Joseph Weisbecker - Random 2 (PD).bin
+  03C6  Studio II Programming Examples by Joseph Weisbecker - Random 2 (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Show Key (PD)
+  C78E  Studio II Programming Examples by Joseph Weisbecker - Show Key (PD).bin
+  8AF0  Studio II Programming Examples by Joseph Weisbecker - Show Key (PD).st2
+
+Studio II Programming Examples by Joseph Weisbecker - Tone (PD)
+  C903  Studio II Programming Examples by Joseph Weisbecker - Tone (PD).bin
+  BD55  Studio II Programming Examples by Joseph Weisbecker - Tone (PD).st2
+
+Studio II-TV Tennis (ANDY) [AUD_2464_09_B41_ID33_01]
+  1F9A  Studio II-TV Tennis (ANDY) [AUD_2464_09_B41_ID33_01].bin
+  7E99  Studio II-TV Tennis (ANDY) [AUD_2464_09_B41_ID33_01].st2
+
+Studio II-TV Tennis (Unidentified Side 02) [AUD_2464_09_B41_ID33_02]
+  B1CB  Studio II-TV Tennis (Unidentified Side 02) [AUD_2464_09_B41_ID33_02].bin
+  B5F9  Studio II-TV Tennis (Unidentified Side 02) [AUD_2464_09_B41_ID33_02].st2
+
+Studio IV Interpreter
+  BB2B  S.572.21B_Studio_IV_Interpreter_1_of_2.rom
+  2174  S.572.21B_Studio_IV_Interpreter_final_1_of_1.rom
+
+Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01]
+  A6F8  Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01].bin
+  B03D  Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01].st2
+
+TV Arcade 2012 v1.00 (2012.12.12) (Lee Romanow) (PD)
+  E3CF  TV Arcade 2012 v1.00 (2012.12.12) (Lee Romanow) (PD).bin
+  4B55  TV Arcade 2012 v1.00 (2012.12.12) (Lee Romanow) (PD).st2
+
+TV Arcade I - Space War (USA) (1977) (Joseph Weisbecker)
+  977C  TV Arcade I - Space War (USA) (1977) (Joseph Weisbecker).bin
+  45B5  TV Arcade I - Space War (USA) (1977) (Joseph Weisbecker).st2
+
+TV Arcade II - Fun with Numbers (USA) (1977) (Phil Baltzer)
+  29B8  TV Arcade II - Fun with Numbers (USA) (1977) (Phil Baltzer).bin
+  CEC2  TV Arcade II - Fun with Numbers (USA) (1977) (Phil Baltzer).st2
+
+TV Arcade III - Tennis + Squash (USA) (1977) (Andrew Modla)
+  88FB  TV Arcade III - Tennis + Squash (USA) (1977) (Andrew Modla).bin
+  FB76  TV Arcade III - Tennis + Squash (USA) (1977) (Andrew Modla).st2
+
+TV Arcade IV - Baseball (USA) (1977) (Andrew Modla)
+  F837  TV Arcade IV - Baseball (USA) (1977) (Andrew Modla).bin
+  2526  TV Arcade IV - Baseball (USA) (1977) (Andrew Modla).st2
+
+TV Arcade Series - Gunfighter + Moonship Battle (USA, Europe) (1977) (Andrew Modla)
+  3CDC  TV Arcade Series - Gunfighter + Moonship Battle (USA, Europe) (1977) (Andrew Modla).bin
+  043E  TV Arcade Series - Gunfighter + Moonship Battle (USA, Europe) (1977) (Andrew Modla).st2
+
+TV Arcade Series - Speedway + Tag (USA) (1977) (Joyce Weisbecker)
+  D0DA  TV Arcade Series - Speedway + Tag (USA) (1977) (Joyce Weisbecker).bin
+  8404  TV Arcade Series - Speedway + Tag (USA) (1977) (Joyce Weisbecker).st2
+
+TV Casino Series - Blackjack (USA) (1977) (Andrew Modla)
+  AF65  TV Casino Series - Blackjack (USA) (1977) (Andrew Modla).bin
+  C8B4  TV Casino Series - Blackjack (USA) (1977) (Andrew Modla).st2
+
+TV Casino Series - TV Bingo (USA, Europe) (1978) (Andrew Modla)
+  3731  TV Casino Series - TV Bingo (USA, Europe) (1978) (Andrew Modla).bin
+  31AE  TV Casino Series - TV Bingo (USA, Europe) (1978) (Andrew Modla).st2
+
+TV Mystic Series - Biorhythm (USA, Europe) (1977) (Jef Winsor)
+  8CDE  TV Mystic Series - Biorhythm (USA, Europe) (1977) (Jef Winsor).bin
+  DA69  TV Mystic Series - Biorhythm (USA, Europe) (1977) (Jef Winsor).st2
+
+TV School House I (USA) (1977) (Joyce Weisbecker)
+  7D85  TV School House I (USA) (1977) (Joyce Weisbecker).bin
+  9D0D  TV School House I (USA) (1977) (Joyce Weisbecker).st2
+
+TV School House II - Math Fun (USA, Europe) (1977) (Andrew Modla)
+  BD53  TV School House II - Math Fun (USA, Europe) (1977) (Andrew Modla).bin
+  B2FF  TV School House II - Math Fun (USA, Europe) (1977) (Andrew Modla).st2
+
+vip
+  FD57  vip.rom
+
