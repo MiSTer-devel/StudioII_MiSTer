@@ -14,7 +14,7 @@ Move controller-profile data out of RTL into an external database.
 
 ## 2. Beeper accuracy
 
-Continue comparing the Studio II discrete-beeper model against real-hardware recordings. Refine pitch behavior, recovery between closely spaced sounds and amplitude shaping where measurements support a change.
+Continue comparing the Studio II discrete-beeper model against real-hardware recordings. Concentration / Match's characteristic double-Q pulse now constrains Q-high retrigger recovery to a partial-charge crest near 560 Hz rather than the former frozen 534 Hz. Capture the revised core passage and obtain an instrumented Q-edge trace to verify both Q-high spans, the intervening gap, the roughly 200-cent interval below the principal pitch and repeat behavior. Continue refining pitch behavior, recovery between closely spaced sounds and amplitude shaping only where measurements support a change.
 
 ## 3. Mute switch
 

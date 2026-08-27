@@ -191,10 +191,11 @@ assign HDMI_FREEZE = 0;
 assign HDMI_BLACKOUT = 0;
 assign HDMI_BOB_DEINT = 0;
 
-// Beeper: a square wave gated by the 1802's Q line, generated in rcastudioii.sv.
-wire audio;
+// Signed beeper/tone sample generated in rcastudioii.sv. The Studio II path
+// includes its release envelope; Studio III remains a fixed-level square wave.
+wire signed [15:0] audio;
 assign AUDIO_S   = 1'b1;                                   // signed samples
-assign AUDIO_L   = audio ? 16'sd6000 : -16'sd6000;
+assign AUDIO_L   = audio;
 assign AUDIO_R   = AUDIO_L;
 assign AUDIO_MIX = 2'd0;
 

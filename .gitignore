@@ -31,7 +31,10 @@
 .qsys_edit
 .vs/
 .vscode/
+
+# (default name) pull builds out if you need them before clean.bat
 dse/
+
 build_id.v
 c5_pin_model_dump.txt
 db/
@@ -43,14 +46,26 @@ hps_isw_handoff
 imgui.ini
 incremental_db/
 out/
+
+# (default name) pull builds out if you need them before clean.bat
 output_files/
+
 PLLJ_PLLSPE_INFO.txt
 refs/
+
+# intentionally leaving out of MiSTer-devel
+rom/
+
 refvideo/
 scaler/
 simulation/
+
+# intentionally leaving out of MiSTer-devel
 software/
+
+# intentionally leaving out of MiSTer-devel
 tools/mame-roms/
+
 tools/mame-work/
 tools/refemu/*.o
 tools/refemu/out/

@@ -46,7 +46,7 @@ module top(
 );
    
    // Core inputs/outputs
-wire audio;   // 1-bit beeper, gated by the 1802's Q line
+wire signed [15:0] audio; // signed beeper/tone sample, including release envelope
    wire [3:0] led/*verilator public_flat*/;
 
    wire VSync, HSync;
@@ -76,7 +76,7 @@ wire audio;   // 1-bit beeper, gated by the 1802's Q line
    assign VGA_B = video[0] ? vid_lvl : 8'h00;
     
    // MAP OUTPUTS
-   assign AUDIO_L = audio ? 16'sd6000 : -16'sd6000;
+   assign AUDIO_L = audio;
    assign AUDIO_R = AUDIO_L;
 
 // The sim keeps ce_pix tied high by default: one pixel per clk_48 edge. Frame

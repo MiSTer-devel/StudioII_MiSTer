@@ -76,7 +76,7 @@ module rcastudioii
 	// select rather than a lit bit, so it should be shown at lower luminance.
 	// Always low on the monochrome Studio II, which has no background colour.
 	output reg         video_bg,
-	output             audio
+	output signed [15:0] audio
 );
 
 //  Derived from `machine`. Most of the machine-dependent behaviour keys off
@@ -1211,44 +1211,247 @@ assign ram_q = pl1_sel_q ? pl1_q
 ////////////////// SOUND ////////////////////////////////////////////////////
 //
 // The Studio II beeper is an NE555 astable gated by the 1802's Q line (SEQ/REQ).
-// Per docs/sound.txt the control pin is tied to 0V through a 10uF electrolytic,
-// which decays the pitch to about half over ~0.4s. MAME just uses a fixed
-// 300Hz beeper and flags the discrete circuit as unimplemented, so this follows
-// the hardware description instead.
+// Gunfighter hardware captures put a freshly charged circuit near E-flat 5
+// (628.4Hz on the measured console). A very long Pac-Man tone settles at 505.3Hz,
+// about a major third below the upper pitch, before its intrinsic release scoop.
+// The 10uF capacitor on pin 5 gives the circuit
+// memory: short sounds remain near the principal pitch, a sustained Q-high bends
+// down with rounded shoulders, and the capacitor recovers while Q is low.  If Q
+// rises again before it has settled, the next beep resumes from that analog
+// state. Outbreak hardware captures also show an intrinsic audible upward tail
+// after Q falls, with no following programmed note. The implementation below
+// keeps the oscillator running through a fading release, continues recovering
+// silently afterward, and reverses both live trajectories on a close retrigger.
 //
-// ce_pix is the 1861 pixel rate (~1.76MHz), which is also the CPU clock, so:
-//   625Hz  -> half period 1.76e6/(2*625) ~= 1408 ticks
-//   312Hz  -> 2816 ticks
-//   0.4s   -> ~704000 ticks, so step the half period every ~500; 512 is close
-//             enough and is a free shift.
-localparam [15:0] SND_HALF_MIN = 16'd1609;   // ~547 Hz, freshly gated on
-localparam [15:0] SND_HALF_MAX = 16'd3218;   // ~274 Hz, fully decayed
+// At the 1.760229MHz pixel clock, the measured upper pitch falls between integer
+// divisors.  A 10-bit fractional divider alternates 1400/1401 pixel ticks
+// (574/1024 long) for about 628.4Hz. The floor setting is 1742 ticks, or
+// about 505.2Hz. The lower point is a measured sustained plateau rather than an
+// equal-tempered B4 constant.
+//
+// A 20ms crest keeps ordinary Gunfighter pips at the principal pitch. After
+// that knee, successively slower bands approximate the first-order RC response
+// of the control-pin capacitor in oscillator-period space. The early curve is
+// unchanged from the hardware fit; extra terminal bands feather the final few
+// hertz into the measured floor at about 210ms overall instead of stopping
+// abruptly at 200ms.
+localparam [15:0] SND_HALF_TOP    = 16'd1400;
+localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
+localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms
+localparam [15:0] SND_RETRIGGER_TOP = 16'd1571; // ~560Hz Q-high recovery limit
+localparam  [1:0] SND_RECOVER     = 2'd0;
+localparam  [1:0] SND_HOLD        = 2'd1;
+localparam  [1:0] SND_DECAY       = 2'd2;
+localparam  [1:0] SND_RELEASE     = 2'd3;
+localparam [15:0] SND_RECOVER_STEP = 16'd600; // ~117ms floor-to-top
+localparam [15:0] SND_ATTACK_STEP  = 16'd14;  // ~2ms zero-to-full
 
 reg [15:0] snd_half;
+reg [15:0] snd_drive_half;
 reg [15:0] snd_cnt;
-reg  [8:0] snd_decay;
+reg [15:0] snd_curve_cnt;
+reg [15:0] snd_recover_cnt;
+reg [15:0] snd_hold_cnt;
+reg [15:0] snd_amp_cnt;
+reg  [9:0] snd_eb_frac;
+reg  [7:0] snd_amp;
+reg  [1:0] snd_state;
+reg        snd_q_prev;
 reg        snd_out;
+
+// Step spacing across the upper-to-floor sweep. For an RC response, each equal
+// change in period takes longer as the remaining distance to equilibrium
+// shrinks. The finer terminal bands avoid a constant-rate final segment followed
+// by a hard clamp, while keeping the implementation divider-only. Together the
+// bands take about 190ms after the 20ms crest.
+function automatic [12:0] snd_decay_interval(input [15:0] half_period);
+begin
+	if      (half_period < 16'd1443) snd_decay_interval = 13'd240;
+	else if (half_period < 16'd1486) snd_decay_interval = 13'd280;
+	else if (half_period < 16'd1529) snd_decay_interval = 13'd330;
+	else if (half_period < 16'd1572) snd_decay_interval = 13'd410;
+	else if (half_period < 16'd1615) snd_decay_interval = 13'd520;
+	else if (half_period < 16'd1657) snd_decay_interval = 13'd740;
+	else if (half_period < 16'd1699) snd_decay_interval = 13'd1600;
+	else if (half_period < 16'd1715) snd_decay_interval = 13'd2400;
+	else if (half_period < 16'd1727) snd_decay_interval = 13'd3400;
+	else if (half_period < 16'd1735) snd_decay_interval = 13'd4800;
+	else if (half_period < 16'd1740) snd_decay_interval = 13'd6800;
+	else                              snd_decay_interval = 13'd8191;
+end
+endfunction
+
+// One-level intervals for the 8-bit release envelope. Doubling the interval
+// after each amplitude halving approximates an RC/exponential decay without a
+// multiplier: the prominent part drops quickly, while a quiet residual tail
+// keeps the total release close to 96ms. The first two bands smooth the initial
+// shoulder; subsequent halvings take about 14.5ms each (roughly a 21ms tau).
+function automatic [12:0] snd_release_interval(input [7:0] amplitude);
+begin
+	if      (amplitude >= 8'd192) snd_release_interval = 13'd170;
+	else if (amplitude >= 8'd128) snd_release_interval = 13'd240;
+	else if (amplitude >= 8'd64)  snd_release_interval = 13'd400;
+	else if (amplitude >= 8'd32)  snd_release_interval = 13'd800;
+	else if (amplitude >= 8'd16)  snd_release_interval = 13'd1600;
+	else if (amplitude >= 8'd8)   snd_release_interval = 13'd3200;
+	else                           snd_release_interval = 13'd5700;
+end
+endfunction
+
+// Fractional terminal count used only on the E-flat plateau.  snd_half itself
+// stays in ordinary integer half-period units so the pitch curve remains cheap.
+wire [10:0] snd_eb_sum = {1'b0, snd_eb_frac} + 11'd574;
+wire        snd_eb_long = (snd_eb_sum >= 11'd1024);
+wire [15:0] snd_toggle_at = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
+	                       ? 16'd1399 : snd_half;
 
 always @(posedge clk_sys) begin
 	if (reset) begin
-		snd_half  <= SND_HALF_MIN;
-		snd_cnt   <= 16'd0;
-		snd_decay <= 9'd0;
-		snd_out   <= 1'b0;
+		snd_half      <= SND_HALF_TOP;
+		snd_drive_half <= SND_HALF_TOP;
+		snd_cnt       <= 16'd0;
+		snd_curve_cnt <= 16'd0;
+		snd_recover_cnt <= 16'd0;
+		snd_hold_cnt  <= 16'd0;
+		snd_amp_cnt   <= 16'd0;
+		snd_eb_frac   <= 10'd0;
+		snd_amp       <= 8'd0;
+		snd_state     <= SND_RECOVER;
+		snd_q_prev    <= 1'b0;
+		snd_out       <= 1'b0;
 	end
 	else if (ce_pix) begin
-		if (!Q) begin                                  // gated off: recharge, output idle
-			snd_half  <= SND_HALF_MIN;
-			snd_cnt   <= 16'd0;
-			snd_decay <= 9'd0;
-			snd_out   <= 1'b0;
+		snd_q_prev <= Q;
+		if (!Q) begin
+			snd_recover_cnt <= 16'd0;
+			snd_hold_cnt  <= 16'd0;
+			if (snd_q_prev) begin
+				snd_state   <= SND_RELEASE;
+				snd_amp_cnt <= 16'd0;
+			end
+			else if (snd_amp == 8'd0)
+				snd_state <= SND_RECOVER;
+
+			// Hardware release turns upward while fading. The provisional 600-clock
+			// step matches the observed ~515-to-554Hz rise in about 40ms and takes
+			// about 117ms to recover all the way from the sustained floor.
+			if (snd_half > SND_HALF_TOP) begin
+				if (snd_curve_cnt >= SND_RECOVER_STEP-1'b1) begin
+					snd_curve_cnt <= 16'd0;
+					snd_half <= snd_half - 1'b1;
+				end
+				else snd_curve_cnt <= snd_curve_cnt + 1'b1;
+			end
+			else snd_curve_cnt <= 16'd0;
+
+			// The one-bit oscillator keeps running after Q falls; only its amplitude
+			// fades. The RC-like envelope drops the prominent portion quickly, then
+			// leaves a faint tail while pitch continues its upward recovery.
+			if (snd_amp != 8'd0) begin
+				if (!snd_q_prev && (snd_amp_cnt >= snd_release_interval(snd_amp)-1'b1)) begin
+					snd_amp_cnt <= 16'd0;
+					snd_amp <= snd_amp - 1'b1;
+				end
+				else if (!snd_q_prev) snd_amp_cnt <= snd_amp_cnt + 1'b1;
+			end
+			else begin
+				snd_amp_cnt <= 16'd0;
+				snd_out <= 1'b0;
+			end
+
+			if (snd_amp != 8'd0) begin
+				if (snd_cnt >= snd_toggle_at) begin
+					snd_cnt <= 16'd0;
+					snd_out <= ~snd_out;
+					if (snd_half == SND_HALF_TOP)
+						snd_eb_frac <= snd_eb_sum[9:0];
+					else
+						snd_eb_frac <= 10'd0;
+				end
+				else snd_cnt <= snd_cnt + 1'b1;
+			end
 		end
 		else begin
-			snd_decay <= snd_decay + 1'b1;
-			if (&snd_decay && (snd_half < SND_HALF_MAX)) snd_half <= snd_half + 1'b1;
-			if (snd_cnt >= snd_half) begin
+			if (!snd_q_prev) begin
+				snd_recover_cnt <= snd_curve_cnt;
+				snd_curve_cnt <= 16'd0;
+				snd_hold_cnt  <= 16'd0;
+				snd_amp_cnt   <= 16'd0;
+				snd_drive_half <= SND_HALF_TOP;
+				snd_state <= SND_HOLD;
+				// Keep the audible divider continuous and retain the upward control-
+				// voltage momentum from release. A hidden fresh-note contour restarts
+				// at the principal pitch and must catch the live divider before it can
+				// pull the oscillator lower. This preserves the hardware's second-pulse
+				// rise without stacking a full additional descent.
+			end
+			else begin
+				// On a close retrigger the analog control state keeps recovering even
+				// though Q is high again. Recovery stops at the measured partial-charge
+				// limit or when the fresh driven contour catches the live divider; that
+				// intersection naturally forms the second-pulse turnaround.
+				if ((snd_half > SND_RETRIGGER_TOP) && (snd_half > snd_drive_half)) begin
+					if (snd_recover_cnt >= SND_RECOVER_STEP-1'b1) begin
+						snd_recover_cnt <= 16'd0;
+						snd_half <= snd_half - 1'b1;
+					end
+					else snd_recover_cnt <= snd_recover_cnt + 1'b1;
+				end
+				else snd_recover_cnt <= 16'd0;
+
+				case (snd_state)
+				SND_HOLD: begin
+					snd_curve_cnt <= 16'd0;
+					if (snd_hold_cnt >= SND_HOLD_TICKS-1'b1) begin
+						snd_hold_cnt <= 16'd0;
+						snd_state    <= SND_DECAY;
+					end
+					else snd_hold_cnt <= snd_hold_cnt + 1'b1;
+				end
+
+				default: begin // SND_DECAY
+					if (snd_drive_half < SND_HALF_BOTTOM) begin
+						if (snd_curve_cnt >= snd_decay_interval(snd_drive_half)-1'b1) begin
+							snd_curve_cnt <= 16'd0;
+							snd_drive_half <= snd_drive_half + 1'b1;
+							if (snd_drive_half >= snd_half) begin
+								snd_half <= snd_drive_half + 1'b1;
+								snd_recover_cnt <= 16'd0;
+							end
+						end
+						else snd_curve_cnt <= snd_curve_cnt + 1'b1;
+					end
+					else begin
+						snd_drive_half <= SND_HALF_BOTTOM;
+						if (snd_half < SND_HALF_BOTTOM)
+							snd_half <= SND_HALF_BOTTOM;
+						snd_curve_cnt <= 16'd0;
+					end
+				end
+				endcase
+			end
+
+			// A driven retrigger reverses the release envelope from its live level.
+			// The ~2ms attack avoids an amplitude teleport without softening pips.
+			if (!snd_q_prev) begin
+				snd_amp_cnt <= 16'd0;
+			end
+			else if (snd_amp < 8'hFF) begin
+				if (snd_amp_cnt >= SND_ATTACK_STEP-1'b1) begin
+					snd_amp_cnt <= 16'd0;
+					snd_amp <= snd_amp + 1'b1;
+				end
+				else snd_amp_cnt <= snd_amp_cnt + 1'b1;
+			end
+			else snd_amp_cnt <= 16'd0;
+
+			if (snd_cnt >= snd_toggle_at) begin
 				snd_cnt <= 16'd0;
 				snd_out <= ~snd_out;
+				if (snd_half == SND_HALF_TOP)
+					snd_eb_frac <= snd_eb_sum[9:0]; // modulo 1024
+				else
+					snd_eb_frac <= 10'd0;
 			end
 			else snd_cnt <= snd_cnt + 1'b1;
 		end
@@ -1261,7 +1464,12 @@ end
 // III sketch (IMG_1536.JPG) does keep a 555 alongside a "16 pin new chip for
 // programmable tones", but that is the III A prototype -- the production
 // Studio III and MPT-02 use the CDP1864, which is what this models.
-assign audio = is_studio3 ? aud_tone : snd_out;
+// Scale the 8-bit envelope by 24 (maximum 6120, close to the old +/-6000).
+// Studio III retains its original fixed-level square wave.
+wire [13:0] snd_magnitude = ({6'd0, snd_amp} << 4) + ({6'd0, snd_amp} << 3);
+wire signed [15:0] snd_sample = snd_out ? $signed({2'b00, snd_magnitude})
+	                                   : -$signed({2'b00, snd_magnitude});
+assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //

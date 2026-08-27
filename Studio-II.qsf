@@ -233,7 +233,7 @@ set_global_assignment -name SYSTEMVERILOG_FILE rtl/rcastudioii.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/dpram.sv
 set_global_assignment -name VERILOG_FILE rtl/cdp1802.v
 set_global_assignment -name SDC_FILE RCAStudioII.sdc
-set_global_assignment -name SYSTEMVERILOG_FILE Studio-II.sv
+set_global_assignment -name SYSTEMVERILOG_FILE "Studio-II.sv"
 set_global_assignment -name VERILOG_FILE rtl/pixie/cdp1861.v
 set_global_assignment -name VERILOG_FILE rtl/pixie/pixie_video.v
 set_instance_assignment -name FAST_INPUT_REGISTER ON -to SDRAM_DQ[*]
@@ -305,5 +305,6 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to SD_SPI*
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to USER_IO[*]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to VGA_EN
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/numstick.sv
+
 
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

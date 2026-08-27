@@ -830,7 +830,7 @@ int main(int argc, char** argv) {
         if (boundary) clks_in_frame = 0; else clks_in_frame++;
 
         {
-            bool a_now = top->rootp->top__DOT__audio != 0;
+            bool a_now = (int16_t)top->rootp->top__DOT__audio > 0;
             if (a_now != a_prev) { a_prev = a_now; a_edges++; }
             bool q_now = CPU(Q) != 0;
             if (q_now != q_prev) {
