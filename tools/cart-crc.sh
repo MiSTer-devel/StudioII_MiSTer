@@ -3,7 +3,7 @@
 # computes during ioctl_download. Use it to add a cartridge to the joystick
 # mapping table (the case statement on cart_crc).
 #
-#   tools/cart-crc.sh software/carts/*.bin
+#   tools/cart-crc.sh software/StudioII-Cartridges/*.st2
 set -euo pipefail
 for f in "$@"; do
   python3 - "$f" <<'PY'

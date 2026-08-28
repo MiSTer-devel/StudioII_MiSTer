@@ -3,7 +3,7 @@
 # Directed test for the memory decode in rtl/rcastudioii.sv.
 #
 # None of the commercial or homebrew software in software/ or refs/ touches the
-# RAM mirrors, so the frame comparison in §9 cannot tell a correct decode from
+# RAM mirrors, so the frame comparison cannot tell a correct decode from
 # the old truncate-to-12-bits one. This builds a tiny native-1802 cartridge that
 # pokes every case and checks the result out of the simulated RAM.
 #

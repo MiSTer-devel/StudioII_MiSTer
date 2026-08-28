@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# The §9 score: every Studio II case, driven with its *documented* start
+# Every Studio II case, driven with its *documented* start
 # sequence (from the RCA manuals, same sequences as tools/play-test.sh), and
 # diffed RTL against the reference emulator.
 #
 #   tools/score-21.sh
 #
-# There was no script for this before -- the figure in CLAUDE.md §9 was measured
+# The original figure was measured
 # by hand, which made it awkward to tell whether a change had moved it. Using a
 # uniform "press A1" instead is not the same metric: several cartridges never
 # start, so their frames agree only because both sides show the same near-empty
@@ -77,7 +77,7 @@ score "Demonstration (A1)"           "$S2/RCA_demo.st2"              300 150,300
 
 # 86677b and 87201 are deliberately excluded: the reference emulator renders
 # full-screen noise for both from the first frame, before any input, so neither
-# side is a reference for the other (CLAUDE.md §9).
+# side is a reference for the other (see CLAUDE.md, Verification model and limits).
 
 echo
 echo "  frames matching: $pass / $((pass+fail))"

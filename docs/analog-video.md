@@ -36,7 +36,7 @@ the background colour.
 The original defect was that we blanked everything outside the bitmap, so the
 active area was 64×128 in a 112×262 frame. A display that locked to the sync
 would have had almost nothing to draw. That is fixed (§8 of
-`docs/succession-plan.md` has the diagnosis).
+`CLAUDE.md` documents the current timing diagnosis).
 
 ---
 
@@ -73,7 +73,7 @@ The Visicom's border is its colour 0, a dark green.
 **The picture is not horizontally centred**: 16 px of border on the left against
 8 on the right. The bitmap is pinned at `40..104` because the BIOS ISR counts
 cycles against the DMA burst, and moving the bitmap means moving the DMA phase.
-Do not "fix" this without reading §10 of `CLAUDE.md` (2026-08-15 and 2026-08-16)
+Do not "fix" this without reading the video geometry and timing invariants in `CLAUDE.md`
 — the DMA phase is the most load-bearing timing in the core and two separate
 classes of bug have already come out of it.
 
@@ -150,18 +150,21 @@ raster — that separation exists exactly so raster work is safe. After any chan
 
 ```sh
 cd verilator && make lint && rm -rf obj_dir_headless && make headless
-cd .. && tools/score-21.sh          # expect 26/48, unchanged
+cd .. && tools/score-21.sh          # inspect changes in valid comparison cases
 tools/visicom-test.sh               # expect all ok
 ```
 
 If a raster change *does* move `score-21.sh`, you have moved the bitmap or the
-DMA phase by accident. Revert and reconsider.
+DMA phase by accident. Revert and reconsider. The historical raw `26/48` total
+is not an acceptance target: until the suite has an expectation manifest, inspect
+the individual cases and exclude comparisons that are not semantically expected
+to match.
 
 ---
 
 ## 4. Recording the result
 
-Whoever runs this: put the outcome in `CLAUDE.md` §10 with the date, the display
+Whoever runs this: put the durable outcome in `CLAUDE.md` with the display
 type, and the `MiSTer.ini` settings used. "Analog video does not work yet" is in
 the Readme's limitations and should be edited to say what actually happens, not
 deleted.

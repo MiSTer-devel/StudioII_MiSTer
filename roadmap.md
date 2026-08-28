@@ -1,35 +1,82 @@
 # Roadmap
 
-This is the short list of planned work beyond the current RC1 stabilization effort. It is intentionally limited to concrete user-facing improvements and accuracy work.
+Studio II audio phase one comes first. Prefer small, measurable changes that
+preserve a unified core model, and keep per-title policy out of RTL when a stable
+user-serviceable data format can represent it.
 
-## 1. External controller profiles
+## 1. Complete Studio II audio phase one
 
-Move controller-profile data out of RTL into an external database.
+Synthesize and listening-test the current gap-dependent retrigger model on
+MiSTer, concentrating on the labeled Gunfighter single/double/triple passages.
+Immediately recheck Concentration / Match and Speedway. If listening exposes a
+problem, capture rel3 through the reference chain and compare matched Q timing
+before retuning. Preserve the accepted endpoints, release envelope and bounded
+retrigger behavior.
 
-- Define a compact, documented mapping format.
-- Allow a mapping file with the same base name as a ROM to load automatically with that ROM.
-- Allow any mapping file to be selected and loaded manually.
-- Preserve mappings for both keypads, start/select sequences, player roles and non-gameplay actions such as CLEAR.
-- Keep exact-file CRC detection available where it remains useful, without requiring every mapping to be compiled into the core.
+Once the pitch model is accepted, adjust the oscillator's high/low duty cycle to
+match the general harmonic profile in KB's hardware recordings. Keep this
+orthogonal to pitch, retrigger and envelope state, and verify that the fundamental
+contour remains unchanged.
 
-## 2. Beeper accuracy
+After accepting the pitch model, add the console's mute switch as a small,
+isolated user control. Muting must affect only the output; it must not reset or
+fork the underlying beeper state.
 
-The current model is broadly convincing, but closely clustered Gunfighter sounds remain a critical failed stress test: Q-high/Q-low transitions on double and triple hits can sound synthetic or uneven. Capture the exact Gunfighter edge cadence and live beeper state, reproduce it in the behavioral model, and replace the fixed retrigger behavior with a natural continuous-state rule. Preserve the accepted pitch endpoints, release envelope, Concentration / Match double pulse, Speedway rapid pulses and non-additive repeated-hit behavior. See `docs/beeper-status.md` for the canonical current assessment.
+The hard early attack knee belongs to a later audio phase. See
+`docs/beeper-status.md` for evidence and acceptance criteria.
 
-## 3. Mute switch
+## 2. External controller profiles
 
-Add the console's real-hardware mute switch as a user control.
+Move per-title mappings out of synthesized RTL and into a stable,
+user-serviceable database. The core should accept new games and corrected
+mappings without requiring a maintainer or a new build.
 
-## 4. Border toggle
+Use one compact declarative format and one loading/interpreting path. Migrate the
+existing mappings rather than retaining permanent compiled and external systems.
+Preserve both keypads, start/select sequences, player roles, non-gameplay actions
+such as CLEAR, manual selection and useful exact-file identification. Invalid or
+missing data must fail safely to ordinary unmapped/manual controls.
 
-Add an HDMI-only option that removes or crops the raster border so the game bitmap can fill more of the display.
+The format is the long-lived interface. Keep it versioned, documented and unable
+to introduce executable behavior or title-specific RTL.
 
-This option must be gated entirely out of the analog/direct-video path. Analog timing and geometry must remain unchanged regardless of the border setting.
+Add missing game and mode mappings only when exact images and controls are known.
+Add this knowledge through the external database rather than growing RTL again.
 
-## 5. 5x crop for 1080p
+## 3. Studio III, Visicom and verification quality
 
-Add a 5x cropped scaling mode suitable for 1080p output. Verify the crop, centering, aspect behavior and interaction with the existing integer-scaling modes on hardware.
+- Investigate intermittent Visicom startup glitches and hangs against real
+  hardware evidence before changing timing or rendering.
+- Determine whether the bottom horizontal line seen with some Studio II and
+  Studio III BIOS/software combinations is authored behavior or a core defect.
+- Verify analog/direct-video output on real hardware. Do not change its timing or
+  geometry as part of HDMI presentation work.
+- Replace raw aggregate frame-match percentages with an expectation manifest.
+  Count only cases that are semantically expected to match the reference;
+  classify other cases as excluded or human-review with a recorded reason.
+- Export a small representative image set for Studio II, Studio III PAL, Studio
+  III NTSC and Visicom on each full regression run. Keep these images available
+  for human review rather than deleting every capture with temporary files.
+- Include a Studio III NTSC case that visibly covers the lower-right edge of the
+  64x32 logical bitmap so the reported horizontal-line issue is directly checked.
 
-## 6. Visicom accuracy testing
+## 4. Future Studio II audio work
 
-Complete additional Visicom COM-100 accuracy testing against real hardware. Required hardware observations are currently pending; avoid speculative timing or rendering changes until those results are available.
+- Model and tune the hard early attack knee against hardware recordings without
+  disturbing the accepted pitch, duty-cycle or release behavior.
+- Generate focused audio test ROMs with known Q timing so hardware capture and
+  RTL state can be aligned without relying on gameplay sequences.
+
+## 5. HDMI presentation options
+
+- Add an HDMI-only border crop that cannot affect analog/direct video.
+- Add a 5x cropped mode for 1080p and verify centering, aspect behavior and its
+  interaction with existing integer scaling on hardware.
+
+Keep these in the existing video path; do not create a second geometry model.
+
+## Deferred architectural expansion
+
+High-page diagnostic ST2 images remain outside the 4 KB cartridge model. Do not
+expand the loader or memory model without a concrete compatibility need and an
+explicit banking design.

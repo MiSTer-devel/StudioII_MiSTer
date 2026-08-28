@@ -3,7 +3,7 @@
 Paul Robson's C emulator for the RCA Studio II, vendored into this repo, plus
 the headless front end and loaders added for this project. This is what
 `tools/compare-game.sh` diffs the RTL against, and it is the basis of every
-accuracy claim in `CLAUDE.md` §9.
+frame-comparison claim described in `CLAUDE.md`, Verification model and limits.
 
 ```sh
 cd tools/refemu && make headless      # -> ./studio2_headless, links libc only
@@ -63,20 +63,20 @@ The vendored copy was verified byte-identical to the `refs/` original across all
 upstream, do that check again — `tools/compare-game.sh` is only meaningful if
 this binary behaves the way the recorded scores were measured with.
 
-The CDP1864 colour support described below arrived that way — see
-`docs/succession-plan.md` §5 and §6.
+The CDP1864 colour support described below was cross-checked against the current
+Studio III invariants in `CLAUDE.md`.
 
 ## CDP1864 colour machines (`--machine mpt02`)
 
-Added here so the §9 comparison does not go dark when the RTL gains a CDP1864.
+Added here so frame comparison remains available when the RTL uses a CDP1864.
 Ported from MAME's `cdp1864` (BSD-3-Clause) and Emma 02's machine XML, both
-cross-checked against the datasheet — see `docs/succession-plan.md` §6.
+cross-checked against the datasheet and `CLAUDE.md`, Studio III hardware.
 
 ```sh
 ./studio2_headless --machine mpt02 \
-  --bios ../../refs/emma_02/data/StudioIII/studio3_pal.bin \
+  --bios ../../rom/studio3_pal.bin \
   --frames 260 --press a1@40:20 --shot 250 --ascii \
-  ../../refs/emma_02/data/St2/Conic_StudioIII-Cartridges/pinball.st2
+  ../../software/Conic_StudioIII-Cartridges/pinball.st2
 ```
 
 What `--machine mpt02` changes:

@@ -465,7 +465,7 @@ static void usage(const char* argv0) {
 "                         with the writing PC (VWR_ALL=1 env: the whole page)\n"
 "\n"
 "  Misc\n"
-"    --trace-q            log every Q (beeper) edge with its frame number\n"
+"    --trace-q            log every Q edge with frame, tick and beeper state\n"
 "    --frame-log          print one line per frame (frame, size, hash)\n"
 "    --quiet              suppress per-frame progress\n"
 "    --help\n", argv0);
@@ -838,7 +838,14 @@ int main(int argc, char** argv) {
                 q_last_chg = fg.frame;
                 q_prev = q_now;
                 q_edges++;
-                if (trace_q) printf("Q %d frame %ld  (audio edges so far %ld)\n", q_now ? 1 : 0, (long)fg.frame, a_edges);
+                if (trace_q)
+                    printf("Q %d frame %ld  (audio edges so far %ld)  tick %llu "
+                           "live=%u control=%u drive=%u amp=%u on_ticks=%u\n",
+                           q_now ? 1 : 0, (long)fg.frame, a_edges,
+                           (unsigned long long)main_time,
+                           (unsigned)RS(snd_half), (unsigned)RS(snd_control_half),
+                           (unsigned)RS(snd_drive_half), (unsigned)RS(snd_amp),
+                           (unsigned)RS(snd_on_ticks));
             }
         }
 

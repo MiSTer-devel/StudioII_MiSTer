@@ -6,7 +6,7 @@
 #
 # There is no reference emulator for this machine -- tools/refemu models the
 # Studio II and the two Studio IIIs only, and Emma 02 has no headless mode -- so
-# the §9 frame diff cannot cover it. What this checks instead is the property
+# the reference frame diff cannot cover it. What this checks instead is the property
 # that the whole implementation turns on: the Visicom's DMA reads *two* bytes,
 # M(R(0)) and M(R(0)+$200), and combines their top bits into a 2-bit colour
 # (Emma 02, Cdp1802::visicomDmaOut). Read one plane and you get a picture in one
@@ -34,7 +34,7 @@
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RTL="$ROOT/verilator/obj_dir_headless/Vtop"
-BIOS="$ROOT/refs/emma_02/data/Visicom/visicom.rom"
+BIOS="$ROOT/rom/visicom.rom"
 CARTS="$ROOT/software/Visicom-Cartridges"
 
 while [[ ${1:-} == --* ]]; do

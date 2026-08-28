@@ -1124,7 +1124,7 @@ wire        rom_sel  = bank0 && (!ram_a[11] || machine_visicom);   // $0000-$07F
 wire        rom_hi   = is_studio3 && bank0 && (ram_a[11:10] == 2'b11);      // $0C00-$0FFF
 // Colour RAM: 64 cells behind a one-page window at $0B00-$0BFF. Only six address
 // lines are decoded, which is why MAME names the storage ($0B00-$0B3F) and Emma 02
-// the window ($0B00-$0BFF) without disagreeing. See docs/succession-plan.md §6.
+// the window ($0B00-$0BFF) without disagreeing. See CLAUDE.md, Studio III hardware.
 wire        col_sel  = is_studio3 && bank0 && (ram_a[11:8] == 4'hB);
 wire        cart_sel = bank0 &&  ram_a[11] && cart_page[ram_a[10:8]] && !rom_hi && !col_sel && !machine_visicom;
 
@@ -1210,60 +1210,35 @@ assign ram_q = pl1_sel_q ? pl1_q
 
 ////////////////// SOUND ////////////////////////////////////////////////////
 //
-// The Studio II beeper is an NE555 astable gated by the 1802's Q line (SEQ/REQ).
-// Gunfighter hardware captures put a freshly charged circuit near E-flat 5
-// (628.4Hz on the measured console). A very long Pac-Man tone settles at 505.3Hz,
-// about a major third below the upper pitch, before its intrinsic release scoop.
-// The 10uF capacitor on pin 5 gives the circuit
-// memory: short sounds remain near the principal pitch, a sustained Q-high bends
-// down with rounded shoulders, and the capacitor recovers while Q is low.  If Q
-// rises again before it has settled, the next beep resumes from that analog
-// state. Outbreak hardware captures also show an intrinsic audible upward tail
-// after Q falls, with no following programmed note. The implementation below
-// keeps the oscillator running through a fading release, continues recovering
-// silently afterward, and reverses both live trajectories on a close retrigger.
-//
-// At the 1.760229MHz pixel clock, the measured upper pitch falls between integer
-// divisors.  A 10-bit fractional divider alternates 1400/1401 pixel ticks
-// (574/1024 long) for about 628.4Hz. The floor setting is 1742 ticks, or
-// about 505.2Hz. The lower point is a measured sustained plateau rather than an
-// equal-tempered B4 constant.
-//
-// A 20ms crest keeps ordinary Gunfighter pips at the principal pitch. After
-// that knee, successively slower bands approximate the first-order RC response
-// of the control-pin capacitor in oscillator-period space. The early curve is
-// unchanged from the hardware fit; extra terminal bands feather the final few
-// hertz into the measured floor at about 210ms overall instead of stopping
-// abruptly at 200ms.
+// Behavioral model of the Q-gated NE555, fitted to the reference recordings in
+// docs/beeper-status.md. A fresh note holds near 628.4Hz for 20ms, then descends
+// to the measured 505.2Hz floor. Q low reverses pitch through the audible release
+// while a faster hidden control trajectory preserves the gap-dependent starts
+// heard in Gunfighter. A fresh Q-high drive contour prevents retriggers from
+// accumulating pitch drop.
 localparam [15:0] SND_HALF_TOP    = 16'd1400;
 localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
 localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms
-localparam [15:0] SND_RETRIGGER_TOP = 16'd1571; // ~560Hz Q-high recovery limit
-localparam  [1:0] SND_RECOVER     = 2'd0;
-localparam  [1:0] SND_HOLD        = 2'd1;
-localparam  [1:0] SND_DECAY       = 2'd2;
-localparam  [1:0] SND_RELEASE     = 2'd3;
-localparam [15:0] SND_RECOVER_STEP = 16'd600; // ~117ms floor-to-top
-localparam [15:0] SND_ATTACK_STEP  = 16'd14;  // ~2ms zero-to-full
+localparam [12:0] SND_RELEASE_STEP = 13'd600; // audible Q-low pitch recovery
+localparam [15:0] SND_RETRIGGER_SETTLE = 16'd10561; // ~6ms live-to-control glide
+localparam  [6:0] SND_RETRIGGER_TRACK_STEP = 7'd64;
+localparam [12:0] SND_ATTACK_STEP  = 13'd14;  // ~2ms zero-to-full
 
-reg [15:0] snd_half;
-reg [15:0] snd_drive_half;
+reg [15:0] snd_half;          // audible oscillator period
+reg [15:0] snd_drive_half;    // fresh Q-high contour
+reg [15:0] snd_control_half;  // recovered control state for a retrigger
 reg [15:0] snd_cnt;
-reg [15:0] snd_curve_cnt;
-reg [15:0] snd_recover_cnt;
-reg [15:0] snd_hold_cnt;
-reg [15:0] snd_amp_cnt;
+reg [12:0] snd_curve_cnt;
+reg [15:0] snd_control_cnt;
+reg [15:0] snd_on_ticks;
+reg [12:0] snd_amp_cnt;
+reg  [6:0] snd_track_cnt;
 reg  [9:0] snd_eb_frac;
 reg  [7:0] snd_amp;
-reg  [1:0] snd_state;
 reg        snd_q_prev;
 reg        snd_out;
 
-// Step spacing across the upper-to-floor sweep. For an RC response, each equal
-// change in period takes longer as the remaining distance to equilibrium
-// shrinks. The finer terminal bands avoid a constant-rate final segment followed
-// by a hard clamp, while keeping the implementation divider-only. Together the
-// bands take about 190ms after the 20ms crest.
+// Divider-only approximation of the rounded ~190ms driven descent.
 function automatic [12:0] snd_decay_interval(input [15:0] half_period);
 begin
 	if      (half_period < 16'd1443) snd_decay_interval = 13'd240;
@@ -1281,11 +1256,27 @@ begin
 end
 endfunction
 
-// One-level intervals for the 8-bit release envelope. Doubling the interval
-// after each amplitude halving approximates an RC/exponential decay without a
-// multiplier: the prominent part drops quickly, while a quiet residual tail
-// keeps the total release close to 96ms. The first two bands smooth the initial
-// shoulder; subsequent halvings take about 14.5ms each (roughly a 21ms tau).
+// Gap-dependent hidden recovery fitted to the Gunfighter retrigger series.
+function automatic [15:0] snd_control_interval(input [15:0] half_period);
+begin
+	if      (half_period >= 16'd1656) snd_control_interval = 16'd200;
+	else if (half_period >= 16'd1592) snd_control_interval = 16'd250;
+	else if (half_period >= 16'd1528) snd_control_interval = 16'd350;
+	else if (half_period >= 16'd1496) snd_control_interval = 16'd500;
+	else if (half_period >= 16'd1464) snd_control_interval = 16'd800;
+	else if (half_period >= 16'd1448) snd_control_interval = 16'd1300;
+	else if (half_period >= 16'd1432) snd_control_interval = 16'd1900;
+	else if (half_period >= 16'd1424) snd_control_interval = 16'd2700;
+	else if (half_period >= 16'd1416) snd_control_interval = 16'd3800;
+	else if (half_period >= 16'd1412) snd_control_interval = 16'd5400;
+	else if (half_period >= 16'd1408) snd_control_interval = 16'd7600;
+	else if (half_period >= 16'd1404) snd_control_interval = 16'd12600;
+	else if (half_period >= 16'd1402) snd_control_interval = 16'd25000;
+	else                               snd_control_interval = 16'd65000;
+end
+endfunction
+
+// Divider-only RC envelope: ~21ms prominent decay and ~96ms total tail.
 function automatic [12:0] snd_release_interval(input [7:0] amplitude);
 begin
 	if      (amplitude >= 8'd192) snd_release_interval = 13'd170;
@@ -1298,8 +1289,7 @@ begin
 end
 endfunction
 
-// Fractional terminal count used only on the E-flat plateau.  snd_half itself
-// stays in ordinary integer half-period units so the pitch curve remains cheap.
+// Fractional terminal count for the 628.4Hz plateau; curves use integer periods.
 wire [10:0] snd_eb_sum = {1'b0, snd_eb_frac} + 11'd574;
 wire        snd_eb_long = (snd_eb_sum >= 11'd1024);
 wire [15:0] snd_toggle_at = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
@@ -1307,144 +1297,151 @@ wire [15:0] snd_toggle_at = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
 
 always @(posedge clk_sys) begin
 	if (reset) begin
-		snd_half      <= SND_HALF_TOP;
+		snd_half       <= SND_HALF_TOP;
 		snd_drive_half <= SND_HALF_TOP;
-		snd_cnt       <= 16'd0;
-		snd_curve_cnt <= 16'd0;
-		snd_recover_cnt <= 16'd0;
-		snd_hold_cnt  <= 16'd0;
-		snd_amp_cnt   <= 16'd0;
-		snd_eb_frac   <= 10'd0;
-		snd_amp       <= 8'd0;
-		snd_state     <= SND_RECOVER;
-		snd_q_prev    <= 1'b0;
-		snd_out       <= 1'b0;
+		snd_control_half <= SND_HALF_TOP;
+		snd_cnt        <= 16'd0;
+		snd_curve_cnt  <= 13'd0;
+		snd_control_cnt <= 16'd0;
+		snd_on_ticks   <= 16'd0;
+		snd_amp_cnt    <= 13'd0;
+		snd_track_cnt  <= 7'd0;
+		snd_eb_frac    <= 10'd0;
+		snd_amp        <= 8'd0;
+		snd_q_prev     <= 1'b0;
+		snd_out        <= 1'b0;
 	end
 	else if (ce_pix) begin
 		snd_q_prev <= Q;
-		if (!Q) begin
-			snd_recover_cnt <= 16'd0;
-			snd_hold_cnt  <= 16'd0;
-			if (snd_q_prev) begin
-				snd_state   <= SND_RELEASE;
-				snd_amp_cnt <= 16'd0;
-			end
-			else if (snd_amp == 8'd0)
-				snd_state <= SND_RECOVER;
 
-			// Hardware release turns upward while fading. The provisional 600-clock
-			// step matches the observed ~515-to-554Hz rise in about 40ms and takes
-			// about 117ms to recover all the way from the sustained floor.
+		// Q edges establish the three continuous trajectories. The audible period
+		// never jumps at an edge; the control and fresh-drive contours determine
+		// where it moves afterward.
+		if (Q != snd_q_prev) begin
+			snd_amp_cnt <= 13'd0;
+			if (Q) begin
+				snd_on_ticks   <= 16'd0;
+				snd_curve_cnt  <= 13'd0;
+				snd_track_cnt  <= 7'd0;
+				snd_drive_half <= SND_HALF_TOP;
+			end
+			else begin
+				snd_on_ticks    <= 16'd0;
+				snd_track_cnt   <= 7'd0;
+				snd_control_half <= snd_half;
+				snd_control_cnt <= 16'd0;
+			end
+		end
+
+		if (!Q) begin
+			// The audible release follows the slower Outbreak/Pac-Man upward tail.
 			if (snd_half > SND_HALF_TOP) begin
-				if (snd_curve_cnt >= SND_RECOVER_STEP-1'b1) begin
-					snd_curve_cnt <= 16'd0;
+				if (snd_curve_cnt >= SND_RELEASE_STEP-1'b1) begin
+					snd_curve_cnt <= 13'd0;
 					snd_half <= snd_half - 1'b1;
 				end
 				else snd_curve_cnt <= snd_curve_cnt + 1'b1;
 			end
-			else snd_curve_cnt <= 16'd0;
+			else snd_curve_cnt <= 13'd0;
 
-			// The one-bit oscillator keeps running after Q falls; only its amplitude
-			// fades. The RC-like envelope drops the prominent portion quickly, then
-			// leaves a faint tail while pitch continues its upward recovery.
+			// The hidden control recovers more quickly along the Gunfighter curve.
+			if (!snd_q_prev) begin
+				if (snd_control_half > SND_HALF_TOP) begin
+					if (snd_control_cnt >= snd_control_interval(snd_control_half)-1'b1) begin
+						snd_control_cnt <= 16'd0;
+						snd_control_half <= snd_control_half - 1'b1;
+					end
+					else snd_control_cnt <= snd_control_cnt + 1'b1;
+				end
+				else snd_control_cnt <= 16'd0;
+			end
+
+			// Q gates the envelope, not the oscillator, so the pitch remains continuous.
 			if (snd_amp != 8'd0) begin
 				if (!snd_q_prev && (snd_amp_cnt >= snd_release_interval(snd_amp)-1'b1)) begin
-					snd_amp_cnt <= 16'd0;
+					snd_amp_cnt <= 13'd0;
 					snd_amp <= snd_amp - 1'b1;
 				end
 				else if (!snd_q_prev) snd_amp_cnt <= snd_amp_cnt + 1'b1;
 			end
 			else begin
-				snd_amp_cnt <= 16'd0;
+				snd_amp_cnt <= 13'd0;
 				snd_out <= 1'b0;
-			end
-
-			if (snd_amp != 8'd0) begin
-				if (snd_cnt >= snd_toggle_at) begin
-					snd_cnt <= 16'd0;
-					snd_out <= ~snd_out;
-					if (snd_half == SND_HALF_TOP)
-						snd_eb_frac <= snd_eb_sum[9:0];
-					else
-						snd_eb_frac <= 10'd0;
-				end
-				else snd_cnt <= snd_cnt + 1'b1;
 			end
 		end
 		else begin
-			if (!snd_q_prev) begin
-				snd_recover_cnt <= snd_curve_cnt;
-				snd_curve_cnt <= 16'd0;
-				snd_hold_cnt  <= 16'd0;
-				snd_amp_cnt   <= 16'd0;
-				snd_drive_half <= SND_HALF_TOP;
-				snd_state <= SND_HOLD;
-				// Keep the audible divider continuous and retain the upward control-
-				// voltage momentum from release. A hidden fresh-note contour restarts
-				// at the principal pitch and must catch the live divider before it can
-				// pull the oscillator lower. This preserves the hardware's second-pulse
-				// rise without stacking a full additional descent.
-			end
-			else begin
-				// On a close retrigger the analog control state keeps recovering even
-				// though Q is high again. Recovery stops at the measured partial-charge
-				// limit or when the fresh driven contour catches the live divider; that
-				// intersection naturally forms the second-pulse turnaround.
-				if ((snd_half > SND_RETRIGGER_TOP) && (snd_half > snd_drive_half)) begin
-					if (snd_recover_cnt >= SND_RECOVER_STEP-1'b1) begin
-						snd_recover_cnt <= 16'd0;
-						snd_half <= snd_half - 1'b1;
+			if (snd_q_prev) begin
+				// For the first 6ms, glide to the gap-dependent recovered control state.
+				if (snd_on_ticks < SND_RETRIGGER_SETTLE) begin
+					if (snd_control_half > SND_HALF_TOP) begin
+						if (snd_control_cnt >= snd_control_interval(snd_control_half)-1'b1) begin
+							snd_control_cnt <= 16'd0;
+							snd_control_half <= snd_control_half - 1'b1;
+						end
+						else snd_control_cnt <= snd_control_cnt + 1'b1;
 					end
-					else snd_recover_cnt <= snd_recover_cnt + 1'b1;
-				end
-				else snd_recover_cnt <= 16'd0;
+					else snd_control_cnt <= 16'd0;
 
-				case (snd_state)
-				SND_HOLD: begin
-					snd_curve_cnt <= 16'd0;
-					if (snd_hold_cnt >= SND_HOLD_TICKS-1'b1) begin
-						snd_hold_cnt <= 16'd0;
-						snd_state    <= SND_DECAY;
+					if (snd_half > snd_control_half) begin
+						if (snd_track_cnt >= SND_RETRIGGER_TRACK_STEP-1'b1) begin
+							snd_track_cnt <= 7'd0;
+							snd_half <= snd_half - 1'b1;
+						end
+						else snd_track_cnt <= snd_track_cnt + 1'b1;
 					end
-					else snd_hold_cnt <= snd_hold_cnt + 1'b1;
+					else snd_track_cnt <= 7'd0;
+
+					if (snd_on_ticks >= SND_RETRIGGER_SETTLE-1'b1) begin
+						snd_track_cnt <= 7'd0;
+						snd_half <= snd_control_half;
+					end
+				end
+				else begin
+					snd_control_cnt <= 16'd0;
+					snd_track_cnt <= 7'd0;
 				end
 
-				default: begin // SND_DECAY
+				// The same note-age counter defines the 20ms upper-pitch crest.
+				if (snd_on_ticks < SND_HOLD_TICKS) begin
+					snd_on_ticks <= snd_on_ticks + 1'b1;
+					snd_curve_cnt <= 13'd0;
+				end
+				else begin
 					if (snd_drive_half < SND_HALF_BOTTOM) begin
 						if (snd_curve_cnt >= snd_decay_interval(snd_drive_half)-1'b1) begin
-							snd_curve_cnt <= 16'd0;
+							snd_curve_cnt <= 13'd0;
 							snd_drive_half <= snd_drive_half + 1'b1;
 							if (snd_drive_half >= snd_half) begin
 								snd_half <= snd_drive_half + 1'b1;
-								snd_recover_cnt <= 16'd0;
+								snd_control_half <= snd_drive_half + 1'b1;
+								snd_control_cnt <= 16'd0;
 							end
 						end
 						else snd_curve_cnt <= snd_curve_cnt + 1'b1;
 					end
 					else begin
 						snd_drive_half <= SND_HALF_BOTTOM;
-						if (snd_half < SND_HALF_BOTTOM)
+						if (snd_half < SND_HALF_BOTTOM) begin
 							snd_half <= SND_HALF_BOTTOM;
-						snd_curve_cnt <= 16'd0;
+							snd_control_half <= SND_HALF_BOTTOM;
+						end
+						snd_curve_cnt <= 13'd0;
 					end
 				end
-				endcase
 			end
 
-			// A driven retrigger reverses the release envelope from its live level.
-			// The ~2ms attack avoids an amplitude teleport without softening pips.
-			if (!snd_q_prev) begin
-				snd_amp_cnt <= 16'd0;
-			end
-			else if (snd_amp < 8'hFF) begin
+			if (snd_q_prev && snd_amp < 8'hFF) begin
 				if (snd_amp_cnt >= SND_ATTACK_STEP-1'b1) begin
-					snd_amp_cnt <= 16'd0;
+					snd_amp_cnt <= 13'd0;
 					snd_amp <= snd_amp + 1'b1;
 				end
 				else snd_amp_cnt <= snd_amp_cnt + 1'b1;
 			end
-			else snd_amp_cnt <= 16'd0;
+			else snd_amp_cnt <= 13'd0;
+		end
 
+		// Run one oscillator path for the driven sound and its fading release.
+		if (Q || (snd_amp != 8'd0)) begin
 			if (snd_cnt >= snd_toggle_at) begin
 				snd_cnt <= 16'd0;
 				snd_out <= ~snd_out;
@@ -1458,14 +1455,8 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// The Studio II's beeper is the discrete NE555 modelled above; the CDP1864
-// machines have the tone generator inside the video part instead, so the 555
-// goes away with the machine rather than being gated off. Weisbecker's Studio
-// III sketch (IMG_1536.JPG) does keep a 555 alongside a "16 pin new chip for
-// programmable tones", but that is the III A prototype -- the production
-// Studio III and MPT-02 use the CDP1864, which is what this models.
 // Scale the 8-bit envelope by 24 (maximum 6120, close to the old +/-6000).
-// Studio III retains its original fixed-level square wave.
+// Production Studio III machines use the CDP1864's fixed-level tone instead.
 wire [13:0] snd_magnitude = ({6'd0, snd_amp} << 4) + ({6'd0, snd_amp} << 3);
 wire signed [15:0] snd_sample = snd_out ? $signed({2'b00, snd_magnitude})
 	                                   : -$signed({2'b00, snd_magnitude});
@@ -1703,7 +1694,7 @@ dpram #(8, 9) sram
 
 	// Port B is tied off entirely, which is what lets this infer as block RAM.
 	// Do not give it a write or a read without re-checking the inferred-
-	// altsyncram list in output_files/RCAStudioII.map.rpt (CLAUDE.md §8).
+	// altsyncram list in output_files/Studio-II.map.rpt (see CLAUDE.md, build traps).
 	.ram_cs_b(1'b0),
 	.wren_b(1'b0),
 	.address_b(9'd0),

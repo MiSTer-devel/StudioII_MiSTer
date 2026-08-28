@@ -12,7 +12,7 @@ TEXT = RTL.read_text(encoding="utf-8")
 
 
 def parameter(name: str) -> int:
-    match = re.search(rf"{name}\s*=\s*16'd(\d+)", TEXT)
+    match = re.search(rf"{name}\s*=\s*\d+'d(\d+)", TEXT)
     assert match, f"could not find {name} in {RTL}"
     return int(match.group(1))
 
@@ -20,8 +20,9 @@ def parameter(name: str) -> int:
 TOP = parameter("SND_HALF_TOP")
 BOTTOM = parameter("SND_HALF_BOTTOM")
 HOLD_TICKS = parameter("SND_HOLD_TICKS")
-RETRIGGER_TOP = parameter("SND_RETRIGGER_TOP")
-RECOVER_STEP = parameter("SND_RECOVER_STEP")
+RELEASE_STEP = parameter("SND_RELEASE_STEP")
+RETRIGGER_SETTLE = parameter("SND_RETRIGGER_SETTLE")
+RETRIGGER_TRACK_STEP = parameter("SND_RETRIGGER_TRACK_STEP")
 ATTACK_STEP = parameter("SND_ATTACK_STEP")
 
 bands = [
@@ -36,12 +37,35 @@ last_interval = re.search(
 assert len(bands) >= 7 and last_interval, "could not parse decay bands"
 intervals = [interval for _, interval in bands] + [int(last_interval.group(1))]
 
+control_body = re.search(
+    r"function automatic \[15:0\] snd_control_interval.*?endfunction", TEXT, re.S
+)
+assert control_body, "could not parse control-recovery bands"
+control_bands = [
+    (int(limit), int(interval))
+    for limit, interval in re.findall(
+        r"half_period >= 16'd(\d+)\) snd_control_interval = 16'd(\d+)",
+        control_body.group(0),
+    )
+]
+control_last = re.search(
+    r"else\s+snd_control_interval = 16'd(\d+)", control_body.group(0)
+)
+assert control_bands and control_last, "could not parse control interval table"
+
 
 def decay_interval(half_period: int) -> int:
     for limit, interval in bands:
         if half_period < limit:
             return interval
     return intervals[-1]
+
+
+def control_interval(half_period: int) -> int:
+    for limit, interval in control_bands:
+        if half_period >= limit:
+            return interval
+    return int(control_last.group(1))
 
 
 def release_interval(amplitude: int) -> int:
@@ -64,33 +88,50 @@ class Beeper:
     def __init__(self) -> None:
         self.half = TOP
         self.drive_half = TOP
+        self.control_half = TOP
         self.curve = 0
-        self.recover_count = 0
-        self.hold = 0
+        self.control_count = 0
+        self.on_ticks = 0
+        self.track_count = 0
         self.amp_count = 0
         self.amp = 0
-        self.state = "recover"
         self.q_prev = False
 
     def tick(self, q: bool) -> None:
         previous_q = self.q_prev
         self.q_prev = q
+
+        if q != previous_q:
+            self.amp_count = 0
+            if q:
+                self.on_ticks = 0
+                self.curve = 0
+                self.track_count = 0
+                self.drive_half = TOP
+            else:
+                self.on_ticks = 0
+                self.track_count = 0
+                self.control_half = self.half
+                self.control_count = 0
+
         if not q:
-            self.recover_count = 0
-            self.hold = 0
-            if previous_q:
-                self.state = "release"
-                self.amp_count = 0
-            elif self.amp == 0:
-                self.state = "recover"
             if self.half > TOP:
-                if self.curve >= RECOVER_STEP - 1:
+                if self.curve >= RELEASE_STEP - 1:
                     self.curve = 0
                     self.half -= 1
                 else:
                     self.curve += 1
             else:
                 self.curve = 0
+            if not previous_q:
+                if self.control_half > TOP:
+                    if self.control_count >= control_interval(self.control_half) - 1:
+                        self.control_count = 0
+                        self.control_half -= 1
+                    else:
+                        self.control_count += 1
+                else:
+                    self.control_count = 0
             if self.amp:
                 if not previous_q and self.amp_count >= release_interval(self.amp) - 1:
                     self.amp_count = 0
@@ -101,53 +142,29 @@ class Beeper:
                 self.amp_count = 0
             return
 
-        if not previous_q:
-            self.recover_count = self.curve
-            self.curve = 0
-            self.hold = 0
-            self.amp_count = 0
-            self.drive_half = TOP
-            self.state = "hold"
-        elif self.state == "hold":
-            if self.half > RETRIGGER_TOP and self.half > self.drive_half:
-                if self.recover_count >= RECOVER_STEP - 1:
-                    self.recover_count = 0
-                    self.half -= 1
-                else:
-                    self.recover_count += 1
-            else:
-                self.recover_count = 0
-            self.curve = 0
-            if self.hold >= HOLD_TICKS - 1:
-                self.hold = 0
-                self.state = "decay"
-            else:
-                self.hold += 1
-        elif self.state == "decay":
-            if self.half > RETRIGGER_TOP and self.half > self.drive_half:
-                if self.recover_count >= RECOVER_STEP - 1:
-                    self.recover_count = 0
-                    self.half -= 1
-                else:
-                    self.recover_count += 1
-            else:
-                self.recover_count = 0
-            if self.drive_half < BOTTOM:
+        if previous_q:
+            self._settle_retrigger()
+            if self.on_ticks < HOLD_TICKS:
+                self.on_ticks += 1
+                self.curve = 0
+            elif self.drive_half < BOTTOM:
                 if self.curve >= decay_interval(self.drive_half) - 1:
                     self.curve = 0
                     self.drive_half += 1
                     if self.drive_half - 1 >= self.half:
                         self.half = self.drive_half
-                        self.recover_count = 0
+                        self.control_half = self.drive_half
+                        self.control_count = 0
                 else:
                     self.curve += 1
             else:
                 self.drive_half = BOTTOM
                 if self.half < BOTTOM:
                     self.half = BOTTOM
+                    self.control_half = BOTTOM
                 self.curve = 0
 
-        if self.amp < 255:
+        if previous_q and self.amp < 255:
             if self.amp_count >= ATTACK_STEP - 1:
                 self.amp_count = 0
                 self.amp += 1
@@ -155,6 +172,31 @@ class Beeper:
                 self.amp_count += 1
         else:
             self.amp_count = 0
+
+    def _settle_retrigger(self) -> None:
+        if self.on_ticks >= RETRIGGER_SETTLE:
+            self.control_count = 0
+            self.track_count = 0
+            return
+        if self.control_half > TOP:
+            if self.control_count >= control_interval(self.control_half) - 1:
+                self.control_count = 0
+                self.control_half -= 1
+            else:
+                self.control_count += 1
+        else:
+            self.control_count = 0
+        if self.half > self.control_half:
+            if self.track_count >= RETRIGGER_TRACK_STEP - 1:
+                self.track_count = 0
+                self.half -= 1
+            else:
+                self.track_count += 1
+        else:
+            self.track_count = 0
+        if self.on_ticks >= RETRIGGER_SETTLE - 1:
+            self.track_count = 0
+            self.half = self.control_half
 
     def run_ms(self, milliseconds: float, q: bool) -> None:
         for _ in range(round(milliseconds * PIXEL_CLOCK / 1000)):
@@ -219,7 +261,7 @@ release.run_ms(211, True)
 release.tick(False)
 check(
     "release entry",
-    release.state == "release" and release.amp == 255,
+    not release.q_prev and release.amp == 255,
     f"entered at {release.hz:.2f} Hz and level {release.amp}",
 )
 release.run_ms(40, False)
@@ -242,7 +284,7 @@ check(
 release.run_ms(19, False)
 check(
     "silent recovery",
-    release.amp == 0 and release.state == "recover",
+    release.amp == 0 and not release.q_prev,
     f"level {release.amp}, continuing at {release.hz:.2f} Hz",
 )
 
@@ -256,7 +298,8 @@ check(
     "retrigger continuity",
     retrigger.half == instantaneous
     and retrigger.amp == instantaneous_amp
-    and retrigger.state == "hold",
+    and retrigger.q_prev
+    and retrigger.on_ticks == 0,
     f"resumed at divider {retrigger.half}, level {retrigger.amp}",
 )
 retrigger.run_ms(2, True)
@@ -298,6 +341,47 @@ check(
     -205 <= principal_interval <= -195 and 130 <= trough_interval <= 140,
     f"{principal_interval:.1f} cents from principal, "
     f"+{trough_interval:.1f} cents from first trough",
+)
+
+# Gunfighter's ROM keeps a shot high for one 60Hz frame and a cactus high for
+# seven. The labeled hardware clips cover cactus-to-shot gaps of 2--9 Q-low
+# frames. Measure 11ms into the following shot, the center of its useful ridge.
+# These medians are acoustic estimates rather than exact electrical readings, so
+# the aggregate fit and monotonic contour are stronger constraints than any one
+# row. The former fixed-ceiling model misses the 2--4 frame cases by 27--38Hz.
+gunfighter_hardware = {
+    2: 596.8,
+    3: 605.4,
+    4: 613.4,
+    5: 616.0,
+    6: 618.7,
+    9: 626.6,
+}
+gunfighter_model = {}
+for gap_frames in gunfighter_hardware:
+    sequence = Beeper()
+    sequence.run_ms(7 * 1000 / 60, True)
+    sequence.run_ms(gap_frames * 1000 / 60, False)
+    sequence.run_ms(11, True)
+    gunfighter_model[gap_frames] = sequence.hz
+
+gunfighter_rmse = math.sqrt(
+    sum(
+        (gunfighter_model[gap] - gunfighter_hardware[gap]) ** 2
+        for gap in gunfighter_hardware
+    ) / len(gunfighter_hardware)
+)
+check(
+    "Gunfighter gap-dependent retrigger",
+    gunfighter_rmse <= 3.5
+    and all(
+        gunfighter_model[a] < gunfighter_model[b]
+        for a, b in zip(gunfighter_model, list(gunfighter_model)[1:])
+    ),
+    f"{gunfighter_rmse:.2f}Hz RMS error across "
+    + ", ".join(
+        f"{gap}f={gunfighter_model[gap]:.1f}Hz" for gap in gunfighter_model
+    ),
 )
 
 rapid = Beeper()

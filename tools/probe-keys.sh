@@ -13,14 +13,15 @@
 # included with the dumps, so per-key meanings are deliberately not claimed.
 # ---------------------------------------------------------------------------
 # For each cartridge: find which key starts it, then which keys do something during play.
-R=/Users/alans/Documents/development/RCAStudioII_Mister
-E="$R/refs/rca-studio2/studio2-games/studio2/studio2_headless"
-cd "$R/refs/rca-studio2/studio2-games/studio2" || exit 1
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+E="$ROOT/tools/refemu/studio2_headless"
+CARTS="$ROOT/software/StudioII-Cartridges"
+[[ -x "$E" ]] || { echo "error: build tools/refemu/studio2_headless" >&2; exit 1; }
 
 hashof() { "$E" "$@" 2>/dev/null | grep -o "final hash [0-9A-F]*" | awk '{print $3}'; }
 
-for c in "$R"/software/carts/*.bin; do
-  b=$(basename "$c" .bin)
+for c in "$CARTS"/*.st2; do
+  b=$(basename "$c" .st2)
   # 1. which key starts it (produces any lit pixels by frame 160)?
   starts=""
   for k in 1 2 3 4 5 6 7 8 9 0; do

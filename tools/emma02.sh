@@ -15,7 +15,7 @@
 #   tools/emma02.sh                      # BIOS only, built-in games
 #   tools/emma02.sh --list               # list the .st2 corpus Emma ships
 #   tools/emma02.sh --cart invaders.st2  # a cart from Emma's own data dir
-#   tools/emma02.sh --cart "software/carts/TV School House I (USA).bin"
+#   tools/emma02.sh --cart "software/StudioII-Cartridges/school.st2"
 #   tools/emma02.sh --gui                # full launcher GUI instead of -c
 #
 # Emma 02 is interactive: it opens a "Studio II" window.  Useful keys once it

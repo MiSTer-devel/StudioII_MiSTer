@@ -39,6 +39,17 @@ All functionality that can currently be exercised has passed hardware testing. A
 - When changing video/timing, state the hardware/emulator reference used.
 - `bitmap_de` is a simulation/capture signal only. Normal MiSTer output uses raster blanking through `video_mixer`; do not route `bitmap_de` into the framework unless a deliberate border-crop feature is being added.
 
+## Repository workflow guardrails
+
+- Treat token efficiency as a working constraint: reserve agent context for analysis, decisions and code changes rather than routine execution the user can perform directly.
+- Treat a compact, unified core model as an acceptance criterion. A seemingly small QoL change is not free if it duplicates behavior, creates a parallel path or adds a maintenance surface larger than its demonstrated benefit.
+- Do not run long tasks when a repository script already performs them. Give the user the exact environment and invocation instead, for example `bash tools/verify-beeper.sh` from WSL or the appropriate command from a Windows terminal.
+- Do not run Quartus synthesis. The user will start it locally and provide the resulting reports when review is needed.
+- Prefer handing off headless builds, simulations and regression runs with concise instructions; these are quick for the user to run and report back.
+- Treat GitHub operations conservatively. Ask before pushing, opening or changing pull requests, creating releases, or making other remote changes; do not infer authorization from ordinary repository work.
+- Substantial additions begin on a dedicated branch that can be reviewed and squash-merged. Be especially cautious with `main`, whose repository automation publishes new core releases.
+- Before any remote Git operation, inspect the proposed changes and untracked files. Do not assume `.gitignore` covers newly generated, captured or local-only artifacts.
+
 ## Top-level architecture
 
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, machine memory maps, keypad/controller mapping and machine video selection.
@@ -293,7 +304,11 @@ Treat this as an open hardware-accuracy question. Because it varies with softwar
 
 ### Beeper tuning
 
-The Studio II beeper targets about 628.4 Hz (near E♭5, via a fractional divider). A very long Pac-Man hardware tone settles at 505.28 Hz before release, establishing the sustained floor at about 505.2 Hz in the integer-divider model. This is about 377.5 cents below the measured upper pitch: close to a major third, with the floor in the B4 neighborhood. Nine repeated long Math Fun notes on another recording establish roughly 200 ms from attack through the rounded descent toward the floor. The branch models this as a 20 ms principal-pitch crest followed by a monotonically slowing decay whose early hardware fit is preserved and whose final few hertz use finer, progressively slower divider bands. The contour is still about 506.1 Hz at 200 ms and reaches the 505.2 Hz floor at about 210 ms, avoiding a digitally abrupt landing. This is a fitted behavioral contour, not a claim that the capacitor sees a simple 4.4 kΩ charging resistance; the 555 control-pin transfer and surrounding circuit affect the observed pitch. The difference in absolute pitch is normal console/source variance. The 514--525 Hz troughs in Gunfighter, Concentration/Match and Outbreak are near-floor release turnarounds. Outbreak, Pac-Man and Math Fun prove that their upward S-tail is intrinsic analog release behavior: it occurs without a following programmed note. Speedway / Tag adds a different constraint: Joyce Weisbecker repeats extremely short pulses as fast as about 20 Hz and keeps them around the principal pitch, whereas Math Fun's retail-style pips repeat near 6 Hz and droop slightly. A "pip" must not be implemented as a fixed sound shape; continuous analog state plus the game's Q timing must produce it. The current RTL keeps the oscillator audible after Q falls through a divider-only RC-like amplitude release, turns pitch upward during that release, and continues pitch recovery after the envelope reaches silence. The envelope's prominent portion has an effective time constant near 21 ms, falls to roughly -16 dB by 40 ms and below -30 dB near 75--80 ms, then ends its faint tail at about 96 ms. A close Q-high retrigger preserves the instantaneous audible divider and amplitude while restarting a hidden fresh-note contour at the upper pitch. Concentration/Match hardware shows that the live pitch keeps recovering after Q rises, reaching about 560 Hz (roughly 200 cents below the principal pitch and a semitone above its turnaround) before the fresh contour catches it and pulls it downward. The Q-high continuation is therefore limited to a measured partial-recovery equilibrium near 560 Hz; Q-low recovery still proceeds to 628.4 Hz. This avoids both the old frozen 534 Hz second pulse and the cumulative lowering that results from applying a complete new descent directly to an already-lowered state. The provisional 600-clock pitch-recovery step models about 515-to-554 Hz in 40 ms and about 117 ms from the floor to the upper endpoint. The 8-bit envelope takes about 2 ms from zero to full. These release constants require refinement against a capture with Q-edge timing; do not retune the accepted early driven descent to compensate for release or analysis-window effects.
+The Studio II beeper targets about 628.4 Hz (near E♭5, via a fractional divider). A very long Pac-Man hardware tone settles at 505.28 Hz before release, establishing the sustained floor at about 505.2 Hz in the integer-divider model. This is about 377.5 cents below the measured upper pitch: close to a major third, with the floor in the B4 neighborhood. Nine repeated long Math Fun notes on another recording establish roughly 200 ms from attack through the rounded descent toward the floor. The branch models this as a 20 ms principal-pitch crest followed by a monotonically slowing decay whose early hardware fit is preserved and whose final few hertz use finer, progressively slower divider bands. The contour is still about 506.1 Hz at 200 ms and reaches the 505.2 Hz floor at about 210 ms, avoiding a digitally abrupt landing. This is a fitted behavioral contour, not a claim that the capacitor sees a simple 4.4 kΩ charging resistance; the 555 control-pin transfer and surrounding circuit affect the observed pitch. The difference in absolute pitch is normal console/source variance. The 514--525 Hz troughs in Gunfighter, Concentration/Match and Outbreak are near-floor release turnarounds. Outbreak, Pac-Man and Math Fun prove that their upward S-tail is intrinsic analog release behavior: it occurs without a following programmed note. Speedway / Tag adds a different constraint: Joyce Weisbecker repeats extremely short pulses as fast as about 20 Hz and keeps them around the principal pitch, whereas Math Fun's retail-style pips repeat near 6 Hz and droop slightly. A "pip" must not be implemented as a fixed sound shape; continuous analog state plus the game's Q timing must produce it. The current RTL keeps the oscillator audible after Q falls through a divider-only RC-like amplitude release, turns pitch upward during that release, and continues pitch recovery after the envelope reaches silence. The envelope's prominent portion has an effective time constant near 21 ms, falls to roughly -16 dB by 40 ms and below -30 dB near 75--80 ms, then ends its faint tail at about 96 ms. The 8-bit envelope takes about 2 ms from zero to full.
+
+Rel3 replaces the former fixed approximately 560 Hz Q-high retrigger ceiling with a gap-dependent control state. The audible Q-low tail retains the accepted 600-clock recovery path, while a hidden control divider follows a faster distance-dependent recovery inferred from labeled Gunfighter clips. On Q rising, the audible divider remains continuous at the edge, glides toward that control state over approximately 6 ms, then holds the resulting crest until the restarted fresh-note descent catches it. This keeps Concentration / Match's representative second crest near 559.5 Hz, leaves Speedway pulses at the principal pitch and prevents cumulative repeated-hit lowering. Gunfighter's ROM holds a shot high for one 60 Hz frame and a cactus high for seven; the hardware set covers 2, 3, 4, 5, 6 and 9 Q-low frames before the next shot. Eleven milliseconds into that shot, the behavioral model gives 591.5, 604.1, 611.6, 617.2, 620.7 and 626.0 Hz respectively, a 2.55 Hz RMS fit to the acoustic estimates 596.8, 605.4, 613.4, 616.0, 618.7 and 626.6 Hz. This is an experimental fit pending MiSTer listening; the captures are acoustically aligned rather than electrically instrumented Q/control-voltage measurements. `verilator --trace-q` reports the exact tick plus live, hidden-control, driven, amplitude and note-age values at every emulated Q edge.
+
+The driven-curve and amplitude interval functions and counters are deliberately 13 bits: their maxima are 8191 and 5700 respectively. Keep those widths aligned so Verilator does not hide accidental range growth behind implicit widening; the separate hidden-control interval reaches 65000 and remains 16 bits.
 
 ### Analog/direct video
 
@@ -324,6 +339,23 @@ Frame capture also cannot exercise memory mirrors or prove block-RAM inference. 
 
 ## Build and regression
 
+### Canonical local layout
+
+The current repository layout is the baseline for every local setup and script:
+
+| Purpose | Canonical path |
+|---|---|
+| Machine firmware | `rom/` (`studio2.rom`, `studio3_pal.bin`, `studio3_ntsc.bin`, `visicom.rom`) |
+| Software corpus | machine/group directories directly under `software/` |
+| Reference emulator | `tools/refemu/` |
+| Headless RTL build | `verilator/obj_dir_headless/Vtop` |
+| Generated visual output | `out/` or another explicitly selected output directory |
+| Optional upstream/research material | `refs/` |
+
+Scripts must derive the repository root from their own location and use these paths. Do not embed a maintainer's home directory or recreate an old private checkout layout. Normal build and regression scripts must not require `refs/`; it is ignored and reserved for optional source packages, emulator distributions and research material. A compatibility fallback may read an old path temporarily, but the canonical path is authoritative and must be tried first.
+
+Do not reorganize this layout casually. Any intentional move requires updating all callers, documentation and setup instructions in the same change. When reconstructing an unavailable local-only tool, first define its intended canonical destination and dependencies rather than inferring them from stale comments.
+
 Quartus 17.0.x:
 
 ```sh
@@ -345,6 +377,8 @@ Useful regressions include:
 - `tools/score-conic.sh`
 
 `tools/contact-sheet.py` renders corpus captures side by side and helps distinguish a different game state from a broken frame when a comparison score moves. Do not turn old score totals into permanent requirements: reference-emulator changes and test recipes legitimately move them.
+
+Aggregate comparison scores must count only cases declared to be semantically expected matches. Put cases with different machine behavior, unsupported reference features, intentionally different startup state or otherwise invalid equivalence into explicit `excluded` or `human-review` classes with a reason; do not let them merely lower a percentage. Full regression runs should also retain a small representative image set for Studio II, Studio III PAL, Studio III NTSC and Visicom so a person can catch visually obvious failures that hashes and aggregate counts obscure.
 
 The current Verilator harness instantiates `rtl/rcastudioii.sv` directly rather than the MiSTer top level. It therefore does not exercise HPS boot ordering, saved-machine boot-follow, `ioctl_index` reset classification, Apply classification or overlapping top-level reset sources. In `verilator/sim.v`, `video_reset` is tied to `ioctl_download`, so every simulated download restarts raster timing; the harness can verify the core reset interface and CLEAR behaviour, but it cannot prove F1/F2 or Apply sync preservation. Keep every core-port change synchronized with all simulation instantiations.
 

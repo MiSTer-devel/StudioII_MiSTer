@@ -53,7 +53,7 @@ fi
 if [[ "$MACHINE" != studio2 ]]; then
     ROWS=6                              # the CDP1864 machines show 32 rows over 192 lines
     if [[ "$BIOS" == "$ROOT/rom/studio2.rom" ]]; then
-        echo "error: --machine $MACHINE needs its own --bios (e.g. refs/emma_02/data/StudioIII/studio3_pal.bin)" >&2
+        echo "error: --machine $MACHINE needs its own --bios (e.g. rom/studio3_pal.bin)" >&2
         exit 1
     fi
 fi

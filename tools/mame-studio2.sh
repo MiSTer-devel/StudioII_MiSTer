@@ -2,12 +2,11 @@
 # ---------------------------------------------------------------------------
 # Run the RCA Studio II in MAME as a golden reference for the MiSTer core.
 #
-# MAME itself is NOT vendored here -- we reuse the checkout/binary that already
-# lives outside this repo. Override with MAME_BIN if yours is elsewhere.
+# MAME itself is NOT vendored here. Set MAME_BIN or put `mame` on PATH.
 #
 # Examples
 #   tools/mame-studio2.sh --frames 300 --shot 60,120,299
-#   tools/mame-studio2.sh --cart "software/carts/TV Arcade I - Space War (USA).bin" \
+#   tools/mame-studio2.sh --cart "software/StudioII-Cartridges/spacewar.st2" \
 #                         --frames 400 --shot-every 100 --dump 399 --vram
 #   tools/mame-studio2.sh --press a1@90 --frames 200 --shot 199
 #
@@ -16,12 +15,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MAME_BIN="${MAME_BIN:-/Users/alans/Documents/development/lbmactwo_MiSTer/mame0283-arm64/mame}"
+MAME_BIN="${MAME_BIN:-$(command -v mame || true)}"
 WORK="$ROOT/tools/mame-work"
 ROMS="$ROOT/tools/mame-roms"
 
 if [[ ! -x "$MAME_BIN" ]]; then
-    echo "error: MAME binary not found at $MAME_BIN" >&2
+    echo "error: MAME binary not found" >&2
     echo "       set MAME_BIN=/path/to/mame" >&2
     exit 1
 fi

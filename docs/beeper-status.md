@@ -1,11 +1,9 @@
 # Studio II beeper: current status
 
 The beeper is broadly convincing, and the parts that already sound right should
-be preserved. It is not finished. Closely clustered Gunfighter sounds are the
-critical stress test: the transitions between Q high and Q low still sound
-synthetic or uneven, especially on double and triple hits. The current model is
-therefore failing an important aural test even though its individual pitch curves
-and focused behavioral checks are close.
+be preserved. Rel3 contains an experimental Gunfighter retrigger model derived
+from the labeled `kb-gf` hardware clips. Its numerical checks pass, but listening
+on MiSTer is still the release criterion.
 
 ## Accepted baseline
 
@@ -24,37 +22,59 @@ and focused behavioral checks are close.
 - The Studio II signed sample path is isolated from the Studio III programmable
   tone path.
 
-## Critical unresolved behavior
+## Gunfighter evidence
 
-The current retrigger rule uses a live pitch state plus a hidden fresh-note
-contour. On Q high, the live pitch can continue recovering toward a fixed region
-near 560 Hz until the restarted contour catches it. This gives convincing results
-for the measured Concentration / Match sequence and prevents cumulative pitch
-drop, but it can sound canned when Q changes rapidly at different intervals.
-Gunfighter exposes that weakness more clearly than the existing unit tests.
+The ROM and simulator establish the programmed cadence:
 
-The likely problem is transition dynamics, not the upper or lower tuning. Exact
-Gunfighter Q-high durations, Q-low gaps, and state at each edge are still the
-most important missing evidence. A matched edge trace is more useful now than
-additional tuning from an unaligned acoustic pitch ridge.
+- shot: Q high for one 60 Hz frame, approximately 16.67 ms;
+- cactus: Q high for seven frames, approximately 116.67 ms;
+- labeled cactus-to-shot samples: Q low for 2, 3, 4, 5, 6 or 9 frames.
+
+Measured about 11 ms into the next shot, those six gaps produce approximately
+596.8, 605.4, 613.4, 616.0, 618.7 and 626.6 Hz. The old fixed-ceiling model was
+27--38 Hz low in the close 2--4 frame cases, then reached the top too abruptly.
+The two files labeled `single` follow the long/cactus-family contour rather than
+the clean one-frame-shot family.
+
+The acoustic onset alignment is repeatable to the game's frame grid, but it is
+not a direct electrical Q/control-voltage capture. Treat the family and contour
+as stronger evidence than any isolated ridge value.
+
+## Rel3 candidate
+
+The audible release and the recovered next-start state are now represented
+separately. Q low keeps the accepted slower audible upward tail, preserving the
+Pac-Man/Outbreak release checks. A hidden divider follows a rounded,
+distance-dependent recovery. On Q rising, live pitch remains unchanged at the
+edge, glides to the hidden state over about 6 ms, and waits there until the fresh
+driven contour catches it. There is no fixed second-pulse pitch.
+
+The behavioral result is 591.5, 604.1, 611.6, 617.2, 620.7 and 626.0 Hz for the
+six Gunfighter gaps, or 2.55 Hz RMS error against the hardware estimates. The
+same checks retain Concentration / Match's approximately 559.5 Hz second crest,
+Speedway's principal-pitch rapid pulses, the long-note endpoints, release
+amplitude/pitch and bounded repeated hits.
 
 ## Next work
 
-1. Capture a reproducible Gunfighter sequence with every Q edge and the live
-   beeper state, including single, double, and triple hits.
-2. Add those exact timings to the behavioral model. Treat listening against
-   matched hardware as a release criterion, not merely a subjective note after
-   the numerical checks pass.
-3. Prototype a more natural continuous-state transition rule before changing
-   RTL. The preferred direction lets Q alter the motion of shared pitch/inertia
-   state instead of steering each retrigger toward a fixed second-pulse crest.
-4. Recheck Gunfighter first, then protect Concentration / Match, Speedway, long
-   Pac-Man/Math Fun notes, release shape, and non-additive repeated hits.
+1. Build rel3 and listen to the labeled Gunfighter single/double/triple passages.
+2. Recheck Concentration / Match and Speedway immediately afterward; numerical
+   preservation is necessary but does not prove that the 6 ms glide sounds right.
+3. Capture the rel3 output through the same chain and align it to the `kb-gf`
+   clips. Use `--trace-q` for the matching simulated live/control state.
+4. Accept, retune or reject the hidden-control trajectory from those matched
+   results. Do not move the established endpoints or release envelope to hide a
+   retrigger problem.
+5. After accepting the pitch model, replace the oscillator's 50% duty cycle with
+   the approximately 11:6 high/low timing indicated by KB's recordings. Treat
+   this as a timbre change and preserve the accepted fundamental pitch contour.
+6. Add the console mute switch as an output-only control that leaves beeper state
+   running underneath it.
 
 Do not special-case a game, reset pitch on every Q rise, or retune accepted
-endpoints to mask the transition problem. The separate 50% versus approximately
-11:6 NE555 duty-cycle/timbre issue and the hard early attack knee remain worthwhile
-follow-up work, but neither should be mixed into the Gunfighter retrigger fix.
+endpoints to mask the transition problem. Duty-cycle correction and mute complete
+audio phase one after the rel3 pitch model is accepted. The hard early attack knee
+remains later refinement.
 
 The primary implementation and executable constraints are in
 `rtl/rcastudioii.sv` and `tools/beeper-curve-test.py`. The dated handoffs and

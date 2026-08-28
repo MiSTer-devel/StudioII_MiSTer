@@ -5,10 +5,9 @@ the RTL core, one late frame each, with a MATCH/DIFFER verdict per title.
 
     tools/contact-sheet.py [outdir]
 
-The scores in CLAUDE.md §9 and docs/succession-plan.md are single numbers -- 26/48
-Studio II, 16/28 Conic PAL -- which say how many frames agree but not whether the
-ones that disagree are broken or merely at a different point in the game. This
-turns that into something you can triage by eye.
+Historical aggregate scores say how many sampled frames agree but not whether
+the ones that disagree are broken, at a different point in the game, or invalid
+comparisons. This turns the cases into something a person can triage by eye.
 
 Both sides are rendered by the code below from each simulator's own --ascii dump,
 using one palette, so any visible difference is a real difference and not two
@@ -23,10 +22,15 @@ import base64, os, struct, subprocess, sys, zlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REF  = os.path.join(ROOT, "tools/refemu/studio2_headless")
 RTL  = os.path.join(ROOT, "verilator/obj_dir_headless/Vtop")
-CART = os.path.join(ROOT, "software/carts")
-ST2  = os.path.join(ROOT, "refs/emma_02/data/St2")
-S3P  = os.path.join(ROOT, "refs/emma_02/data/StudioIII/studio3_pal.bin")
-VIS  = os.path.join(ROOT, "refs/emma_02/data/Visicom/visicom.rom")
+S2C  = os.path.join(ROOT, "software/StudioII-Cartridges")
+S2H  = os.path.join(ROOT, "software/StudioII-Homebrew")
+S3C  = os.path.join(ROOT, "software/Conic_StudioIII-Cartridges")
+S3H  = os.path.join(ROOT, "software/Conic_StudioIII-Homebrew")
+S3S  = os.path.join(ROOT, "software/Conic_StudioIII-Sarnoff-Collection")
+VISC = os.path.join(ROOT, "software/Visicom-Cartridges")
+S3P  = os.path.join(ROOT, "rom/studio3_pal.bin")
+S3N  = os.path.join(ROOT, "rom/studio3_ntsc.bin")
+VIS  = os.path.join(ROOT, "rom/visicom.rom")
 
 # One palette, both sides. The letters are what each simulator prints.
 PAL_STD = {" ": (0,0,0), "#": (255,255,255), "B": (0,0,208), "G": (0,208,0),
@@ -103,10 +107,11 @@ def expand(rows, n):
 # ---------------------------------------------------------------------------
 # The library. Studio II start sequences are the documented ones from the RCA
 # manuals, the same list tools/score-21.sh uses. Conic gets a uniform A1, which
-# is what tools/score-conic.sh measures. Homebrew keys are from CLAUDE.md §10.
+# is what tools/score-conic.sh measures. Homebrew keys are from docs/how-to-play.md.
 # ---------------------------------------------------------------------------
-C = lambda n: os.path.join(CART, n)
-H = lambda n: os.path.join(ST2, "StudioII-Homebrew", n)
+C2 = lambda n: os.path.join(S2C, n)
+C3 = lambda n: os.path.join(S3C, n)
+H = lambda n: os.path.join(S2H, n)
 
 STUDIO2 = [
     ("Doodle",              None, ["a1@40:20"]),
@@ -114,25 +119,25 @@ STUDIO2 = [
     ("Bowling",             None, ["a3@40:20"]),
     ("Freeway",             None, ["a4@40:20"]),
     ("Addition",            None, ["a5@40:20"]),
-    ("Space War",           C("TV Arcade I - Space War (USA).bin"), ["a1@40:20","a2@150:20"]),
-    ("Tennis",              C("TV Arcade III - Tennis + Squash (USA).bin"), ["a2@40:15","a5@90:15","b5@140:15"]),
-    ("Squash",              C("TV Arcade III - Tennis + Squash (USA).bin"), ["a1@40:15","b5@90:15"]),
-    ("Speedway",            C("TV Arcade Series - Speedway + Tag (USA).bin"), ["a1@40:20","a2@150:60"]),
-    ("Tag",                 C("TV Arcade Series - Speedway + Tag (USA).bin"), ["a2@40:20","a6@150:60"]),
-    ("Gunfighter",          C("TV Arcade Series - Gunfighter + Moonship Battle (USA, Europe).bin"), ["a1@40:20","a5@150:20"]),
-    ("Moonship Battle",     C("TV Arcade Series - Gunfighter + Moonship Battle (USA, Europe).bin"), ["a3@40:20","a5@150:20"]),
-    ("Baseball",            C("TV Arcade IV - Baseball (USA).bin"), ["a0@40:20","b5@150:20"]),
-    ("Blackjack",           C("TV Casino Series - Blackjack (USA).bin"), ["a1@40:20","b5@150:20"]),
-    ("Star Wars",           C("Star Wars (Europe).bin"), ["a1@40:20","a2@120:20"]),
-    ("Fun with Numbers",    C("TV Arcade II - Fun with Numbers (USA).bin"), ["a1@40:20","b1@150:15","b2@180:15"]),
-    ("Biorhythm",           C("TV Mystic Series - Biorhythm (USA, Europe).bin"), ["a0@40:20","b1@120:15","b2@150:15"]),
-    ("Pinball",             C("Pinball (Europe).bin"), ["a1@40:20"]),
-    ("Speedway + Tag (EU)", C("Speedway + Tag (Europe).bin"), ["a1@40:20","a2@150:60"]),
-    ("School House I",      C("TV School House I (USA).bin"), ["a1@40:20"]),
-    ("Math Fun",            C("TV School House II - Math Fun (USA, Europe).bin"), ["a1@40:20"]),
-    ("TV Bingo",            C("TV Casino Series - TV Bingo (USA, Europe).bin"), ["a1@40:20"]),
-    ("Concentration Match", C("Concentration Match (Europe).bin"), ["a1@40:20"]),
-    ("Demonstration",       C("Demonstration Cartridge (USA).bin"), ["a1@40:20"]),
+    ("Space War",           C2("spacewar.st2"), ["a1@40:20","a2@150:20"]),
+    ("Tennis",              C2("tennis.st2"), ["a2@40:15","a5@90:15","b5@140:15"]),
+    ("Squash",              C2("tennis.st2"), ["a1@40:15","b5@90:15"]),
+    ("Speedway",            C2("speedway.st2"), ["a1@40:20","a2@150:60"]),
+    ("Tag",                 C2("speedway.st2"), ["a2@40:20","a6@150:60"]),
+    ("Gunfighter",          C2("gunfighter.st2"), ["a1@40:20","a5@150:20"]),
+    ("Moonship Battle",     C2("gunfighter.st2"), ["a3@40:20","a5@150:20"]),
+    ("Baseball",            C2("baseball.st2"), ["a0@40:20","b5@150:20"]),
+    ("Blackjack",           C2("blackjack.st2"), ["a1@40:20","b5@150:20"]),
+    ("Star Wars",           C3("star-wars.st2"), ["a1@40:20","a2@120:20"]),
+    ("Fun with Numbers",    C2("fun-with-numbers.st2"), ["a1@40:20","b1@150:15","b2@180:15"]),
+    ("Biorhythm",           C2("biorhythm.st2"), ["a0@40:20","b1@120:15","b2@150:15"]),
+    ("Pinball",             C3("pinball.st2"), ["a1@40:20"]),
+    ("Speedway + Tag (EU)", C3("speedway.st2"), ["a1@40:20","a2@150:60"]),
+    ("School House I",      C2("school.st2"), ["a1@40:20"]),
+    ("Math Fun",            C2("mathfun.st2"), ["a1@40:20"]),
+    ("TV Bingo",            C3("bingo.st2"), ["a1@40:20"]),
+    ("Concentration Match", C3("concentration-match.st2"), ["a1@40:20"]),
+    ("Demonstration",       C2("RCA_demo.st2"), ["a1@40:20"]),
 ]
 
 HOMEBREW = [
@@ -154,11 +159,10 @@ VISICOM = [
 for n, t in [("cas-110-arithmetic_drill","Arithmetic Drill"), ("cas-130-sports_fan","Sports Fan"),
              ("cas-140-gambler_i","Gambler I"), ("cas-141-gambler_ii","Gambler II"),
              ("cas-160-space_command","Space Command"), ("cas-190-bagua-blood-horoscope","Bagua Horoscope")]:
-    VISICOM.append((t, os.path.join(ST2, "Visicom-Cartridges", n + ".st2"), ["a0@40:20"]))
+    VISICOM.append((t, os.path.join(VISC, n + ".st2"), ["a0@40:20"]))
 
 CONIC = []
-for sub in ["Conic_StudioIII-Cartridges", "Conic_StudioIII-Homebrew", "Conic_StudioIII-Sarnoff-Collection"]:
-    d = os.path.join(ST2, sub)
+for d in [S3C, S3H, S3S]:
     if os.path.isdir(d):
         for f in sorted(os.listdir(d)):
             if f.endswith(".st2"):
@@ -188,13 +192,18 @@ SECTIONS = [
     dict(key="homebrew", name="Studio II homebrew", machine="studio2",
          bios=os.path.join(ROOT, "rom/studio2.rom"), pal=PAL_STD, mult=4,
          frames=400, shot=400, compare=True, items=HOMEBREW,
-         blurb="Paul Robson's 2000 builds. Start keys from CLAUDE.md §10 -- these "
+         blurb="Paul Robson's 2000 builds. Start keys from docs/how-to-play.md -- these "
                "are the titles whose timing marginality drove the DMA work."),
     dict(key="conic",    name="Studio III PAL",    machine="mpt02",
          bios=S3P, pal=PAL_STD, mult=6,
          frames=300, shot=300, compare=True, items=CONIC,
          blurb="CDP1864: video, colour and tone in one part, 312-line PAL frame over "
                "192 display lines. Uniform A1, which is what tools/score-conic.sh measures."),
+    dict(key="studio3ntsc", name="Studio III NTSC", machine="studio3ntsc",
+         bios=S3N, pal=PAL_STD, mult=4,
+         frames=300, shot=300, compare=False, items=CONIC,
+         blurb="CDP1861 + CDP1862 colour path. Shown RTL-only for human review; "
+               "the PAL reference is not an expected frame match."),
     dict(key="visicom",  name="Visicom COM-100",   machine="visicom",
          bios=VIS, pal=PAL_VIS, mult=4,
          frames=250, shot=250, compare=False, items=VISICOM,

@@ -5,11 +5,9 @@
 #
 #   tools/score-conic.sh [--machine mpt02|studio3ntsc] [--bios FILE]
 #
-# This exists because the figure in docs/succession-plan.md ("14/28") was
-# measured by hand and could not be reproduced from the note alone -- re-running
-# the obvious uniform-A1 sweep gives 16/28 both before and after unrelated
-# changes, so the two numbers are different metrics rather than a regression.
-# Whatever this script prints is now the number; quote it with the date.
+# This reproduces the historical uniform-A1 sweep. Its raw total is diagnostic,
+# not an accuracy percentage; only manifest cases expected to match belong in an
+# acceptance score (see CLAUDE.md, Verification model and limits).
 # ---------------------------------------------------------------------------
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,7 +17,7 @@ REF="$ROOT/tools/refemu/studio2_headless"
 RTL="$ROOT/verilator/obj_dir_headless/Vtop"
 
 MACHINE=mpt02
-BIOS="$ROOT/refs/emma_02/data/StudioIII/studio3_pal.bin"
+BIOS="$ROOT/rom/studio3_pal.bin"
 while [[ ${1:-} == --* ]]; do
     case "$1" in
         --machine) MACHINE="$2"; shift 2 ;;
