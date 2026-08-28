@@ -32,6 +32,9 @@
 .vs/
 .vscode/
 
+# unnecessary for remote
+audio_refs/
+
 # (default name) pull builds out if you need them before clean.bat
 dse/
 
