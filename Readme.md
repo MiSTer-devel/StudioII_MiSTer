@@ -13,15 +13,13 @@ MiSTer FPGA core for the **RCA Studio II** (1977), with support for the Studio I
 
 ### Known issues / open verification
 
-- Visicom software can behave unexpectedly (visual glitches, hanging). The conditions for this are still under investigation. It is currently recommended to reload the core before loading Visicom games and to use .st2 files.
+- Visicom software can behave unexpectedly (visual glitches, hanging). This behavior is apparent at game start and does not arise if not encountered immediately. The conditions for this are still under investigation. It is currently recommended to reload the core if you experience glitches in Visicom games.
 - Studio III NTSC seems to have an errant horizontal line at the bottom of the drawn image. This is still under investigation.
-- The hardware-fitted beeper model is still undergoing comparison testing. Close
-  retriggers, especially Gunfighter double and triple hits, may sound slightly
-  uneven and remain an intentional focus for future hardware measurements.
+- The hardware-fitted beeper model is still undergoing comparison testing. 
 - Direct video has not yet been tested at time of writing.
 - Not every game and mode has an automap profile, and not all known software is present in the hash table.
 
-**Note**: If upgrading from the `RCA-StudioII` to the `Studio-II` core, delete or rename all related `RCA-StudioII` or `Studio-II` config files from `/media/fat/config`. If you get scaler issues, this should fix it. Note also that for Studio II's BIOS, `boot.rom` is now `boot0.rom`.
+**Note**: There were errors in the hash values listed for BIOS files below. They have been corrected.
 
 ## Features
 
@@ -43,10 +41,10 @@ Place BIOS files in `/media/fat/games/Studio-II/`:
 
 | Machine         | Boot slot / filename | Recommended BIOS image | Size | MD5                                |
 | --------------- | -------------------- | ---------------------- | ---: | ---------------------------------- |
-| Studio II       | `boot0.rom`          | Studio II              | 2 KB | `B37205BF19B197682F00619D05DA194B` |
-| Studio III PAL  | `boot1.rom`          | Victory (PAL)          | 4 KB | `5E261010D361A378EAB13F543A96D3C5` |
-| Studio III NTSC | `boot2.rom`          | Studio III (NTSC)      | 2 KB | `F2EBBF8FA4A2F8509C041B6F07E55C5A` |
-| Visicom         | `boot3.rom`          | Visicom                | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
+| Studio II       | `boot0.rom`          | `studio2.rom`          | 2 KB | `B37205BF19B197682F00619D05DA194B` |
+| Studio III PAL  | `boot1.rom`          | `studio3_pal.bin`      | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
+| Studio III NTSC | `boot2.rom`          | `studio3_ntsc.bin`     | 4 KB | `849A484AA4B2784ECE5C35C39D9D51A8` |
+| Visicom         | `boot3.rom`          | `visicom.rom`          | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
 
 You can load a different firmware or return to the firmware (to play the resident games, for example) from a cartridge using the `Load Firmware` option, which accepts a `.bin` or `.rom` image. The BIOS is loaded into the currently selected machine's slot.
 
