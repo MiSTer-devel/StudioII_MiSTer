@@ -69,8 +69,10 @@ tools/mame-roms/
 tools/mame-work/
 tools/refemu/*.o
 tools/refemu/out/
-tools/refemu/studio2/
-tools/refemu/studio2_headless/
+tools/refemu/studio2
+tools/refemu/studio2.exe
+tools/refemu/studio2_headless
+tools/refemu/studio2_headless.exe
 verilator/.vs/sim/v17/Browse.VC.db
 verilator/.vs/sim/v17/ipch/AutoPCH/181b54f0b0efa9df/SIM_MAIN.ipch
 verilator/bin/

@@ -10,7 +10,7 @@
 #   <shots>   comma separated frame numbers to compare
 #
 # Example
-#   tools/compare-game.sh "software/carts/Pinball (Europe).bin" 400 120,200,300,400 \
+#   tools/compare-game.sh software/StudioII-Cartridges/gunfighter.st2 400 120,200,300,400 \
 #       --press a1@40:20 --press a2@150:10 --press a5@250:10
 #
 # The reference renders 32 logical rows; the RTL renders 128 scanlines, so each

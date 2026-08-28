@@ -2,7 +2,7 @@
 # ---------------------------------------------------------------------------
 # Directed test for the Toshiba Visicom COM-100 (--machine visicom).
 #
-#   tools/visicom-test.sh
+#   tools/visicom-test.sh [--bios FILE]
 #
 # There is no reference emulator for this machine -- tools/refemu models the
 # Studio II and the two Studio IIIs only, and Emma 02 has no headless mode -- so
@@ -35,10 +35,18 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RTL="$ROOT/verilator/obj_dir_headless/Vtop"
 BIOS="$ROOT/refs/emma_02/data/Visicom/visicom.rom"
-CARTS="$ROOT/refs/emma_02/data/St2/Visicom-Cartridges"
+CARTS="$ROOT/software/Visicom-Cartridges"
+
+while [[ ${1:-} == --* ]]; do
+    case "$1" in
+        --bios) BIOS="$2"; shift 2 ;;
+        *) echo "unknown option $1" >&2; exit 1 ;;
+    esac
+done
+[[ -f "$ROOT/$BIOS" ]] && BIOS="$ROOT/$BIOS"
 
 [[ -x "$RTL" ]]  || { echo "error: build the RTL sim: (cd verilator && make headless)" >&2; exit 1; }
-[[ -f "$BIOS" ]] || { echo "error: no Visicom BIOS at $BIOS (run tools/emma02.sh)" >&2; exit 1; }
+[[ -f "$BIOS" ]] || { echo "error: no Visicom BIOS at $BIOS (pass --bios FILE)" >&2; exit 1; }
 
 fail=0
 
