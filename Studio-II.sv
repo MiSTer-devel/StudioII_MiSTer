@@ -195,8 +195,6 @@ assign HDMI_BOB_DEINT = 0;
 // includes its release envelope; Studio III remains a fixed-level square wave.
 wire signed [15:0] audio;
 assign AUDIO_S   = 1'b1;                                   // signed samples
-assign AUDIO_L   = audio;
-assign AUDIO_R   = AUDIO_L;
 assign AUDIO_MIX = 2'd0;
 
 assign LED_DISK = 0;
@@ -207,13 +205,15 @@ assign BUTTONS = 0;
 
 `include "build_id.v"
 localparam CONF_STR = {
-	"Studio-II;v7;",
+	"Studio-II;v8;",
 	"F1,ST2BINROM,Load Cartridge;",
 	"F2,BINROM,Load Firmware;",
 	"-;",
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	// Machine held until Apply and reset
 	"R[15],Apply and reset;",
+	"-;",
+	"O[16],Audio,On,Mute;",
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
 	// Order must match localparams in rtl/rcastudioii.sv
@@ -242,6 +242,12 @@ wire  [10:0] ps2_key;
 wire  [31:0] joystick_0, joystick_1;
 wire  [15:0] joystick_l_analog_0, joystick_r_analog_0;
 wire  [15:0] joystick_l_analog_1, joystick_r_analog_1;
+
+// The console mute switch gates only the delivered samples. Both tone
+// generators continue running so unmute resumes their current state.
+wire signed [15:0] audio_out = status[16] ? 16'sd0 : audio;
+assign AUDIO_L = audio_out;
+assign AUDIO_R = audio_out;
 
 // Pixie's timing generator is kept running in order to be
 // friendlier to display sync. TODO: This is very useful but 

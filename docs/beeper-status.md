@@ -55,28 +55,59 @@ same checks retain Concentration / Match's approximately 559.5 Hz second crest,
 Speedway's principal-pitch rapid pulses, the long-note endpoints, release
 amplitude/pitch and bounded repeated hits.
 
-## Next work
+## Audio phase-one candidate
 
-1. Build rel3 and listen to the labeled Gunfighter single/double/triple passages.
-2. Recheck Concentration / Match and Speedway immediately afterward; numerical
-   preservation is necessary but does not prove that the 6 ms glide sounds right.
-3. Capture the rel3 output through the same chain and align it to the `kb-gf`
-   clips. Use `--trace-q` for the matching simulated live/control state.
-4. Accept, retune or reject the hidden-control trajectory from those matched
-   results. Do not move the established endpoints or release envelope to hide a
-   retrigger problem.
-5. After accepting the pitch model, replace the oscillator's 50% duty cycle with
-   the approximately 11:6 high/low timing indicated by KB's recordings. Treat
-   this as a timbre change and preserve the accepted fundamental pitch contour.
-6. Add the console mute switch as an output-only control that leaves beeper state
-   running underneath it.
+The duty-cycle and mute implementation is now deliberately orthogonal to the
+accepted pitch, retrigger and envelope state. No curve constant changed.
 
-Do not special-case a game, reset pitch on every Q rise, or retune accepted
-endpoints to mask the transition problem. Duty-cycle correction and mute complete
-audio phase one after the rel3 pitch model is accepted. The hard early attack knee
-remains later refinement.
+### 1. Duty cycle
 
-The primary implementation and executable constraints are in
-`rtl/rcastudioii.sv` and `tools/beeper-curve-test.py`. The dated handoffs and
-per-game analyses remain supporting evidence; this file is the canonical current
-status.
+The oscillator phase scheduling around `snd_cnt`, `snd_out` and
+`snd_toggle_at` in `rtl/rcastudioii.sv` now:
+
+- replaces the equal high/low phases with the approximately 11:6 high/low ratio
+  measured in KB's recordings.
+- derives both phase lengths from one latched full period, with a sum equal to
+  the former two half-periods so the fundamental contour does not move.
+- keeps the fractional 628.4 Hz plateau by sharing one selected base length over
+  each high/low pair and advancing the error accumulator once per full cycle.
+- keeps one oscillator running through Q-low release without changing
+  `snd_half`, `snd_drive_half`, `snd_control_half`, note age, or the amplitude
+  envelope.
+
+`tools/beeper-curve-test.py` checks phase lengths at the top and bottom dividers:
+high+low equals the old full period, the ratio rounds to 11:6, and the average
+fundamentals remain approximately 628.4 Hz and 505.2 Hz. Every existing
+pitch/release/retrigger check passes unchanged.
+
+The unequal signed waveform has a non-zero arithmetic mean. Keep the existing
+`+/-snd_magnitude` levels for this small timbre change and judge the real MiSTer
+audio path by listening; do not add an unmeasured filter or a second envelope to
+compensate for it.
+
+### 2. Mute
+
+Free status bit 16 in `Studio-II.sv` exposes the switch:
+
+```systemverilog
+"O[16],Audio,On,Mute;"
+```
+
+`AUDIO_L` and `AUDIO_R` are gated to signed zero at the top level when muted.
+Mute does not enter `rcastudioii`, gate Q, reset either tone generator, or change
+audio state. Unmuting therefore reveals the oscillator at the phase, pitch and
+envelope it reached while muted. This also keeps the control consistent across
+Studio II and Studio III without adding a machine-specific path. Existing OSD
+profile writeback preserves bit 16 because it replaces only status bits `[5:2]`.
+
+### Remaining acceptance
+
+1. Run `tools/verify-beeper.sh`; all existing checks plus the new duty checks pass.
+2. Build with the supported Quartus 17 flow and confirm normal map/timing results.
+3. On MiSTer, compare the same Gunfighter, Concentration / Match and Speedway
+   passages used to accept rel3. Duty cycle may change timbre, not pitch contour.
+4. Mute during a long descending note and unmute during its release/recovery; the
+   resumed sound must prove that state continued underneath the mute.
+
+Do not special-case a game or fold the later hard early-attack knee into this
+change. The build and MiSTer listening checks above close audio phase one.

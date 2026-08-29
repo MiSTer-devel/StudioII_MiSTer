@@ -29,14 +29,13 @@ colour. Nothing scales anything:
 Sources: CDP1864 datasheet Fig. 4 (the `BACKGROUND` region around the
 `DISPLAY AREA`), Fig. 6 (13.14 µs of horizontal blanking in a 64 µs line), and
 MAME's `cdp1861.h` (`HBLANK_END = 12` of `SCREEN_WIDTH = 112`;
-`SCANLINE_VBLANK_END = 16` of 262). The photographs of real Studio III output in
-`docs/rca-technical/` show it too: picture in the middle, wide border, border in
-the background colour.
+`SCANLINE_VBLANK_END = 16` of 262). Photographs of real Studio III output show it
+too: picture in the middle, wide border, border in the background colour.
 
 The original defect was that we blanked everything outside the bitmap, so the
 active area was 64×128 in a 112×262 frame. A display that locked to the sync
-would have had almost nothing to draw. That is fixed (§8 of
-`CLAUDE.md` documents the current timing diagnosis).
+would have had almost nothing to draw. That is fixed; `docs/development.md`
+summarizes the current video path and timing constraints.
 
 ---
 
@@ -73,9 +72,9 @@ The Visicom's border is its colour 0, a dark green.
 **The picture is not horizontally centred**: 16 px of border on the left against
 8 on the right. The bitmap is pinned at `40..104` because the BIOS ISR counts
 cycles against the DMA burst, and moving the bitmap means moving the DMA phase.
-Do not "fix" this without reading the video geometry and timing invariants in `CLAUDE.md`
-— the DMA phase is the most load-bearing timing in the core and two separate
-classes of bug have already come out of it.
+Do not "fix" this without reading the video behavior and hardware constraints in
+`docs/development.md` — the DMA phase is the most load-bearing timing in the core
+and two separate classes of bug have already come out of it.
 
 If centring is wanted, the safe change is to shift `H_ACTIVE_START`, `HSYNC_*`
 and the porches *around* the fixed bitmap, not to move the bitmap.
@@ -164,7 +163,5 @@ to match.
 
 ## 4. Recording the result
 
-Whoever runs this: put the durable outcome in `CLAUDE.md` with the display
-type, and the `MiSTer.ini` settings used. "Analog video does not work yet" is in
-the Readme's limitations and should be edited to say what actually happens, not
-deleted.
+Record the durable outcome in this file with the display type and `MiSTer.ini`
+settings used, then update the verification summary in `docs/development.md`.

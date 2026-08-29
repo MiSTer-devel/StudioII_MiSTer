@@ -3,7 +3,8 @@
 Paul Robson's C emulator for the RCA Studio II, vendored into this repo, plus
 the headless front end and loaders added for this project. This is what
 `tools/compare-game.sh` diffs the RTL against, and it is the basis of every
-frame-comparison claim described in `CLAUDE.md`, Verification model and limits.
+frame-comparison claim described in `docs/development.md`, Verification and
+local layout.
 
 ```sh
 cd tools/refemu && make headless      # -> ./studio2_headless, links libc only
@@ -31,9 +32,7 @@ repository.
 **One exception, deliberately kept:** `studio2_rom.h` is the RCA Studio II BIOS
 as a C array (`_studio2[2048]`), which `cpu.c` copies into memory at reset. It is
 RCA's code, *not* covered by the MIT grant above. It is here because `cpu.c` will
-not compile without it, and because the same 2 KB is already tracked in this repo
-as `rom/studio2.rom` — so vendoring it adds no exposure that did not already
-exist. The harness overrides it from a file via `--bios` anyway.
+not compile without it. The harness overrides it from a file via `--bios`.
 
 Upstream's other three ROM headers (`studio2.h`, `studio2_bios.h`,
 `studio2_game.h`) are the same bytes again in different slices and nothing
@@ -64,13 +63,14 @@ upstream, do that check again — `tools/compare-game.sh` is only meaningful if
 this binary behaves the way the recorded scores were measured with.
 
 The CDP1864 colour support described below was cross-checked against the current
-Studio III invariants in `CLAUDE.md`.
+Studio III constraints in `docs/development.md`.
 
 ## CDP1864 colour machines (`--machine mpt02`)
 
 Added here so frame comparison remains available when the RTL uses a CDP1864.
 Ported from MAME's `cdp1864` (BSD-3-Clause) and Emma 02's machine XML, both
-cross-checked against the datasheet and `CLAUDE.md`, Studio III hardware.
+cross-checked against the datasheet and `docs/development.md`, Hardware-derived
+constraints.
 
 ```sh
 ./studio2_headless --machine mpt02 \
@@ -94,31 +94,3 @@ What `--machine mpt02` changes:
 BIOS embedded, and a Studio III cartridge on it draws nothing. The Studio III
 image is 4 KB and covers both of that machine's ROM regions (`$0000-$07FF` and
 `$0C00-$0FFF`), so the loader steps over the RAM and colour RAM in between.
-
-### Three things measurement settled
-
-- **Use the PAL BIOS.** `studio3_pal.bin` and `victory.rom` run properly;
-  `studio3_ntsc.bin` and `studio3.rom` do not — with PAL timing they get as far
-  as 175 writes and stall, against 5017 for the PAL image. That is real evidence
-  that the NTSC Studio III is a different timing configuration and not merely a
-  different ROM, which was an open question in the plan. NTSC support here needs
-  its own frame timing, not just `--bios`.
-- **64 colour cells is right.** The PAL BIOS writes `$0B00-$0BFF` exactly **64**
-  times during init — the number the MAME-derived `{off[7:5], off[2:0]}` index
-  implies, arrived at independently.
-- **Rows are shown 6×.** Emma's MPT-02 config gives display lines 76 to 267
-  inclusive, which is exactly 192, and 192 / 32 logical rows = 6. So the logical
-  framebuffer stays 64×32 and only the vertical scale changes.
-
-### State
-
-Working: 12 of the 14 Conic/Studio III cartridges draw, 6 of them in colour
-(`pinball` renders a recognisable table — blue field, yellow border and digits,
-green and red bumpers, magenta targets, cyan lanes). `baseball` and `biorhythm`
-come up blank, almost certainly because they start on a different key rather
-than anything to do with the port — the Studio II table has Baseball on `A0`.
-
-Not done: the tone generator is swallowed rather than synthesised, since the
-harness only ever diffs frames; NTSC colour machines need their own timing as
-above; and none of this is validated against a second emulator yet, which is
-what Emma 02 is for.

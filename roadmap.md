@@ -6,24 +6,11 @@ user-serviceable data format can represent it.
 
 ## 1. Complete Studio II audio phase one
 
-Synthesize and listening-test the current gap-dependent retrigger model on
-MiSTer, concentrating on the labeled Gunfighter single/double/triple passages.
-Immediately recheck Concentration / Match and Speedway. If listening exposes a
-problem, capture rel3 through the reference chain and compare matched Q timing
-before retuning. Preserve the accepted endpoints, release envelope and bounded
-retrigger behavior.
-
-Once the pitch model is accepted, adjust the oscillator's high/low duty cycle to
-match the general harmonic profile in KB's hardware recordings. Keep this
-orthogonal to pitch, retrigger and envelope state, and verify that the fundamental
-contour remains unchanged.
-
-After accepting the pitch model, add the console's mute switch as a small,
-isolated user control. Muting must affect only the output; it must not reset or
-fork the underlying beeper state.
-
-The hard early attack knee belongs to a later audio phase. See
-`docs/beeper-status.md` for evidence and acceptance criteria.
+The oscillator duty cycle and output-only mute are implemented. Verify the
+candidate on MiSTer to close this phase. The exact implementation boundary,
+tests, listening cases, and accepted pitch model are maintained in
+`docs/beeper-status.md`. The hard early attack knee belongs to a later audio
+phase.
 
 ## 2. External controller profiles
 

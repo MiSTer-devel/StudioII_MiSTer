@@ -32,10 +32,7 @@
 .vs/
 .vscode/
 
-# unnecessary for remote
-audio_refs/
-
-# (default name) pull builds out if you need them before clean.bat
+# (default name) pull test builds into rbf_archive before clean.bat
 dse/
 
 build_id.v
@@ -48,28 +45,26 @@ hc_output
 hps_isw_handoff
 imgui.ini
 incremental_db/
+misc/
 out/
 
-# (default name) pull builds out if you need them before clean.bat
+# pull test builds into rbf_archive before clean.bat
 output_files/
 
 PLLJ_PLLSPE_INFO.txt
-refs/
 
 # intentionally leaving out of MiSTer-devel
 rom/
-
+rbf_archive/
+audio_refs/
+refs/
 refvideo/
+software/
+tools/mame-roms/
+tools/mame-work/
+
 scaler/
 simulation/
-
-# intentionally leaving out of MiSTer-devel
-software/
-
-# intentionally leaving out of MiSTer-devel
-tools/mame-roms/
-
-tools/mame-work/
 tools/refemu/*.o
 tools/refemu/out/
 tools/refemu/studio2

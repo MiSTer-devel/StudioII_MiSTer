@@ -2,7 +2,10 @@ RCA Studio II — CRC16-CCITT Hash Inventory
 Algorithm: CRC16-CCITT, polynomial 0x1021, initial value 0xFFFF, exact file bytes.
 Grouped by game identity; names follow the Fullset v12.1 ROM filenames.
 Multiple CRCs under one filename indicate distinct file or header revisions.
-by Elle Ball (meauxdal), August 24, 2026
+by Elle Ball (meauxdal), updated August 28, 2026
+
+39f040 final multi-system image
+  77BA  39f040.final.rom
 
 40th Anniversary Multi-Cart [39sf040] (auto) (2016) (FLiP)
   5DCD  40th Anniversary Multi-Cart [39sf040] (auto) (2016) (FLiP).bin
@@ -13,6 +16,11 @@ A Cheap Graphics Computer (1978) (Joseph Weisbecker)
 
 am4kbas
   54A6  am4kbas.bin
+  10B9  am4kbas 1978.bin
+  62F6  am4kbas 2020 NTSC.bin
+  2F74  am4kbas 2020 PAL.bin
+  0CAE  am4kbas 32K 2020 NTSC.bin
+  412C  am4kbas 32K 2020 PAL.bin
 
 Arithmetic Drill (Math Fun & Fun with Numbers) (Maths Drill) (CAS-110) (Japan) (1978) (Andrew Modla, Philip Baltzer)
   9BCF  Arithmetic Drill (Math Fun & Fun with Numbers) (Maths Drill) (CAS-110) (Japan) (1978) (Andrew Modla, Philip Baltzer).bin
@@ -38,36 +46,44 @@ Biorhythm [AUD_2464_09_B41_ID08_01]
   5D70  Biorhythm [AUD_2464_09_B41_ID08_01].bin
   5E41  Biorhythm [AUD_2464_09_B41_ID08_01].st2
 
-[BIOS] Apollo 80 Programmable Video Game (Europe) (1978)
-  228D  [BIOS] Apollo 80 Programmable Video Game (Europe) (1978).bin
+[BIOS] Shared 4 KB PAL Studio III-family image
+  228D  [BIOS] Academy Apollo 80 Programmable Video Game (United Kingdom) (PAL) (1978).bin
+  228D  [BIOS] Conic M-1200 Microprocessor Programmable TV Game (PAL) (1978).bin
+  228D  [BIOS] Soundic Victory Home TV Programmer (MPT-02) (Australia) (PAL) (1978).bin
+  228D  boot1.rom
 
 [BIOS] RCA Studio II (USA) (1977)
   B5BF  [BIOS] RCA Studio II (USA) (1977).bin
   B5BF  boot0.rom
+  9847  studio2.rom (Emma 02 collection image)
 
 [BIOS] RCA Studio II (USA) (Alt) (1977)
   19E6  [BIOS] RCA Studio II (USA) (Alt) (1977).bin
 
-[BIOS] RCA Studio III (4KB) (1978)
-  ED56  [BIOS] RCA Studio III (4KB) (1978).bin
+[BIOS] Shared 4 KB NTSC Studio III-family image
+  ED56  [BIOS] Conic M-1200 Microprocessor Programmable TV Game (NTSC) (1978).bin
+  ED56  [BIOS] RCA Studio III (NTSC) (1978).bin
+  ED56  boot2.rom
 
-[BIOS] RCA Studio III (NTSC) (1978)
-  39B5  [BIOS] RCA Studio III (NTSC) (1978).bin
+[BIOS] RCA Studio III (NTSC) (Alt) (1978)
+  39B5  [BIOS] RCA Studio III (NTSC) (Alt) (1978).bin
 
 [BIOS] RCA Studio III (PAL) (1978)
   BE1F  [BIOS] RCA Studio III (PAL) (1978).bin
 
-[BIOS] Victory MPT-02 (NTSC) (1978)
-  AE1C  [BIOS] Victory MPT-02 (NTSC) (1978).bin
-  AE1C  boot2.rom
+[BIOS] Soundic Victory Home TV Programmer (MPT-02) (NTSC) (1978)
+  AE1C  [BIOS] Soundic Victory Home TV Programmer (MPT-02) (NTSC) (1978).bin
+  AE1C  __old__/boot2.rom
 
-[BIOS] Victory MPT-02 (PAL) (1978)
-  228D  [BIOS] Victory MPT-02 (PAL) (1978).bin
-  228D  boot1.rom
-
-[BIOS] Visicom COM-100 (Japan) (1978)
-  C47C  [BIOS] Visicom COM-100 (Japan) (1978).bin
+[BIOS] Toshiba Visicom COM-100 (Japan) (NTSC) (1978)
+  C47C  [BIOS] Toshiba Visicom COM-100 (Japan) (NTSC) (1978).bin
   C47C  boot3.rom
+
+[BIOS] Hanimex Jeu TV Programmable MPT-02 (France) (PAL) (1978)
+  F0D5  [BIOS] Hanimex Jeu TV Programmable MPT-02 (France) (PAL) (1978).bin
+
+CHIP-8 interpreter
+  0039  chip8.bin
 
 Climber v1.00 (2013.05.15) (Lee Romanow) (PD)
   AD6A  Climber v1.00 (2013.05.15) (Lee Romanow) (PD).bin
@@ -104,6 +120,7 @@ Demonstration Cartridge (USA) (1977) (Andrew Modla)
 Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD)
   3244  Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).bin
   9562  Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).st2
+  F7A3  fifteen.st2
 
 Flappy Pixel (2026.02.13) (FLiP) (PD)
   6D1D  Flappy Pixel (2026.02.13) (FLiP) (PD).bin
@@ -122,10 +139,11 @@ Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker)
   3505  Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker).bin
   FC34  Game Pack (Doodle, Curling, Pong, Addition, Freeway) (Joseph Weisbecker).st2
 
-Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla)
+Grand Pack (Europe) (1978) (Joseph Weisbecker, Andrew Modla)
   FC72  Grand Pack (86677b) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
   74AB  Grand Pack (87201) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
-  EF21  Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
+  EF21  Grand Pack (Europe) (1978) (Joseph Weisbecker, Andrew Modla).bin
+  1594  Grand Pack (Europe) (1978) (Joseph Weisbecker, Andrew Modla).st2
   815E  Grand Pack (merged) (Europe) (1978) (Joseph Weisbecker, Andrew Modla).st2
 
 Gunfight [AUD_2464_09_B41_ID17_02]
@@ -155,6 +173,7 @@ Invaders (Space Invaders) (Paul Robson) (PD)
 Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD)
   2DDB  Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD).bin
   13A3  Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD).st2
+  D481  invsn.st2
 
 Kaboom (2013.03.22) (Paul Robson) (PD)
   DFCF  Kaboom (2013.03.22) (Paul Robson) (PD).bin
@@ -164,9 +183,11 @@ New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01]
   B555  New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01].bin
   670D  New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01].st2
 
-noshaders (2018.08.25) (Realm Of Illusion) (PD)
-  D706  noshaders (2018.08.25) (Realm Of Illusion) (PD).bin
-  13B3  noshaders (2018.08.25) (Realm Of Illusion) (PD).st2
+noshaders (Realm Of Illusion) (frog) (PD)
+  D706  noshaders (2018.08.25) (Realm Of Illusion) (frog) (PD).bin
+  13B3  noshaders (2018.08.25) (Realm Of Illusion) (frog) (PD).st2
+  DF91  noshaders (2025.01.05) (Realm Of Illusion) (frog) (PD).bin
+  29B6  noshaders (2025.01.05) (Realm Of Illusion) (frog) (PD).st2
 
 Numbers [AUD_2464_09_B41_ID12_01]
   FC89  Numbers [AUD_2464_09_B41_ID12_01].bin
@@ -199,6 +220,7 @@ Race (2020.08.07) (azya52) (PD)
 RCA Test Cartridge - Tester 1 (1976) (Jack Wright)
   7BB6  RCA Test Cartridge - Tester 1 (1976) (Jack Wright).bin
   79C5  RCA Test Cartridge - Tester 1 (1976) (Jack Wright).st2
+  FA4E  RCA_TEST_CARTRIDGE_TESTER1.st2
 
 Rocket v1.01 (2010.08.23) (Lee Romanow) (PD)
   127F  Rocket v1.01 (2010.08.23) (Lee Romanow) (PD).bin
@@ -217,6 +239,7 @@ Space Command (CAS-160) (Japan) (1978) (Jef Winsor)
   12E8  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).bin
   2BC5  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).st2
   A7DF  Space Command (CAS-160) (Japan) (1978) (Jef Winsor).st2
+  BF97  cas-160-space_command.st2
 
 Space Explorer (1978) (Thomas Lenihan)
   0C03  Space Explorer (1978) (Thomas Lenihan).bin
@@ -226,6 +249,10 @@ Space War (512 Bytes) [AUD_2464_09_B41_ID05_01]
   F28A  Space War (512 Bytes) [AUD_2464_09_B41_ID05_01].bin
   8B09  Space War (512 Bytes) [AUD_2464_09_B41_ID05_01].st2
 
+Space War (Sarnoff collection revisions)
+  DD89  spacewar-2.st2
+  0E3C  spacewar-3.st2
+
 Speedway + Tag (Europe) (1978) (Joyce Weisbecker)
   E153  Speedway + Tag (Europe) (1978) (Joyce Weisbecker).bin
   9505  Speedway + Tag (Europe) (1978) (Joyce Weisbecker).st2
@@ -233,6 +260,7 @@ Speedway + Tag (Europe) (1978) (Joyce Weisbecker)
 Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown)
   D4A0  Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown).bin
   8D88  Sports Fan (Baseball & Sumo Wrestling) (CAS-130) (Japan) (1978) (Andrew Modla, unknown).st2
+  0192  cas-130-sports_fan.st2
 
 ST3CTA Test Cartridge - Tester 3 (unknown)
   75E2  ST3CTA Test Cartridge - Tester 3 (unknown).bin
@@ -285,6 +313,9 @@ Studio II-TV Tennis (Unidentified Side 02) [AUD_2464_09_B41_ID33_02]
 Studio IV Interpreter
   BB2B  S.572.21B_Studio_IV_Interpreter_1_of_2.rom
   2174  S.572.21B_Studio_IV_Interpreter_final_1_of_1.rom
+  25D5  Studio IV V3 NTSC.bin
+  3C16  super-chip NTSC.bin
+  1C90  super-chip PAL.bin
 
 Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01]
   A6F8  Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01].bin

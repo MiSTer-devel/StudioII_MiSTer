@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Focused checks for the Studio II pitch, release, and retrigger model."""
+"""Focused checks for the Studio II pitch, waveform, release, and retrigger model."""
 
 from pathlib import Path
 import math
@@ -24,6 +24,9 @@ RELEASE_STEP = parameter("SND_RELEASE_STEP")
 RETRIGGER_SETTLE = parameter("SND_RETRIGGER_SETTLE")
 RETRIGGER_TRACK_STEP = parameter("SND_RETRIGGER_TRACK_STEP")
 ATTACK_STEP = parameter("SND_ATTACK_STEP")
+DUTY_HIGH_PARTS = parameter("SND_DUTY_HIGH_PARTS")
+DUTY_PARTS = parameter("SND_DUTY_PARTS")
+DUTY_ROUND = parameter("SND_DUTY_ROUND")
 
 bands = [
     (int(limit), int(interval))
@@ -215,6 +218,41 @@ def check(label: str, condition: bool, detail: str) -> None:
     if not condition:
         raise AssertionError(f"{label}: {detail}")
     print(f"ok  {label}: {detail}")
+
+
+def phase_lengths(base_ticks: int):
+    full_ticks = 2 * base_ticks
+    high_ticks = (full_ticks * DUTY_HIGH_PARTS + DUTY_ROUND) // DUTY_PARTS
+    return high_ticks, full_ticks - high_ticks
+
+
+check(
+    "duty constants",
+    DUTY_HIGH_PARTS == 11 and DUTY_PARTS - DUTY_HIGH_PARTS == 6,
+    f"{DUTY_HIGH_PARTS}:{DUTY_PARTS - DUTY_HIGH_PARTS} high/low target",
+)
+
+for label, base_ticks in (
+    ("top short", TOP),
+    ("top long", TOP + 1),
+    ("bottom", BOTTOM + 1),
+):
+    high_ticks, low_ticks = phase_lengths(base_ticks)
+    full_ticks = 2 * base_ticks
+    check(
+        f"{label} phase lengths",
+        high_ticks + low_ticks == full_ticks
+        and abs(high_ticks - full_ticks * 11 / 17) <= 0.5,
+        f"{high_ticks}+{low_ticks}={full_ticks} ticks, {high_ticks / full_ticks:.3%} high",
+    )
+
+top_hz = PIXEL_CLOCK / (2 * (TOP + 574 / 1024))
+bottom_hz = PIXEL_CLOCK / (2 * (BOTTOM + 1))
+check(
+    "duty-cycle fundamentals",
+    628.3 <= top_hz <= 628.5 and 505.1 <= bottom_hz <= 505.3,
+    f"top {top_hz:.2f} Hz, bottom {bottom_hz:.2f} Hz",
+)
 
 
 check(

@@ -1223,11 +1223,15 @@ localparam [12:0] SND_RELEASE_STEP = 13'd600; // audible Q-low pitch recovery
 localparam [15:0] SND_RETRIGGER_SETTLE = 16'd10561; // ~6ms live-to-control glide
 localparam  [6:0] SND_RETRIGGER_TRACK_STEP = 7'd64;
 localparam [12:0] SND_ATTACK_STEP  = 13'd14;  // ~2ms zero-to-full
+localparam  [4:0] SND_DUTY_HIGH_PARTS = 5'd11;
+localparam  [4:0] SND_DUTY_PARTS      = 5'd17;
+localparam  [4:0] SND_DUTY_ROUND      = 5'd8;
 
 reg [15:0] snd_half;          // audible oscillator period
 reg [15:0] snd_drive_half;    // fresh Q-high contour
 reg [15:0] snd_control_half;  // recovered control state for a retrigger
 reg [15:0] snd_cnt;
+reg [15:0] snd_cycle_base;    // selected tick length shared by one high/low pair
 reg [12:0] snd_curve_cnt;
 reg [15:0] snd_control_cnt;
 reg [15:0] snd_on_ticks;
@@ -1292,8 +1296,20 @@ endfunction
 // Fractional terminal count for the 628.4Hz plateau; curves use integer periods.
 wire [10:0] snd_eb_sum = {1'b0, snd_eb_frac} + 11'd574;
 wire        snd_eb_long = (snd_eb_sum >= 11'd1024);
-wire [15:0] snd_toggle_at = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
-	                       ? 16'd1399 : snd_half;
+wire [15:0] snd_next_base = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
+	                         ? 16'd1400 : snd_half + 16'd1;
+
+// Split the former two equal phases into the measured 11:6 ratio. The rounded
+// high phase and residual low phase always sum to the same full period.
+wire [16:0] snd_full_ticks = {snd_cycle_base, 1'b0};
+wire [20:0] snd_high_scaled = ({4'd0, snd_full_ticks}
+	                           * {16'd0, SND_DUTY_HIGH_PARTS})
+	                           + {16'd0, SND_DUTY_ROUND};
+wire [20:0] snd_high_quotient = snd_high_scaled / {16'd0, SND_DUTY_PARTS};
+wire [16:0] snd_high_ticks = snd_high_quotient[16:0];
+wire [16:0] snd_phase_ticks = snd_out ? snd_high_ticks
+	                                  : snd_full_ticks - snd_high_ticks;
+wire [15:0] snd_toggle_at = snd_phase_ticks[15:0] - 16'd1;
 
 always @(posedge clk_sys) begin
 	if (reset) begin
@@ -1301,6 +1317,7 @@ always @(posedge clk_sys) begin
 		snd_drive_half <= SND_HALF_TOP;
 		snd_control_half <= SND_HALF_TOP;
 		snd_cnt        <= 16'd0;
+		snd_cycle_base <= 16'd1400;
 		snd_curve_cnt  <= 13'd0;
 		snd_control_cnt <= 16'd0;
 		snd_on_ticks   <= 16'd0;
@@ -1445,10 +1462,15 @@ always @(posedge clk_sys) begin
 			if (snd_cnt >= snd_toggle_at) begin
 				snd_cnt <= 16'd0;
 				snd_out <= ~snd_out;
-				if (snd_half == SND_HALF_TOP)
-					snd_eb_frac <= snd_eb_sum[9:0]; // modulo 1024
-				else
-					snd_eb_frac <= 10'd0;
+				// A low-to-high edge starts the next complete oscillator cycle.
+				// Select its base once so both phases use the same fractional period.
+				if (!snd_out) begin
+					snd_cycle_base <= snd_next_base;
+					if (snd_half == SND_HALF_TOP)
+						snd_eb_frac <= snd_eb_sum[9:0]; // modulo 1024
+					else
+						snd_eb_frac <= 10'd0;
+				end
 			end
 			else snd_cnt <= snd_cnt + 1'b1;
 		end
