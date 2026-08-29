@@ -3,7 +3,7 @@
 # Run Emma 02 (etxmato) as a reference Studio II for the MiSTer core.
 #
 # Emma 02 is the definitive CDP1802 multi-system emulator and is the reference
-# CLAUDE.md points at for *behaviour*.  We do not build it: refs/emma_02 ships
+# docs/development.md identifies for behavioral comparison. We do not build it: refs/emma_02 ships
 # a prebuilt macOS installer, and this script unpacks that installer into
 # refs/emma_02/dist without touching /Applications or /usr/local.
 #

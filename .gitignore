@@ -13,6 +13,7 @@
 *.ppf
 *.py[cod]
 *.qdf
+*.qarlog
 *.qws
 *.rej
 *.rpt
@@ -82,3 +83,8 @@ verilator/sim.vcd
 verilator/spacewar.bin
 verilator/x64/Debug/
 vip
+/instructions
+dse2_base.qsf
+dse2_base.qpf
+dse1_base.qsf
+dse1_base.qpf

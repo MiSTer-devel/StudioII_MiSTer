@@ -19,7 +19,7 @@ int ioctl_next_addr = -1;
 int ioctl_last_index = -1;
 
 IData* ioctl_addr = NULL;
-CData* ioctl_index = NULL;
+SData* ioctl_index = NULL;
 CData* ioctl_wait = NULL;
 CData* ioctl_download = NULL;
 CData* ioctl_upload = NULL;

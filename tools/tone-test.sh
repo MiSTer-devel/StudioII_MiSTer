@@ -9,7 +9,7 @@
 # a hand-assembled native-1802 cartridge, one run per latch value, and measures
 # the frequency from the sim's audio edge count.
 #
-# Expected from the sources (CLAUDE.md, Studio III hardware, and the datasheet
+# Expected from the sources (docs/development.md and the datasheet
 # distilled in rtl/pixie/cdp1864.v):
 #
 #   f = clk / 8 / 4 / (latch+1) / 2      MAME's division chain
@@ -114,7 +114,7 @@ fi
 # And the Studio II must be untouched: it keeps its discrete 555 and ignores
 # OUT 4 entirely. Testing that by absolute frequency would be wrong, because the
 # 555 model deliberately droops -- ~547 Hz fresh, decaying to ~274 Hz over 0.4s,
-# which is the "warpy" power-up sound (see CLAUDE.md, Sound). Over a
+# which is the "warpy" power-up sound. Over a
 # window this long the average lands nearer the decayed end. So test the property
 # that matters instead: two very different latch values must give the *same*
 # frequency, because neither reaches the beeper.

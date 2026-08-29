@@ -149,15 +149,11 @@ raster — that separation exists exactly so raster work is safe. After any chan
 
 ```sh
 cd verilator && make lint && rm -rf obj_dir_headless && make headless
-cd .. && tools/score-21.sh          # inspect changes in valid comparison cases
-tools/visicom-test.sh               # expect all ok
+cd .. && tools/visicom-test.sh
 ```
 
-If a raster change *does* move `score-21.sh`, you have moved the bitmap or the
-DMA phase by accident. Revert and reconsider. The historical raw `26/48` total
-is not an acceptance target: until the suite has an expectation manifest, inspect
-the individual cases and exclude comparisons that are not semantically expected
-to match.
+The legacy corpus scores are not acceptance tests. Inspect directed captures for
+the exact bitmap, DMA, raster, or palette property changed.
 
 ---
 

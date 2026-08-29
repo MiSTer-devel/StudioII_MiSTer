@@ -29,7 +29,7 @@ module rcastudioii
 	input              video_reset,
 	
 	input wire         ioctl_download,
-	input wire   [7:0] ioctl_index,
+	input wire  [15:0] ioctl_index,
 	input wire         ioctl_wr,
 	input       [24:0] ioctl_addr,
 	input        [7:0] ioctl_dout,
@@ -43,6 +43,7 @@ module rcastudioii
 	input        [1:0] players,        // OSD: 0 = auto, 1 = one player, 2 = two players
 	input        [9:0] osk_a,          // on-screen keypad presses for keypad A (bit = key)
 	input        [9:0] osk_b,          // and for keypad B
+	output reg         chip8_fw_loaded,
 	input  reg         ce_pix,
 	input              clear_key,      // literal CLEAR input; also owns the VRAM-clear behavior below
 	//  Which machine, from the OSD:
@@ -95,6 +96,10 @@ localparam [1:0] MACHINE_VISICOM   = 2'd3;
 wire is_studio3      = (machine == MACHINE_S3_PAL) || (machine == MACHINE_S3_NTSC);
 wire machine_mpt02   = (machine == MACHINE_S3_PAL);   // has the CDP1864
 wire machine_visicom = (machine == MACHINE_VISICOM);
+reg  chip8_loaded = 1'b0;
+reg  chip8_write_seen = 1'b0;
+reg  boot4_start_seen = 1'b0;
+wire chip8_active = chip8_loaded && !machine_visicom;
 wire preserve_sync_reset = reset && !video_reset;
 
 ////////////////// VIDEO //////////////////////////////////////////////////////////////////
@@ -699,13 +704,12 @@ always @(posedge clk_sys) begin
 
 
 			// ----------------------------------------------------------------
-			// Existing recognized hash with no supplied inventory identity
+			// Visicom Inspiration (Fortunetelling & Biorhythm), .st2
 			// ----------------------------------------------------------------
 
-			// Identity not present in supplied CRC inventory.
 			16'hE4C4: begin
 				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
+				start_key   <= 4'd0;
 			end
 
 
@@ -716,8 +720,8 @@ always @(posedge clk_sys) begin
 			// Every Visicom cartridge dumped so far starts on 0, not 1 -- Emma
 			// 02's FaqVisicomCartridges says "to start press 0" (or space, which
 			// is its keypad-A 0) for all of them, and the built-in games use
-			// 1/2/3/4/7 instead. There is no CRC entry for any of them yet, so
-			// the machine decides rather than the table.
+			// 1/2/3/4/7 instead. The machine fallback covers forms without an
+			// explicit CRC entry.
 			default: begin
 				map_profile <= MAP_8WAY;
 				start_key   <= machine_visicom ? 4'd0 : 4'd1;
@@ -734,7 +738,7 @@ end
 // after reset counts -- those keys are reused during play (A5 rolls the ball in
 // Bowling, for instance). 
 
-wire       no_cart = (cart_crc == 16'hFFFF);
+wire       no_cart = !chip8_active && (cart_crc == 16'hFFFF);
 reg        builtin_sel;
 reg  [3:0] builtin_profile;
 
@@ -765,7 +769,7 @@ end
 // "0 = auto" value inside the profile enum, so every one of the 16 encodings --
 // MAP_NONE included -- is selectable, and the top level can display the
 // detected profile in the same row the user would edit (see Studio-II.sv).
-assign     auto_profile = no_cart ? builtin_profile : map_profile;
+assign     auto_profile = chip8_active ? MAP_NONE : (no_cart ? builtin_profile : map_profile);
 wire [3:0] profile      = joy_manual ? joy_override : auto_profile;
 
 // ---- profile -> keypad presses ---------------------------------------------
@@ -966,7 +970,7 @@ always @* begin
 	end
 end
 wire       start_press = joystick_0[6] | joystick_1[6];
-wire [3:0] active_start_key = ((profile == MAP_GUNFIGHTER) || (profile == MAP_DOODLE) || (profile == MAP_8WAY)) ? 4'd1 : start_key;
+wire [3:0] active_start_key = ((profile == MAP_GUNFIGHTER) || (profile == MAP_DOODLE)) ? 4'd1 : start_key;
 wire [9:0] start_keys       = ((profile != MAP_CLEAR_ONLY) && start_press) ? (10'd1 << active_start_key) : 10'd0;
 
 // Gunfighter is the special case: in Auto/1P it is B-only (2/4/6/8 + 5 + 0 on
@@ -1116,17 +1120,18 @@ reg  [7:0]  cart_page = 8'h00;    // indexed by address bits [10:8]: page $08..$
 
 wire        bank0    = (ram_a[15:12] == 4'h0);
 wire        rom_sel  = bank0 && (!ram_a[11] || machine_visicom);   // $0000-$07FF ($0000-$0FFF on the Visicom)
-// The CDP1864 machines put a second ROM region at $0C00-$0FFF -- MAME's
-// mpt02_map has .rom() there as well as at $0000-$07FF, and the Studio III BIOS
-// is a 4K image covering both. On those machines it is ROM whether or not a
-// cartridge paged anything in, so it takes precedence over the RAM mirror that
-// $0C00-$0DFF would otherwise be.
-wire        rom_hi   = is_studio3 && bank0 && (ram_a[11:10] == 2'b11);      // $0C00-$0FFF
+// Studio III puts a second ROM region at $0C00-$0FFF -- MAME's mpt02_map has
+// .rom() there as well as at $0000-$07FF, and the BIOS is a 4K image covering
+// both. Marcel's interpreter needs the same window on Studio II while CHIP-8 is
+// active. It takes precedence over the normal $0C00-$0DFF RAM mirror.
+wire        rom_hi   = (is_studio3 || chip8_active) && bank0 &&
+	                   (ram_a[11:10] == 2'b11);                              // $0C00-$0FFF
 // Colour RAM: 64 cells behind a one-page window at $0B00-$0BFF. Only six address
 // lines are decoded, which is why MAME names the storage ($0B00-$0B3F) and Emma 02
-// the window ($0B00-$0BFF) without disagreeing. See CLAUDE.md, Studio III hardware.
+// the window ($0B00-$0BFF) without disagreeing. See AGENTS.md for the unified-model rule.
 wire        col_sel  = is_studio3 && bank0 && (ram_a[11:8] == 4'hB);
-wire        cart_sel = bank0 &&  ram_a[11] && cart_page[ram_a[10:8]] && !rom_hi && !col_sel && !machine_visicom;
+wire        cart_sel = bank0 && ram_a[11] && cart_page[ram_a[10:8]] &&
+	                   !rom_hi && !col_sel && !machine_visicom && !chip8_active;
 
 // ---- Toshiba Visicom COM-100 ----------------------------------------------
 // A different map from either Studio, and the only one here that puts RAM above
@@ -1486,20 +1491,22 @@ assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //
-// Raw .bin/.rom images are a flat copy to $0400. .st2 images are paged: a
-// 256-byte header followed by 256-byte blocks, each block's target page taken
-// from the table at header offsets 64-127 (docs/cartridge.txt).
+// Raw .bin/.rom images are a flat copy to $0400 on Studio machines and $0800 on
+// the Visicom. .st2 images are paged: a 256-byte header followed by 256-byte
+// blocks, each block's target page taken from the table at header offsets 64-127
+// (docs/cartridge.txt).
 //
 // The format is detected purely from the "RCA2" magic in the first four bytes.
-// The OSD extension index (ioctl_index[7:6]) is deliberately not used.
+// The OSD extension index above ioctl_index[5:0] is deliberately not used.
 
-// Index 0 is bootN.rom autoload (slot in ioctl_index[7:6]); index 2 is the
-// OSD "Load Firmware" entry, whose [7:6] carries the picked file's extension
+// Index 0 is bootN.rom autoload (slot in ioctl_index[15:6]); index 2 is the
+// OSD "Load Firmware" entry, whose upper bits carry the picked file's extension
 // index instead of a slot, so it routes to the selected machine's slot below.
 wire        boot_dl = ioctl_download && (ioctl_index[5:0] == 6'd0);
 wire        fw_dl   = ioctl_download && (ioctl_index[5:0] == 6'd2);
 wire        bios_dl = boot_dl | fw_dl;
 wire        cart_dl = ioctl_download && (ioctl_index[5:0] == 6'd1);
+wire        ch8_dl  = ioctl_download && (ioctl_index[5:0] == 6'd3);
 
 reg  [2:0]  st2_magic;                  // running match on "RCA"
 reg         st2_mode;                   // "RCA2" seen: treat as paged
@@ -1544,9 +1551,20 @@ wire        st2_pg_ok = (st2_pg[7:4] == 4'h0) && (st2_pg[3:0] > 4'h3)
                         && !(is_studio3 && (st2_pg[3:0] == 4'hB));
 
 wire        st2_data  = ioctl_addr >= 16'd256;          // past the header
+wire [11:0] raw_base  = machine_visicom ? 12'h800 : 12'h400;
 wire [11:0] cart_a    = st2_mode ? {st2_pg[3:0], ioctl_addr[7:0]}
-                                 : (ioctl_addr[11:0] + 12'h400);
+                                 : (ioctl_addr[11:0] + raw_base);
 wire        cart_we   = cart_dl && ioctl_wr && (!st2_mode || (st2_data && st2_pg_ok));
+
+// Marcel van Tongeren's interpreter translates the two discontiguous Studio
+// ROM windows into CHIP-8 program space $0200-$0AFF. Ordinary .ch8 files begin
+// at virtual $0200, so file bytes $000-$4FF land at physical $0300-$07FF and
+// $500-$8FF land at $0C00-$0FFF. Larger programs are outside its model.
+wire [11:0] ch8_a = (ioctl_addr < 25'h500)
+	               ? (12'h300 + ioctl_addr[11:0])
+	               : (12'hC00 + (ioctl_addr[11:0] - 12'h500));
+wire        ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
+	                 !machine_visicom && (ioctl_addr < 25'h900);
 
 // Pages $0A-$0F, the ones the decode has to be told about. Pages $08/$09 are
 // RAM and can never be claimed: st2_pg_ok already rejects them, and the
@@ -1558,11 +1576,11 @@ always @(posedge clk_sys) begin
 	if (cart_we && cart_hi)                       cart_page[cart_a[10:8]] <= 1'b1;
 end
 
-// ---- Four BIOS BRAMs (boot0.rom … boot3.rom) --------------------------------
+// ---- Five BIOS BRAMs (boot0.rom … boot4.rom) ---------------------------------
 //
-// MiSTer auto-loads bootN.rom with ioctl_index[5:0]==0 and the sub-index in
-// ioctl_index[7:6] (0=boot0 … 3=boot3). Each BRAM only accepts writes for its
-// own sub-index, so the four firmwares never overwrite each other.
+// MiSTer auto-loads bootN.rom with ioctl_index[5:0]==0 and the boot slot in
+// ioctl_index[15:6]. Each BRAM only accepts writes for its own slot, so boot4
+// cannot alias boot0. boot4 is the universal Studio-family CHIP-8 interpreter.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
 //   0 Studio II        → boot0.rom
@@ -1572,22 +1590,22 @@ end
 //
 // Manual "Load Firmware" (F2) lands in the *currently selected* machine's
 // slot: pick the machine, Apply, then load its firmware. (It cannot ride
-// ioctl_index[7:6] the way boot autoload does -- menu loads put the file's
+// ioctl_index[15:6] the way boot autoload does -- menu loads put the file's
 // extension index there, so a .rom would always land in slot 1.)
 //
 // Cartridge downloads (ioctl index 1) are written into the *currently
 // selected* machine's BRAM so the cart pages sit alongside that machine's
 // firmware. cart_page remains global.
 
-wire [1:0]  bios_slot = fw_dl ? machine : ioctl_index[7:6];
-
-wire [11:0] dl_a  = bios_dl ? ioctl_addr[11:0] : cart_a;
+wire [9:0]  boot_slot = ioctl_index[15:6];
+wire [11:0] dl_a = ch8_dl ? ch8_a : (bios_dl ? ioctl_addr[11:0] : cart_a);
 
 // BIOS write: only the matching boot-slot BRAM
-wire        bios_we0 = bios_dl && ioctl_wr && (bios_slot == 2'd0);
-wire        bios_we1 = bios_dl && ioctl_wr && (bios_slot == 2'd1);
-wire        bios_we2 = bios_dl && ioctl_wr && (bios_slot == 2'd2);
-wire        bios_we3 = bios_dl && ioctl_wr && (bios_slot == 2'd3);
+wire        bios_we0 = ioctl_wr && ((fw_dl && (machine == 2'd0)) || (boot_dl && (boot_slot == 10'd0)));
+wire        bios_we1 = ioctl_wr && ((fw_dl && (machine == 2'd1)) || (boot_dl && (boot_slot == 10'd1)));
+wire        bios_we2 = ioctl_wr && ((fw_dl && (machine == 2'd2)) || (boot_dl && (boot_slot == 10'd2)));
+wire        bios_we3 = ioctl_wr && ((fw_dl && (machine == 2'd3)) || (boot_dl && (boot_slot == 10'd3)));
+wire        bios_we4 = boot_dl && ioctl_wr && (boot_slot == 10'd4) && (ioctl_addr < 25'h300);
 
 // Cart write: into the BRAM that belongs to the active machine
 wire        cart_we0 = cart_we && (machine == 2'd0);
@@ -1599,8 +1617,27 @@ wire        we0 = bios_we0 | cart_we0;
 wire        we1 = bios_we1 | cart_we1;
 wire        we2 = bios_we2 | cart_we2;
 wire        we3 = bios_we3 | cart_we3;
+wire        we4 = bios_we4 | ch8_we;
 
-wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q;
+wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q, rom4_q;
+
+// A truncated or absent boot4.rom must not enable F3. A valid interpreter is
+// 768 bytes, ending at $02FF; starting a replacement invalidates the old copy
+// until that final required byte arrives. Loading it never activates CHIP-8.
+initial chip8_fw_loaded = 1'b0;
+always @(posedge clk_sys) begin
+	if (!ioctl_download) boot4_start_seen <= 1'b0;
+	else if (bios_we4 && (ioctl_addr == 25'd0)) boot4_start_seen <= 1'b1;
+
+	if (boot_dl && !dl_d && (boot_slot == 10'd4)) chip8_fw_loaded <= 1'b0;
+	else if (bios_we4 && boot4_start_seen && (ioctl_addr == 25'h2FF)) chip8_fw_loaded <= 1'b1;
+
+	if (!ioctl_download) chip8_write_seen <= 1'b0;
+	else if (ch8_we)     chip8_write_seen <= 1'b1;
+
+	if ((cart_dl || fw_dl) && !dl_d) chip8_loaded <= 1'b0;
+	else if (dl_done && chip8_write_seen) chip8_loaded <= 1'b1;
+end
 
 dpram #(8, 12) rom0
 (
@@ -1662,11 +1699,27 @@ dpram #(8, 12) rom3
 	.q_b()
 );
 
-// CPU (and DMA) reads the BRAM for the selected machine.
-assign rom_q = (machine == 2'd0) ? rom0_q :
-               (machine == 2'd1) ? rom1_q :
-               (machine == 2'd2) ? rom2_q :
-                                   rom3_q;
+dpram #(8, 12) rom4
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
+	.wren_a(we4),
+	.data_a(ioctl_dout),
+	.q_a(rom4_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
+// CPU (and DMA) reads the shared CHIP-8 image when active, otherwise the BRAM
+// belonging to the selected native machine. Visicom can never select rom4.
+assign rom_q = chip8_active ? rom4_q :
+	           (machine == 2'd0) ? rom0_q :
+	           (machine == 2'd1) ? rom1_q :
+	           (machine == 2'd2) ? rom2_q : rom3_q;
 
 // The RAM: 512 bytes ($0800-$08FF program/system, $0900-$09FF display on the
 // Studio II and III; $1000-$11FF on the Visicom, whose bit plane 0 is its top
@@ -1716,7 +1769,7 @@ dpram #(8, 9) sram
 
 	// Port B is tied off entirely, which is what lets this infer as block RAM.
 	// Do not give it a write or a read without re-checking the inferred-
-	// altsyncram list in output_files/Studio-II.map.rpt (see CLAUDE.md, build traps).
+	// altsyncram list in output_files/Studio-II.map.rpt (see AGENTS.md, RAM inference).
 	.ram_cs_b(1'b0),
 	.wren_b(1'b0),
 	.address_b(9'd0),

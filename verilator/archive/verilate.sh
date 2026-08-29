@@ -1,3 +1,9 @@
+#!/usr/bin/env bash
+
+# ARCHIVED AND NONFUNCTIONAL.
+# This entry point predates the current RTL layout and intentionally retains its
+# original source list for provenance. Use ../Makefile for maintained builds.
+
 verilator \
 -cc -exe --public --trace --savable \
 --compiler msvc +define+SIMULATION=1 \

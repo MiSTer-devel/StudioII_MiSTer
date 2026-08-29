@@ -1,10 +1,11 @@
 # Development reference
 
-Mutable architecture, implementation state, verification scope, and build notes live here. `CLAUDE.md` contains only permanent repository rules. Current RTL defines what is implemented; primary documentation and measured hardware define the target.
+Architecture, verification scope, and build mechanics live here. `AGENTS.md` contains permanent repository rules. Current RTL defines what is implemented; primary documentation and measured hardware define the target.
 
 Read the focused references when relevant:
 
 - `docs/how-to-play.md` — game selection and keypad research.
+- `docs/controller.md` — controller implementation and identification rules.
 - `docs/beeper-status.md` — Studio II audio evidence and current acceptance criteria.
 - `docs/analog-video.md` — direct-video behavior and hardware test procedure.
 - `roadmap.md` — planned work.
@@ -18,7 +19,7 @@ Read the focused references when relevant:
 | Studio III NTSC | CDP1861 + CDP1862 | CDP1863 | 1861 timing with separate colour |
 | Visicom COM-100 | CDP1861 + second DMA bitplane | none | separate memory map and fixed palette |
 
-The CPU, DMA video, raw and paged cartridges, four resident firmware slots, machine memory maps, controller profiles, on-screen keypad, integer scaling, and sync-preserving same-standard resets are implemented. The loader intentionally models only 4 KB of cartridge address space; high-page diagnostics such as ST3CTA Tester 3 remain unsupported.
+The CPU, DMA video, raw and paged cartridges, four native firmware slots plus the CHIP-8 interpreter slot, machine memory maps, controller profiles, on-screen keypad, integer scaling, and sync-preserving same-standard resets are implemented. The loader intentionally models only 4 KB of cartridge address space; high-page diagnostics such as ST3CTA Tester 3 remain unsupported.
 
 ## Module and clock map
 
@@ -52,7 +53,7 @@ rcastudioii sync + blanking + RGB
 
 The CDP1861 path has 112 native pixel times and 262 lines per frame. Raster active starts at pixel 24 and is 88 pixels wide. Bitmap DMA occupies pixels 40–103, leaving the authored window 16 pixels from the raster's left edge and eight from the right. Do not move the bitmap window to centre it; adjust porches/blanking and revalidate timing instead.
 
-The CDP1864 path has 112 native pixel times, 312 lines, and a 192-line display. Switching between PAL and NTSC is a real standard change and may make the display resync.
+The CDP1864 path has 112 native pixel times, 312 lines, and a 192-line display. Switching between PAL and NTSC will generally make the display resync; this is expected.
 
 Integer scaling depends on two top-level integration details:
 
@@ -69,6 +70,7 @@ CPU/machine reset and raster reset are separate. `reset` restarts machine state;
 |---|---|---|
 | Core load, MiSTer reset, unknown download | hard | restarts |
 | Cartridge load (F1) | sync-preserving | remains live |
+| CHIP-8 load (F3) | sync-preserving | remains live |
 | Manual firmware load (F2) | sync-preserving | remains live |
 | Same-standard Apply and reset | sync-preserving | remains live |
 | PAL/NTSC Apply and reset | hard | restarts |
@@ -84,8 +86,9 @@ The Machine OSD field is staged until **Apply and reset**, except for the short 
 | Studio III PAL | `boot1.rom` |
 | Studio III NTSC | `boot2.rom` |
 | Visicom | `boot3.rom` |
+| Marcel's CHIP-8 interpreter | `boot4.rom` |
 
-Studio II firmware is normally 2 KB; each resident BRAM is 4 KB so Studio III firmware fits. F2 writes the active machine's slot. Boot autoload uses index 0 with `ioctl_index[7:6]` selecting the slot.
+Studio II firmware is normally 2 KB; each resident BRAM is 4 KB so Studio III firmware fits. F2 writes the active machine's slot. The 16-bit download index uses `[5:0]` for the menu entry and `[15:6]` for the boot slot, making `boot4.rom` index `$0100`. Its fifth 4 KB BRAM holds the 768-byte interpreter plus the loaded game. The CHIP-8 menu remains disabled until the complete interpreter has arrived.
 
 ## Memory and cartridge model
 
@@ -102,17 +105,43 @@ Studio III may use 4 KB firmware and has 64 mirrored 3-bit colour cells in `$0B0
 
 Visicom uses `$0000-$0FFF` for ROM/cartridge, `$1000-$11FF` for 512-byte RAM and plane 0, `$1300-$13FF` for plane 1, and leaves `$1200-$12FF` empty. Its two plane bits select one of four fixed colours.
 
-Raw `.bin`/`.rom` images load from `$0400`. `.st2` is detected from `RCA2` magic and uses its header page table. Page ownership permits cartridge pages `$0C/$0D` to replace the normal RAM mirror. Studio II rejects system pages `$00-$03` and RAM pages `$08-$09`; Studio III also reserves colour page `$0B`; Visicom accepts `$04-$0F` because its RAM is above the cartridge bank. Pages `$10+` are dropped.
+Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Visicom. `.st2` is detected from `RCA2` magic and uses its header page table. Page ownership permits cartridge pages `$0C/$0D` to replace the normal RAM mirror. Studio II rejects system pages `$00-$03` and RAM pages `$08-$09`; Studio III also reserves colour page `$0B`; Visicom accepts `$04-$0F` because its RAM is above the cartridge bank. Pages `$10+` are dropped.
+
+F3 `.ch8` bytes `$000-$4FF` map to physical ROM `$0300-$07FF`; bytes
+`$500-$8FF` map to `$0C00-$0FFF`; bytes from `$900` onward are dropped. This
+path requires `boot4.rom` and rejects Visicom in RTL as well as in the OSD.
+Activation selects the fifth ROM on Studio II and both Studio III variants,
+without changing the native RAM or Studio III colour-RAM windows. CLEAR, Reset,
+and machine switches retain the game; F1 and F2 exit CHIP-8 mode.
+
+[Marcel van Tongeren's interpreter map](https://www.emma02.hobby-site.com/studio_chip8.html)
+accounts for the complete physical 4 KB bank:
+
+| Studio address | Interpreter use | CHIP-8 view |
+|---|---|---|
+| `$0000-$02FF` | Interpreter | — |
+| `$0300-$07FF` | First program window | `$0200-$06FF` |
+| `$0800-$089F` | Writable game RAM | `$0B00-$0B9F` through `I` translation |
+| `$08A0-$08CF` | CHIP-8 stack | — |
+| `$08D0-$08EF` | Interpreter work area | — |
+| `$08F0-$08FF` | Registers V0–VF | — |
+| `$0900-$09FF` | Display RAM | — |
+| `$0A00-$0BFF` | Unused by the interpreter | — |
+| `$0C00-$0FFF` | Second program window | `$0700-$0AFF` |
+
+Thus the program address ceiling is virtual `$0AFF`: a conventional `.ch8`
+file begins at `$0200`, so its supported payload is `$900` bytes at file offsets
+`$000-$8FF`. JP and CALL cannot target virtual `$0800-$0BFF`. Writes through
+`I` are translated into the small `$0B00-$0B9F` virtual RAM window and are only
+compatible with simple RAM use; software depending on broader or
+self-modifying program memory generally needs adaptation.
 
 Controller automapping hashes exact downloaded bytes using CRC16-CCITT, polynomial `0x1021`, initial value `0xFFFF`. Headered and raw forms have different CRCs even when their payloads match.
 
-## Controller profile implementation
+## Controllers
 
-`Mapping` selects Auto or Manual. Auto drives gameplay directly from `auto_profile` and writes that value back to OSD bits `[5:2]`; Manual uses the selected Joystick value. The OSD row is disabled while Auto owns it.
-
-Profiles are implemented in `rtl/rcastudioii.sv`. Their exact user-visible behavior, including player routing and limitations, is documented in `Readme.md`. Game-control evidence belongs in `docs/how-to-play.md`; do not infer controls from a similar title.
-
-For CRC additions, verify the exact Fullset filename, machine, start sequence, keypad/player roles, and every in-game action. Include each known container/header revision. `tools/cart-crc.sh` hashes explicitly supplied images; `docs/crc16-ccitt-hashes-by-game_20260824.txt` is the grouped inventory.
+Controller architecture and profile identification are documented in
+`docs/controller.md`. Game-control evidence belongs in `docs/how-to-play.md`.
 
 ## Hardware-derived constraints
 
@@ -124,14 +153,6 @@ For CRC additions, verify the exact Fullset filename, machine, start sequence, k
 - CDP1861/CDP1864 EF timing leads nominal line boundaries deliberately. Interrupt and DMA requests are accepted at instruction boundaries, DMA remains asserted until serviced, and parity adaptation may move service by one machine cycle.
 - `CON` is captured with each luminance DMA byte. Studio III NTSC is a 1861+1862+1863 machine, not a retimed 1864; its 1863 tone is four times the 1864-integrated tone for the same latch.
 - In the CPU Cx row, `C4` is NOP and `C5-C7`/`CC-CF` are long skips.
-
-## Current verification gaps
-
-- Some Visicom starts can glitch or hang. Investigate input/reset state and phase before changing correct steady-state rendering; use hardware or a trustworthy trace.
-- A bottom horizontal line appears with some Studio II/Studio III firmware combinations. Establish whether software authored it before changing geometry.
-- Studio II beeper rel3 still requires final MiSTer listening acceptance; see `docs/beeper-status.md`.
-- Analog/direct video has not been verified on real hardware; see `docs/analog-video.md`.
-- Profile coverage and exact-file identification remain incomplete.
 
 ## Verification and local layout
 
@@ -150,7 +171,7 @@ Canonical paths are `rom/` for firmware, `software/` for the corpus, `tools/refe
 
 Quartus commands are `tools/quartus-build.sh`, `tools/quartus-build.sh map`, and `tools/quartus-build.sh clean`. The script uses the amd64 Quartus 17 container with `--parallel=1`, which is required under Apple Silicon emulation. After RAM changes, inspect `output_files/Studio-II.map.rpt` for inferred `altsyncram` instances.
 
-Focused regressions include `tools/memdecode-test.sh`, `tools/tone-test.sh`, `tools/visicom-test.sh`, `tools/score-21.sh`, `tools/score-conic.sh`, and `tools/verify-beeper.sh`. Comparison totals are regression signals, not permanent accuracy percentages. Exclude semantically incomparable cases explicitly, retain representative images from every machine, and review them visually.
+Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/tone-test.sh`, `tools/visicom-test.sh`, and `tools/verify-beeper.sh`. The older corpus sweeps are diagnostics, not release gates.
 
 ## References and provenance
 
@@ -160,4 +181,4 @@ The original core is by Jason Coombes, with MiSTer integration and early Pixie w
 
 Accuracy work also relies on Paul Robson, MAME contributors, Marcel van Tongeren, Andrew Modla, Eric Smith, dmadole, kanpapa, RCA documentation, and community hardware research. Special thanks to Kevin Bunch for reference captures and hardware insight, and to the Hagley Museum and Library for preservation work.
 
-The project is GPL-2.0-or-later. GPL-3 reference files under `rtl/reference` and `rtl/cosmac.v` are not compiled into the core.
+The project is GPL-2.0-or-later. Reference-emulator sources under `tools/refemu/` are not compiled into the core.

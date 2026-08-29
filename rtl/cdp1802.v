@@ -221,8 +221,6 @@ module cdp1802 (
     default:    state_n = FETCH;
     endcase
 
-  // SC was driven with <= inside this combinational block and left unassigned on most paths, which
-  // inferred a latch and meant the 1861 could never see a DMA or interrupt state code.
   always @*
     case (state)
     FETCH:            SC = 2'b00;   // S0 fetch
@@ -247,18 +245,11 @@ module cdp1802 (
   localparam MEM_RD  = 2'b10;       // memory read strobe
   localparam MEM_WR  = 2'b01;       // memory write strobe
 
-  // NOTE: Rwd must NOT be written in terms of Rrd. Rrd is R[Ra], Ra comes out
-  // of `action`, and `action` is assigned by this very block -- writing
-  // {action, Rwd} = {..., Rrd ...} makes Rwd a function of the *previous*
-  // evaluation's Ra. Combined with the old `always @(state, I, N)` sensitivity
-  // list (which omits Rrd, P and X) that silently wrote the wrong register and
-  // the core never got past address $0004 of the BIOS. Each case therefore
-  // names the register it reads explicitly.
+  // Each case names the register it reads explicitly.
   always @*
     case (state)
     FETCH, SKIP:                    {action, Rwd} = {P, MEM_RD, R[P] + 16'd1};
-    // 8'h00 is IDL, not LDN R0. Handled ahead of the casez so the IDL and LDN patterns do not
-    // overlap (they did, which is legal casez priority but warns in both Quartus and verilator).
+    // 8'h00 is IDL
     EXECUTE:
       if ({I, N} == 8'h00)          {action, Rwd} = {P, MEM___, R[P]};
       else casez ({I, N})
@@ -287,7 +278,7 @@ module cdp1802 (
       /* long-skip family (C4-C7, CC-CF): no operand bytes; P moves by 0 or 1
          this cycle and again in LSKIP -- skip means step over two bytes,
          no-skip (C4 NOP included) means P stays put for all 3 cycles. `take`
-         here is the reference's cond_no_skip: 1 = do not skip. */
+         is the reference's cond_no_skip: 1 = do not skip. */
       {4'hc, 4'b?1??}:              {action, Rwd} = {P, MEM___, take ? R[P] : (R[P] + 16'd1)};
 
       /* immediate and branch instructions must fetch from R[P] */
@@ -301,8 +292,7 @@ module cdp1802 (
       endcase
     BRANCH3:                        {action, Rwd} = {P, MEM___, B, ram_q};
     LSKIP:                          {action, Rwd} = {P, MEM___, take ? R[P] : (R[P] + 16'd1)};
-    // A DMA cycle always goes through R(0) and post-increments it -- that is what makes the 1861's
-    // 8 bytes per scanline walk through display memory without the CPU touching an address.
+    // A DMA cycle always goes through R(0), then increments it
     DMA_OUT:                        {action, Rwd} = {4'd0, MEM_RD, R[0] + 16'd1};
     DMA_IN:                         {action, Rwd} = {4'd0, MEM_WR, R[0] + 16'd1};
     default:                        {action, Rwd} = {X, MEM___, R[X]};
@@ -333,15 +323,12 @@ module cdp1802 (
     endcase
 
   assign io_n = N[2:0];
-  // OUT completes in EXECUTE now that memory reads no longer need a second cycle; this still
-  // said EXECUTE2, a state that no longer occurs, so OUT 2 never latched the keypad.
+  // OUT completes in EXECUTE
   assign io_out = (I == 4'h6) & ~N[3] & (state == EXECUTE) & (N[2:0] != 3'b000);
   assign io_inp = (I == 4'h6) & N[3] & (state == EXECUTE) & (N[2:0] != 3'b000);
-  // OUT sends M(R(X)), which is the byte read during this EXECUTE cycle. While OUT completed in
-  // EXECUTE2 this was mem_r; now that it completes in EXECUTE, mem_r still holds the *opcode*, so
-  // OUT 2 was latching 0x62 into the keypad selector instead of the key number.
+  // OUT sends M(R(X)), which is the byte read during this EXECUTE cycle
   assign io_dout = ram_q;
-  assign unsupported = 1'b0;      // RET/DIS/SAV/MARK/IDL are all implemented now
+  assign unsupported = 1'b0;      // RET/DIS/SAV/MARK/IDL all implemented
   /*
   always @(posedge CLOCK) begin
     if(unsupported) begin
@@ -365,8 +352,7 @@ module cdp1802 (
     }
     */
     if (!CLEAR_N) begin
-        // 1802 reset leaves I=N=0, Q=0, X=0, P=0, R(0)=0 and *IE=1*. IE was never initialised
-        // before, so even a working interrupt path could not have fired.
+        // 1802 reset leaves I=N=0, Q=0, X=0, P=0, R(0)=0 and IE=1
         {Q, P, X} <= 0;
         {DF, D} <= 9'd0;
         T     <= 8'd0;
@@ -376,11 +362,7 @@ module cdp1802 (
         state <= RESET;
       end
     else begin
-      // Clear=1, Wait=1 is Run (see the table above). This used to be "!WAIT_N && CLEAR_N", i.e.
-      // it ran only while WAIT_N was asserted low -- which the same file calls Pause. It worked
-      // solely because rcastudioii.sv tied WAIT_N to 0.
-      // One state per machine cycle, not one per CLOCK. Free-running, this core executed ~16x more
-      // instructions per frame than a real Studio II (CLAUDE.md 6.1/7.3).
+      // Clear=1, Wait=1 is Run (see table above)
       if (WAIT_N && clk_enable) begin
         state <= state_n;
         if (state == FETCH)

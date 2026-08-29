@@ -36,6 +36,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RTL="$ROOT/verilator/obj_dir_headless/Vtop"
 BIOS="$ROOT/rom/visicom.rom"
 CARTS="$ROOT/software/Visicom-Cartridges"
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 while [[ ${1:-} == --* ]]; do
     case "$1" in
@@ -94,6 +95,21 @@ for e in "${CART_WANT[@]}"; do
     check "$n" "$want" --cart "$f" --press a0@40:20
     seen="$seen$want"
 done
+
+# The Visicom raw dumps are the same eight payload pages as their .st2 forms,
+# without the 256-byte page-table header. One representative raw boot locks the
+# machine-specific $0800 base; $0400 would overwrite firmware and leave the last
+# four cartridge pages absent. Inspiration's headered CRC also has an explicit
+# table entry, so start it through gamepad Start to lock its required A0 mapping.
+inspiration="$CARTS/cas-190-bagua-blood-horoscope.st2"
+if [[ -e "$inspiration" ]]; then
+    raw="$TMP/cas-190-bagua-blood-horoscope.bin"
+    tail -c +257 "$inspiration" > "$raw"
+    check "Inspiration raw .bin" "CG" --cart "$raw" --joy 0x40@40:20
+    check "Inspiration Start -> A0" "CG" --cart "$inspiration" --joy 0x40@40:20
+else
+    echo "  skip  raw loader and Start mapping (Inspiration not in $CARTS)"
+fi
 
 # Between them the cartridges must exercise all four colours. Y and R require
 # plane 1's bit, so this is the check that the second DMA read happens at all.

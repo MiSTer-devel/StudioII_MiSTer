@@ -77,7 +77,7 @@ score "Demonstration (A1)"           "$S2/RCA_demo.st2"              300 150,300
 
 # 86677b and 87201 are deliberately excluded: the reference emulator renders
 # full-screen noise for both from the first frame, before any input, so neither
-# side is a reference for the other (see CLAUDE.md, Verification model and limits).
+# side is a reference for the other (see AGENTS.md, change discipline).
 
 echo
 echo "  frames matching: $pass / $((pass+fail))"

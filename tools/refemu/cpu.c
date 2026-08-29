@@ -378,7 +378,7 @@ static void CPU_OutputHandler(BYTE8 portID,BYTE8 data)
         case 4:                                                                     // OUT 4 loads the 1864 tone divider latch.
             //  Not generating audio here: the comparison harness only ever diffs
             //  frames, and the RTL's audio is checked separately by measuring Q
-            //  edges (CLAUDE.md §10, 2026-08-12). Swallowed so it does not fall
+            //  edges. Swallowed so it does not fall
             //  through to anything else.
             break;
     }

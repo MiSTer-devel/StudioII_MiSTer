@@ -36,7 +36,7 @@ struct SimBus {
 public:
 
 	IData* ioctl_addr;
-	CData* ioctl_index;
+	SData* ioctl_index;
 	CData* ioctl_wait;
 	CData* ioctl_download;
 	CData* ioctl_upload;

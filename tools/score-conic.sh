@@ -7,7 +7,7 @@
 #
 # This reproduces the historical uniform-A1 sweep. Its raw total is diagnostic,
 # not an accuracy percentage; only manifest cases expected to match belong in an
-# acceptance score (see CLAUDE.md, Verification model and limits).
+# acceptance score (see AGENTS.md, change discipline).
 # ---------------------------------------------------------------------------
 set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

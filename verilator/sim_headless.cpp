@@ -34,13 +34,51 @@
 #define RS(sig)   (top->rootp->top__DOT__rcastudio__DOT__##sig)
 #define CPU(sig)  (top->rootp->top__DOT__rcastudio__DOT__cdp1802__DOT__##sig)
 #define PIX(sig)  (top->rootp->top__DOT__rcastudio__DOT__pixie_video__DOT__cdp1861__DOT__##sig)
-#define DPRAM     (top->rootp->top__DOT__rcastudio__DOT__dpram__DOT__mem)   // ROM/cart image, $0000-$0FFF
+#define ROM0      (top->rootp->top__DOT__rcastudio__DOT__rom0__DOT__mem)
+#define ROM1      (top->rootp->top__DOT__rcastudio__DOT__rom1__DOT__mem)
+#define ROM2      (top->rootp->top__DOT__rcastudio__DOT__rom2__DOT__mem)
+#define ROM3      (top->rootp->top__DOT__rcastudio__DOT__rom3__DOT__mem)
+#define ROM4      (top->rootp->top__DOT__rcastudio__DOT__rom4__DOT__mem)
 #define SRAM      (top->rootp->top__DOT__rcastudio__DOT__sram__DOT__mem)    // the 512 bytes of RAM, $0800-$09FF
 #define COLRAM    (top->rootp->top__DOT__rcastudio__DOT__colour_ram)         // 64 CDP1864 colour cells
 
 static Vtop* top = nullptr;
 static vluint64_t main_time = 0;
 double sc_time_stamp() { return (double)main_time; }
+
+static uint8_t rom_byte(int slot, int addr) {
+    switch (slot) {
+        case 0: return ROM0[addr];
+        case 1: return ROM1[addr];
+        case 2: return ROM2[addr];
+        case 3: return ROM3[addr];
+        default: return ROM4[addr];
+    }
+}
+
+static void set_rom_byte(int slot, int addr, uint8_t data) {
+    switch (slot) {
+        case 0: ROM0[addr] = data; break;
+        case 1: ROM1[addr] = data; break;
+        case 2: ROM2[addr] = data; break;
+        case 3: ROM3[addr] = data; break;
+        default: ROM4[addr] = data; break;
+    }
+}
+
+static std::vector<uint8_t> read_binary(const std::string& path) {
+    FILE* f = fopen(path.c_str(), "rb");
+    if (!f) { fprintf(stderr, "error: cannot open %s\n", path.c_str()); exit(2); }
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    std::vector<uint8_t> data((size_t)n);
+    if (n > 0 && fread(data.data(), 1, (size_t)n, f) != (size_t)n) {
+        fprintf(stderr, "error: short read on %s\n", path.c_str()); exit(2);
+    }
+    fclose(f);
+    return data;
+}
 
 // ---------------------------------------------------------------------------
 // PNG writer (zlib, 8-bit RGB, no external image library)
@@ -119,7 +157,7 @@ static const int MAX_H = 1024;
 
 // {R,G,B} -> one character. Black is a space and white is '#', exactly as the
 // pre-colour harness printed them, so every Studio II capture and the whole §9
-// comparison in CLAUDE.md is byte-identical. The six chromatic values only ever
+// comparison is byte-identical. The six chromatic values only ever
 // appear on a CDP1864 machine, and get their initials.
 static inline char ascii_for(uint8_t rgb) {
     switch (rgb & 7) {
@@ -263,7 +301,7 @@ struct IoctlDriver {
             fclose(f);
             pos = 0;
             active = true;
-            top->ioctl_index = (uint8_t)d.index;
+            top->ioctl_index = (uint16_t)d.index;
             fprintf(stderr, "[ioctl] %s -> index %d (%ld bytes)\n", d.path.c_str(), d.index, n);
             return true;
         }
@@ -409,7 +447,10 @@ static void usage(const char* argv0) {
 "\n"
 "  Software\n"
 "    --bios FILE          BIOS image, ioctl index 0   (default ../rom/studio2.rom)\n"
-"    --cart FILE          cartridge image, ioctl index 1 (raw .bin, loads at $0400)\n"
+"    --cart FILE          cartridge image, ioctl index 1 (raw: Studio $0400, Visicom $0800)\n"
+"    --chip8-fw FILE      Marcel's 768-byte interpreter, boot4 index $0100\n"
+"    --ch8 FILE           CHIP-8 program, ioctl index 3\n"
+"    --loader-check       verify all five ROM slots and CHIP-8 address mapping\n"
 "\n"
 "  Run length\n"
 "    --frames N           stop after N video frames (default 300)\n"
@@ -486,6 +527,8 @@ static void parse_list(const char* s, std::set<long>& out) {
 int main(int argc, char** argv) {
     std::string bios = "../rom/studio2.rom";
     std::string cart;
+    std::string chip8_fw;
+    std::string ch8;
     std::string outdir = "out";
     std::string prefix;
     std::string dumpfile;
@@ -494,6 +537,7 @@ int main(int argc, char** argv) {
     int  scale = 4;
     int  shot_every = 0, dump_every = 0;
     bool want_ppm = false, want_ascii = false, want_vram = false;
+    bool loader_check = false;
     bool shot_last = false, frame_log = false, quiet = false;
     long trace_cpu = 0, trace_from = 0;
     bool trace_r0 = false;
@@ -530,6 +574,9 @@ int main(int argc, char** argv) {
         if      (a == "--help" || a == "-h") { usage(argv[0]); return 0; }
         else if (a == "--bios")       bios = next("--bios");
         else if (a == "--cart")       cart = next("--cart");
+        else if (a == "--chip8-fw")   chip8_fw = next("--chip8-fw");
+        else if (a == "--ch8")        ch8 = next("--ch8");
+        else if (a == "--loader-check") loader_check = true;
         else if (a == "--outdir")     outdir = next("--outdir");
         else if (a == "--prefix")     prefix = next("--prefix");
         else if (a == "--dump-file")  dumpfile = next("--dump-file");
@@ -636,7 +683,7 @@ int main(int argc, char** argv) {
     }
 
     if (prefix.empty()) {
-        const std::string& src = cart.empty() ? bios : cart;
+        const std::string& src = !ch8.empty() ? ch8 : (cart.empty() ? bios : cart);
         size_t slash = src.find_last_of('/');
         prefix = (slash == std::string::npos) ? src : src.substr(slash + 1);
         size_t dot = prefix.find_last_of('.');
@@ -672,11 +719,13 @@ int main(int argc, char** argv) {
 
     IoctlDriver io;
     // The firmware goes into the selected machine's boot slot, exactly as
-    // MiSTer's bootN.rom autoload does: index[5:0]=0 with the slot in [7:6].
+    // MiSTer's bootN.rom autoload does: index[5:0]=0 with the slot in [15:6].
     // Loading with a flat index 0 would land every machine's BIOS in the
     // Studio II BRAM and machines 1-3 would boot from an empty ROM.
     io.add(bios, machine << 6);
+    if (!chip8_fw.empty()) io.add(chip8_fw, 0x0100);
     if (!cart.empty()) io.add(cart, 1);
+    if (!ch8.empty()) io.add(ch8, 3);
 
     FrameGrabber fg;
 
@@ -685,6 +734,14 @@ int main(int argc, char** argv) {
     top->ioctl_addr = 0; top->ioctl_dout = 0; top->ioctl_din = 0; top->ioctl_index = 0;
     top->ps2_key = 0; top->inputs = 0;
     top->eval();
+
+    // Give the loader check a known background in every slot. It can then
+    // prove both positive routing and that rejected/unsupported bytes did not
+    // modify any destination.
+    if (loader_check)
+        for (int slot = 0; slot < 5; slot++)
+            for (int addr = 0; addr < 0x1000; addr++)
+                set_rom_byte(slot, addr, 0xA5);
 
     // Pre-fill the RAM arrays with junk before the machine boots. On hardware
     // the 512-byte RAM (and the Visicom's plane-1 RAM) is wiped only by CLEAR:
@@ -753,6 +810,8 @@ int main(int argc, char** argv) {
         top->clk_48 = 1;
         if (++clk24_div >= 2) { clk24_div = 0; top->clk_24 = !top->clk_24; }
         top->eval();
+
+        if (loader_check && io.finished && !io.active) break;
 
         // CPU instruction trace. FETCH puts the PC on the bus; the opcode is
         // valid one state later, in EXECUTE (the dpram has 1 cycle latency).
@@ -893,6 +952,112 @@ int main(int argc, char** argv) {
 
         main_time++;
         cycles++;
+    }
+
+    if (loader_check) {
+        std::vector<std::vector<uint8_t>> expected(5, std::vector<uint8_t>(0x1000, 0xA5));
+        const std::vector<uint8_t> bios_data = read_binary(bios);
+        for (size_t i = 0; i < bios_data.size() && i < 0x1000; i++) expected[machine][i] = bios_data[i];
+
+        bool fw_valid = false;
+        if (!chip8_fw.empty()) {
+            const std::vector<uint8_t> fw_data = read_binary(chip8_fw);
+            for (size_t i = 0; i < fw_data.size() && i < 0x300; i++) expected[4][i] = fw_data[i];
+            fw_valid = fw_data.size() >= 0x300;
+        }
+
+        bool ch8_accepted = fw_valid && (machine != 3) && !ch8.empty();
+        if (!ch8.empty()) {
+            const std::vector<uint8_t> ch8_data = read_binary(ch8);
+            if (ch8_accepted) {
+                for (size_t i = 0; i < ch8_data.size() && i < 0x900; i++) {
+                    size_t addr = (i < 0x500) ? (0x300 + i) : (0xC00 + i - 0x500);
+                    expected[4][addr] = ch8_data[i];
+                }
+            }
+            ch8_accepted = ch8_accepted && !ch8_data.empty();
+        }
+
+        int failures = 0;
+        for (int slot = 0; slot < 5; slot++) {
+            for (int addr = 0; addr < 0x1000; addr++) {
+                uint8_t got = rom_byte(slot, addr);
+                if (got != expected[slot][addr]) {
+                    if (failures < 12)
+                        printf("FAIL rom%d[$%03X] = %02X, expected %02X\n",
+                               slot, addr, got, expected[slot][addr]);
+                    failures++;
+                }
+            }
+        }
+        if ((RS(chip8_fw_loaded) != 0) != fw_valid) {
+            printf("FAIL chip8_fw_loaded = %u, expected %u\n",
+                   (unsigned)RS(chip8_fw_loaded), fw_valid ? 1u : 0u);
+            failures++;
+        }
+        if ((RS(chip8_loaded) != 0) != ch8_accepted) {
+            printf("FAIL chip8_loaded = %u, expected %u\n",
+                   (unsigned)RS(chip8_loaded), ch8_accepted ? 1u : 0u);
+            failures++;
+        }
+
+        // Activation follows the applied machine without discarding the game:
+        // all three Studio selections use ROM4 and Visicom suppresses it.
+        top->clk_48 = 0;
+        top->eval();
+        RS(chip8_loaded) = 1;
+        for (int m = 0; m < 4; m++) {
+            top->machine = m;
+            top->eval();
+            bool expected_active = m != 3;
+            if ((RS(chip8_active) != 0) != expected_active) {
+                printf("FAIL chip8_active on machine %d = %u, expected %u\n", m,
+                       (unsigned)RS(chip8_active), expected_active ? 1u : 0u);
+                failures++;
+            }
+        }
+        top->machine = machine;
+
+        // A machine reset/CLEAR must retain the selected game.
+        top->rootp->top__DOT__clear_key = 1;
+        top->clk_48 = 1;
+        top->eval();
+        top->clk_48 = 0;
+        top->eval();
+        top->rootp->top__DOT__clear_key = 0;
+        if (!RS(chip8_loaded)) {
+            printf("FAIL machine reset cleared chip8_loaded\n");
+            failures++;
+        }
+
+        // F1 and F2 each exit CHIP-8. Exercise both classifications without a
+        // write; activation policy changes at transfer start, not by file size.
+        for (int index = 1; index <= 2; index++) {
+            RS(chip8_loaded) = 1;
+            top->ioctl_index = index;
+            top->ioctl_download = 1;
+            top->ioctl_wr = 0;
+            top->clk_48 = 1;
+            top->eval();
+            top->clk_48 = 0;
+            top->eval();
+            if (RS(chip8_loaded)) {
+                printf("FAIL ioctl index %d did not clear chip8_loaded\n", index);
+                failures++;
+            }
+            top->ioctl_download = 0;
+            top->clk_48 = 1;
+            top->eval();
+            top->clk_48 = 0;
+            top->eval();
+        }
+
+        printf("CHIP-8 loader: %s (%d mismatch%s)\n", failures ? "FAIL" : "PASS",
+               failures, failures == 1 ? "" : "es");
+        top->final();
+        if (df != stdout) fclose(df);
+        delete top;
+        return failures ? 1 : 0;
     }
 
     printf("\n");

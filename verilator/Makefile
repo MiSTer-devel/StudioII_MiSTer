@@ -80,7 +80,7 @@ VOUT = obj_dir/Vtop.cpp
 
 # ---------------------------------------------------------------------------
 # Headless simulator: no SDL/ImGui, frame counting, screenshots, state dumps.
-# This is the target used for regression testing -- see ./run_tests.sh
+# This target provides the headless model used by the directed test scripts.
 # ---------------------------------------------------------------------------
 HL_DIR = obj_dir_headless
 HL_EXE = ./$(HL_DIR)/Vtop

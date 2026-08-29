@@ -191,8 +191,8 @@ assign HDMI_FREEZE = 0;
 assign HDMI_BLACKOUT = 0;
 assign HDMI_BOB_DEINT = 0;
 
-// Signed beeper/tone sample generated in rcastudioii.sv. The Studio II path
-// includes its release envelope; Studio III remains a fixed-level square wave.
+// Signed beeper/tone sample generated in rcastudioii.sv. Studio II path
+// includes release envelope; Studio III is a fixed-level square wave
 wire signed [15:0] audio;
 assign AUDIO_S   = 1'b1;                                   // signed samples
 assign AUDIO_MIX = 2'd0;
@@ -205,27 +205,28 @@ assign BUTTONS = 0;
 
 `include "build_id.v"
 localparam CONF_STR = {
-	"Studio-II;v8;",
+	"Studio-II;v9;",
 	"F1,ST2BINROM,Load Cartridge;",
+	"D3F3,CH8,Load CHIP-8;",
 	"F2,BINROM,Load Firmware;",
 	"-;",
-	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	// Machine held until Apply and reset
+	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"R[15],Apply and reset;",
-	"-;",
-	"O[16],Audio,On,Mute;",
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
 	// Order must match localparams in rtl/rcastudioii.sv
 	"D2O[5:2],Joystick,None,Cross,Space War,Freeway,Bowling,Baseball,Homebrew,Gunfighter,8-way,Doodle,2P Homebrew,Clear-only,Paddle;",
 	"O[8:7],Players,Auto,1,2;",
-	"O[10:9],Stick Keypad,Off,Pad A,Pad B;",
+	"O[10:9],Numstick,Off,Pad A,Pad B;",
+	"-;",
+	"O[16],Sound,On,Off;",
 	"-;",
 	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"-;",
 	"T[1],Clear;",
-	"R[0],Reset and close OSD;",
+	"T[0],Reset;",
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
 	// jn is default virtual mapping
 	"jn,A,B,Start,Select;",
@@ -243,13 +244,13 @@ wire  [31:0] joystick_0, joystick_1;
 wire  [15:0] joystick_l_analog_0, joystick_r_analog_0;
 wire  [15:0] joystick_l_analog_1, joystick_r_analog_1;
 
-// The console mute switch gates only the delivered samples. Both tone
-// generators continue running so unmute resumes their current state.
+// Sound On/Off switch only gates audio. Tone
+// generators continue running.
 wire signed [15:0] audio_out = status[16] ? 16'sd0 : audio;
 assign AUDIO_L = audio_out;
 assign AUDIO_R = audio_out;
 
-// Pixie's timing generator is kept running in order to be
+// Pixie's timing generator is kept running which is
 // friendlier to display sync. TODO: This is very useful but 
 // still a hack and may need further scrutiny or refinement
 // in the future.
@@ -261,7 +262,7 @@ always @(posedge clk_sys) begin
 end
 
 wire        ioctl_download;
-wire  [7:0] ioctl_index;
+wire [15:0] ioctl_index;
 wire        ioctl_wr;
 wire [24:0] ioctl_addr;
 wire  [7:0] ioctl_data;
@@ -320,7 +321,9 @@ wire joy_clear = joystick_0[7] | joystick_1[7];
 wire clear_request = status[1] | clear_key | joy_clear;
 
 // Preserve raster timing on soft resets
-wire      user_download_now = (ioctl_index[5:0] == 6'd1) || (ioctl_index[5:0] == 6'd2);
+wire      user_download_now = (ioctl_index[5:0] == 6'd1) ||
+	                          (ioctl_index[5:0] == 6'd2) ||
+	                          (ioctl_index[5:0] == 6'd3);
 reg       download_soft_latched = 1'b0;
 reg [7:0] download_reset_cnt = 8'd0;
 wire      download_reset = ioctl_download | (download_reset_cnt != 0);
@@ -341,7 +344,8 @@ always @(posedge CLK_50M) begin
 	if (RESET || status[0] || buttons[1]) hard_reset_cnt <= 8'd255;
 	else if (hard_reset_cnt != 0) hard_reset_cnt <= hard_reset_cnt - 8'd1;
 
-	if(ioctl_download && (ioctl_index[5:0] == 0 || ioctl_index[5:0] == 2) && ioctl_addr == 24'd100) rom_loaded <= 1'b1;
+	if(ioctl_download && (((ioctl_index[5:0] == 0) && (ioctl_index[15:6] < 10'd4)) ||
+	   (ioctl_index[5:0] == 2)) && ioctl_addr == 24'd100) rom_loaded <= 1'b1;
 end
 
 ////////////////// Machine select: staged, applied on request ////////////////
@@ -408,6 +412,7 @@ wire VSync;
 wire [2:0] video;   	// {R,G,B} from the core
 wire       video_bg;    // ...at background luminance (CDP1864 BCKGND)
 wire [1:0] vis_index;   // Visicom: one of its four fixed colours
+wire       chip8_fw_loaded;
 
 rcastudioii rcastudio
 (
@@ -438,6 +443,7 @@ rcastudioii rcastudio
 	.machine(machine_active),
 	.video_bg(video_bg),
 	.joy_manual(status[6]),
+	.chip8_fw_loaded(chip8_fw_loaded),
 	.auto_profile(auto_profile),
 	.players(status[8:7]),
 	.osk_a(osk_a),
@@ -491,10 +497,13 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// Gray-out the Joystick OSD option when Mapping is set to Auto. CONF_STR's
-// D[2] prefix consumes this bit from status_menumask; bit 2 is the first status
-// bit of the Joystick O[5:2] option.
-assign status_menumask = (!status[6]) ? 16'h0004 : 16'h0000;
+// D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
+// CHIP-8 picker until boot4.rom is present, and whenever the applied machine is
+// the unsupported Visicom. Use machine_active so a staged selection does not
+// take effect before Apply and reset.
+wire disable_chip8_loader = (machine_active == 2'd3) || !chip8_fw_loaded;
+assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
+	                     (disable_chip8_loader ? 16'h0008 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 
@@ -543,7 +552,7 @@ wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] : (video[2] ? vid_lvl : 8'h0
 wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8]  : (video[1] ? vid_lvl : 8'h00);
 wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0]   : (video[0] ? vid_lvl : 8'h00);
 
-////////////////// On-screen keypad (from Jaguar via Coleco Adam) /////////////
+////////////////// Numstick //////////////////
 
 wire [1:0] osk_mode   = status[10:9];   // 0 off, 1 pad A, 2 pad B
 wire       osk_use_j1 = (osk_mode == 2'd2) && (status[8:7] == 2'd2);

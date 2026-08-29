@@ -7,6 +7,7 @@ Game names follow the Fullset v12.1 filenames. Instructions are consolidated fro
 ## Contents
 
 - [Console keypad notation](#console-keypad-notation)
+- [CHIP-8 programs](#chip-8-programs)
 - [Profile-oriented quick index](#profile-oriented-quick-index)
 - [RCA Studio II resident games](#rca-studio-ii-resident-games)
 - [Studio II retail cartridges](#studio-ii-retail-cartridges)
@@ -30,6 +31,26 @@ The machines have two ten-key pads, identified here as **A** and **B**. `A5` mea
 Many games treat `2/4/6/8` as up/left/right/down and `1/3/7/9` as diagonals. This document names the console keys directly; references to PC arrow keys, Space, Tab, W/A/S/Z or a numeric keypad in emulator documentation have been translated back to A/B keypad positions where the relationship is known.
 
 `CLEAR` means the console CLEAR button, available from F3, the OSD or gamepad Select in this core. Unless an entry says otherwise, press CLEAR before selecting or restarting a program.
+
+## CHIP-8 programs
+
+Install [Marcel van Tongeren's interpreter](https://www.emma02.hobby-site.com/studio_chip8.html)
+as `boot4.rom`, then choose a classic `.ch8` program with **Load CHIP-8**.
+Virtual CHIP-8 keys `0`–`9` map to keypad A
+`0`–`9`; `A`–`F` map to keypad B `1`–`6`. Their keyboard equivalents are:
+
+```text
+CHIP-8: 0 1 2 3 4 5 6 7 8 9  A B C D E F
+Key:    X 1 2 3 Q W E A S D  7 8 9 U I O
+```
+
+There is no universal gamepad layout for CHIP-8 software. Use the keyboard,
+direct A/B keypad bindings, Numstick, or select a manual profile appropriate to
+the game. The loader supports the classic Studio-family interpreter only;
+CHIP-8X, Super-Chip, XO-CHIP, file offsets from `$900` onward, and Visicom are
+not supported. The `$900`-byte payload limit follows from loading at virtual
+`$0200` and requiring the program to end by `$0AFF`; it is not an `$0B00`-byte
+file-size allowance.
 
 ## Profile-oriented quick index
 

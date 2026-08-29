@@ -224,12 +224,16 @@ int verilate() {
 
 static const char* opt_bios = "./boot.rom";
 static const char* opt_cart = nullptr;
+static const char* opt_chip8_fw = nullptr;
+static const char* opt_ch8 = nullptr;
 static bool        opt_run  = false;
 
 static void usage(const char* a0) {
 	printf("Usage: %s [options]\n"
 	       "  --bios FILE   BIOS image, ioctl index 0 (default ./boot.rom)\n"
 	       "  --cart FILE   cartridge, ioctl index 1 (raw .bin, loads at $0400)\n"
+	       "  --chip8-fw FILE  Marcel's interpreter, boot4 index $0100\n"
+	       "  --ch8 FILE    CHIP-8 program, ioctl index 3\n"
 	       "  --run         start with the simulation already running\n"
 	       "  --press K@F[:H]  press key K at frame F, hold H frames (default 4).\n"
 	       "                K is 0-9, optionally prefixed a/b for the two keypads\n"
@@ -243,6 +247,8 @@ int main(int argc, char** argv, char** env) {
 		std::string a = argv[i];
 		if      (a == "--bios" && i + 1 < argc) opt_bios = argv[++i];
 		else if (a == "--cart" && i + 1 < argc) opt_cart = argv[++i];
+		else if (a == "--chip8-fw" && i + 1 < argc) opt_chip8_fw = argv[++i];
+		else if (a == "--ch8" && i + 1 < argc) opt_ch8 = argv[++i];
 		else if (a == "--run")                  opt_run  = true;
 		else if (a == "--press" && i + 1 < argc) {
 			std::string spec = argv[++i];
@@ -335,11 +341,22 @@ int main(int argc, char** argv, char** env) {
 	if (FILE* f = fopen(opt_bios, "rb")) { fclose(f); }
 	else { fprintf(stderr, "error: cannot open BIOS '%s' (cwd must be verilator/)\n", opt_bios); return 1; }
 	bus.QueueDownload(opt_bios, 0, true);
+	if (opt_chip8_fw) {
+		if (FILE* f = fopen(opt_chip8_fw, "rb")) { fclose(f); }
+		else { fprintf(stderr, "error: cannot open CHIP-8 firmware '%s'\n", opt_chip8_fw); return 1; }
+		bus.QueueDownload(opt_chip8_fw, 0x0100, true);
+	}
 	if (opt_cart) {
 		if (FILE* f = fopen(opt_cart, "rb")) { fclose(f); }
 		else { fprintf(stderr, "error: cannot open cart '%s'\n", opt_cart); return 1; }
 		printf("[cart] %s -> ioctl index 1\n", opt_cart);
 		bus.QueueDownload(opt_cart, 1, false);
+	}
+	if (opt_ch8) {
+		if (FILE* f = fopen(opt_ch8, "rb")) { fclose(f); }
+		else { fprintf(stderr, "error: cannot open CHIP-8 program '%s'\n", opt_ch8); return 1; }
+		printf("[chip8] %s -> ioctl index 3\n", opt_ch8);
+		bus.QueueDownload(opt_ch8, 3, true);
 	}
 	if (opt_run) run_enable = 1;
 
@@ -408,10 +425,19 @@ int main(int argc, char** argv, char** env) {
 		//ImGui::Begin("ROM");
 		//mem_edit.DrawContents(&top->rootp->top__DOT__rcastudio__DOT__Rom_StudioII__DOT__d, 2048, 0);
 		//ImGui::End();
-		// The ROM/cartridge image ($0000-$0FFF) and the 512 bytes of RAM are
-		// separate arrays -- see the memory decode in rtl/rcastudioii.sv.
+		// The selected native ROM (or shared CHIP-8 ROM while active) and the
+		// 512 bytes of RAM are separate arrays -- see rtl/rcastudioii.sv.
 		ImGui::Begin("ROM / cartridge $0000-$0FFF");
-		mem_edit.DrawContents(&top->rootp->top__DOT__rcastudio__DOT__dpram__DOT__mem, 4096, 0);
+		CData* rom_mem = &top->rootp->top__DOT__rcastudio__DOT__rom0__DOT__mem[0];
+		if (top->rootp->top__DOT__rcastudio__DOT__chip8_active)
+			rom_mem = &top->rootp->top__DOT__rcastudio__DOT__rom4__DOT__mem[0];
+		else if (top->machine == 1)
+			rom_mem = &top->rootp->top__DOT__rcastudio__DOT__rom1__DOT__mem[0];
+		else if (top->machine == 2)
+			rom_mem = &top->rootp->top__DOT__rcastudio__DOT__rom2__DOT__mem[0];
+		else if (top->machine == 3)
+			rom_mem = &top->rootp->top__DOT__rcastudio__DOT__rom3__DOT__mem[0];
+		mem_edit.DrawContents(rom_mem, 4096, 0);
 		ImGui::End();
 		ImGui::Begin("RAM $0800-$09FF");
 		mem_edit.DrawContents(&top->rootp->top__DOT__rcastudio__DOT__sram__DOT__mem, 512, 0x800);

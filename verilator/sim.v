@@ -32,7 +32,7 @@ module top(
    input [24:0] ioctl_addr,
    input [7:0]  ioctl_dout,
    input [7:0]  ioctl_din,   
-   input [7:0]  ioctl_index,
+   input [15:0] ioctl_index,
    output  reg  ioctl_wait=1'b0,
 
    input [10:0] ps2_key,
@@ -47,6 +47,7 @@ module top(
    
    // Core inputs/outputs
 wire signed [15:0] audio; // signed beeper/tone sample, including release envelope
+   wire chip8_fw_loaded/*verilator public_flat*/;
    wire [3:0] led/*verilator public_flat*/;
 
    wire VSync, HSync;
@@ -141,6 +142,7 @@ rcastudioii rcastudio
 	.joy_override(joy_override),
 	.joy_manual(joy_manual),
 	.auto_profile(),
+	.chip8_fw_loaded(chip8_fw_loaded),
 	.players(players),
 	.machine(machine),
 	.osk_a(10'd0),

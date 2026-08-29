@@ -1,113 +1,66 @@
-# Studio II beeper: current status
+# Studio II beeper
 
-The beeper is broadly convincing, and the parts that already sound right should
-be preserved. Rel3 contains an experimental Gunfighter retrigger model derived
-from the labeled `kb-gf` hardware clips. Its numerical checks pass, but listening
-on MiSTer is still the release criterion.
+This file records the accepted behavioral model, its evidence, and remaining
+measurement uncertainty. Release chronology belongs in release notes and Git.
 
-## Accepted baseline
+## Behavioral baseline
 
-- The reference tuning is about 628.4 Hz at the upper pitch and 505.2 Hz at the
-  sustained floor. Console-to-console variation is expected and is not a reason
-  to move these defaults.
-- A long Q-high interval descends smoothly toward the floor in about 210 ms.
-- Q low does not mute the circuit. Pitch turns upward while an RC-like amplitude
-  envelope fades to silence in about 96 ms, and the pitch state continues to
-  recover afterward.
-- Pitch and amplitude remain continuous across close Q transitions. Repeated
-  sounds remain bounded rather than stacking a fresh full descent on every hit.
-- Speedway's rapid roughly 20 Hz pulses remain near the upper pitch. Long notes,
-  isolated releases, and Concentration / Match's characteristic double pulse are
-  useful protected regression cases and are currently close to hardware.
-- The Studio II signed sample path is isolated from the Studio III programmable
-  tone path.
+- Fresh-note pitch is approximately 628.4 Hz; the sustained floor is
+  approximately 505.2 Hz. Console tolerance is expected.
+- Q high holds the upper pitch for about 20 ms, then follows a rounded descent
+  that settles in roughly 210--220 ms.
+- Q low does not mute or reset the oscillator. Pitch recovers upward continuously
+  while an RC-like amplitude envelope fades over roughly 96 ms.
+- Pitch and amplitude remain continuous across close Q transitions. Retriggers
+  recover according to the low-gap duration and do not stack independent notes.
+- Rapid pulses such as Speedway remain near the upper pitch. Concentration /
+  Match and Gunfighter exercise close-retrigger behavior.
+- The output waveform uses an approximately 11:6 high/low duty ratio while
+  preserving the full-cycle period.
 
-## Gunfighter evidence
+The December 1976 demonstration recordings independently show the same pitch
+span and driven-curve family at about `0.9945` of the accepted absolute tuning.
+That scale is consistent with unit/component tolerance and is not a reason to
+retune the default model.
 
-The ROM and simulator establish the programmed cadence:
+## Implementation
 
-- shot: Q high for one 60 Hz frame, approximately 16.67 ms;
-- cactus: Q high for seven frames, approximately 116.67 ms;
-- labeled cactus-to-shot samples: Q low for 2, 3, 4, 5, 6 or 9 frames.
+`rtl/rcastudioii.sv` maintains one oscillator state through drive, release, and
+retrigger. Audible release and recovered next-start state are represented
+separately: the live pitch follows the release tail, while a hidden divider
+tracks recovery. On Q rising, live pitch glides to the recovered state without a
+discontinuous edge, then rejoins the driven contour.
 
-Measured about 11 ms into the next shot, those six gaps produce approximately
-596.8, 605.4, 613.4, 616.0, 618.7 and 626.6 Hz. The old fixed-ceiling model was
-27--38 Hz low in the close 2--4 frame cases, then reached the top too abruptly.
-The two files labeled `single` follow the long/cactus-family contour rather than
-the clean one-frame-shot family.
+High and low phase lengths are derived from one latched full period. Their sum
+preserves the pitch curve, and the fractional-period accumulator advances once
+per full cycle. The signed sample path is independent of the Studio III
+programmable-tone path.
 
-The acoustic onset alignment is repeatable to the game's frame grid, but it is
-not a direct electrical Q/control-voltage capture. Treat the family and contour
-as stronger evidence than any isolated ridge value.
+`Studio-II.sv` implements `Sound: On/Off` by gating `AUDIO_L` and `AUDIO_R` to
+signed zero. It does not gate Q, reset either generator, or alter oscillator,
+pitch, phase, or envelope state.
 
-## Rel3 candidate
+## Evidence and verification
 
-The audible release and the recovered next-start state are now represented
-separately. Q low keeps the accepted slower audible upward tail, preserving the
-Pac-Man/Outbreak release checks. A hidden divider follows a rounded,
-distance-dependent recovery. On Q rising, live pitch remains unchanged at the
-edge, glides to the hidden state over about 6 ms, and waits there until the fresh
-driven contour catches it. There is no fixed second-pulse pitch.
+The model is constrained by labeled retail-console recordings, the RCA
+demonstration archive, ROM/simulator Q cadence, and MiSTer listening. Acoustic
+analysis uses cycle periods, spectral ridges, and harmonics; recordings do not
+provide direct electrical Q or control-voltage timing.
 
-The behavioral result is 591.5, 604.1, 611.6, 617.2, 620.7 and 626.0 Hz for the
-six Gunfighter gaps, or 2.55 Hz RMS error against the hardware estimates. The
-same checks retain Concentration / Match's approximately 559.5 Hz second crest,
-Speedway's principal-pitch rapid pulses, the long-note endpoints, release
-amplitude/pitch and bounded repeated hits.
+`tools/beeper-curve-test.py` checks endpoints, descent, release, retrigger
+families, phase-length sums, duty ratio, and protected game cases.
+`tools/verify-beeper.sh` runs the focused audio checks. Synthesis reports must
+still be inspected separately for timing and inference, and MiSTer listening is
+required for release acceptance.
 
-## Audio phase-one candidate
+## Remaining uncertainty
 
-The duty-cycle and mute implementation is now deliberately orthogonal to the
-accepted pitch, retrigger and envelope state. No curve constant changed.
+- Archival release ridges suggest a faster upward recovery than the accepted
+  curve, but short-window endpoint bias can also produce impossible overshoot.
+- The hardest early-attack knee is not fully constrained.
+- Direct electrical or line-level captures with a recorded Q trace would remove
+  acoustic onset ambiguity.
 
-### 1. Duty cycle
-
-The oscillator phase scheduling around `snd_cnt`, `snd_out` and
-`snd_toggle_at` in `rtl/rcastudioii.sv` now:
-
-- replaces the equal high/low phases with the approximately 11:6 high/low ratio
-  measured in KB's recordings.
-- derives both phase lengths from one latched full period, with a sum equal to
-  the former two half-periods so the fundamental contour does not move.
-- keeps the fractional 628.4 Hz plateau by sharing one selected base length over
-  each high/low pair and advancing the error accumulator once per full cycle.
-- keeps one oscillator running through Q-low release without changing
-  `snd_half`, `snd_drive_half`, `snd_control_half`, note age, or the amplitude
-  envelope.
-
-`tools/beeper-curve-test.py` checks phase lengths at the top and bottom dividers:
-high+low equals the old full period, the ratio rounds to 11:6, and the average
-fundamentals remain approximately 628.4 Hz and 505.2 Hz. Every existing
-pitch/release/retrigger check passes unchanged.
-
-The unequal signed waveform has a non-zero arithmetic mean. Keep the existing
-`+/-snd_magnitude` levels for this small timbre change and judge the real MiSTer
-audio path by listening; do not add an unmeasured filter or a second envelope to
-compensate for it.
-
-### 2. Mute
-
-Free status bit 16 in `Studio-II.sv` exposes the switch:
-
-```systemverilog
-"O[16],Audio,On,Mute;"
-```
-
-`AUDIO_L` and `AUDIO_R` are gated to signed zero at the top level when muted.
-Mute does not enter `rcastudioii`, gate Q, reset either tone generator, or change
-audio state. Unmuting therefore reveals the oscillator at the phase, pitch and
-envelope it reached while muted. This also keeps the control consistent across
-Studio II and Studio III without adding a machine-specific path. Existing OSD
-profile writeback preserves bit 16 because it replaces only status bits `[5:2]`.
-
-### Remaining acceptance
-
-1. Run `tools/verify-beeper.sh`; all existing checks plus the new duty checks pass.
-2. Build with the supported Quartus 17 flow and confirm normal map/timing results.
-3. On MiSTer, compare the same Gunfighter, Concentration / Match and Speedway
-   passages used to accept rel3. Duty cycle may change timbre, not pitch contour.
-4. Mute during a long descending note and unmute during its release/recovery; the
-   resumed sound must prove that state continued underneath the mute.
-
-Do not special-case a game or fold the later hard early-attack knee into this
-change. The build and MiSTer listening checks above close audio phase one.
+Any refinement must improve aggregate hardware agreement without moving the
+accepted endpoints, special-casing a title, or regressing the protected rapid,
+long-note, release, and close-retrigger cases.

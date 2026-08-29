@@ -2,12 +2,16 @@
 
 MiSTer FPGA core for the RCA Studio II, Studio III/MPT-02 family, and Toshiba Visicom COM-100.
 
+## Status
+
+All outstanding high priority fixes are done: NE555 beeper fine-tuning and pitch-modeling is implemented, Visicom instability is resolved, and the Studio III NTSC horizontal line issue related to using the wrong BIOS is resolved (check the BIOS hashes below; they have been corrected since the initial core release). The beeper emulation is now modeled directly on reference recordings for pitch range and curve, retrigger behavior, and timbre. While still imperfect, in my opinion this core represents the best currently available sound emulation for this hardware.
+
 ## Install and play
 
 1. Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
 2. Put the firmware below in `/media/fat/games/Studio-II/`.
-3. Launch the core from `/_Console/` (or wherever you placed it)
-3. Use **Load Cartridge** for a `.st2`, `.bin`, or `.rom` game. Use **Load Firmware** only to replace the active machine's firmware temporarily.
+3. Launch the core from `/_Console/` (or wherever you placed it).
+4. Use **Load Cartridge** for a `.st2`, `.bin`, or `.rom` game, or **Load CHIP-8** for a classic `.ch8` program. Use **Load Firmware** only to replace the active machine's firmware temporarily.
 
 `Machine` selects between `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, and `Visicom`, in that order. Changes won't take effect until you `Apply and reset`.
 
@@ -17,12 +21,18 @@ MiSTer FPGA core for the RCA Studio II, Studio III/MPT-02 family, and Toshiba Vi
 | Studio III PAL | `boot1.rom` | `studio3_pal.bin` | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
 | Studio III NTSC | `boot2.rom` | `studio3_ntsc.bin` | 4 KB | `849A484AA4B2784ECE5C35C39D9D51A8` |
 | Visicom | `boot3.rom` | `visicom.rom` | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
+| CHIP-8 interpreter | `boot4.rom` | `chip8.bin` | 768 bytes | `9F037435B6721BE9EE91DC93293E52CE` |
+
+`boot4.rom` is [Marcel van Tongeren's Studio-family CHIP-8 interpreter](https://www.emma02.hobby-site.com/studio_chip8.html). The
+**Load CHIP-8** row stays disabled when it is missing and on Visicom. A loaded
+CHIP-8 program follows the applied Studio II/III machine across resets and
+machine changes; selecting Visicom temporarily returns to its native firmware.
 
 The Studio II firmware contains five games: `A1` Doodle, `A2` Patterns, `A3` Bowling, `A4` Freeway, and `A5` Addition. Play instructions for these and more are in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Keypad and CLEAR
 
-The consoles use left keypad A and right keypad B. Mapped on MiSTer keyboard like this:
+The keyboard is mapped like this:
 
 ```text
    Keypad A (left)        Keypad B (right)
@@ -37,40 +47,36 @@ The consoles use left keypad A and right keypad B. Mapped on MiSTer keyboard lik
 | Keypad A | `1` | `2` | `3` | `Q` | `W` | `E` | `A` | `S` | `D` | `X` |
 | Keypad B | `7` | `8` | `9` | `U` | `I` | `O` | `J` | `K` | `L` | `,` |
 
-`CLEAR` is F3, **Clear** in the OSD, or gamepad Select. Every `A0`–`A9` and `B0`–`B9` action can also be assigned directly through MiSTer's **Define Buttons**.
+For CHIP-8, virtual keys `0`–`9` use keypad A `0`–`9`, while `A`–`F` use
+keypad B `1`–`6` (keyboard `7`, `8`, `9`, `U`, `I`, `O`). Games choose their
+own layouts, so CHIP-8 automatic gamepad mapping intentionally defaults to
+None; keyboard, direct keypad bindings, manual profiles, and Numstick remain
+available.
+
+The interpreter targets classic Studio-family CHIP-8 with program space
+`$0200`–`$0AFF` and about `$A0` bytes of writable game RAM at virtual
+`$0B00`–`$0B9F`, backed by physical `$0800`–`$089F`. Programs needing self-modifying program memory, jumps/calls
+into `$0800`–`$0BFF`, more RAM, CHIP-8X, Super-Chip, or XO-CHIP may fail.
+Visicom is unsupported.
+
+**Sound: Off** silences the output without stopping or resetting the selected machine's
+tone generator. Turning sound back on resumes the live beeper or tone state.
 
 ## Controller profiles
 
-**Mapping: Auto** uses the exact cartridge file's CRC, falling back to 8-way when it has no match, and changes profile after a resident game is selected. **Manual** lets you choose the profile. Keyboard, direct keypad bindings, CLEAR, and the on-screen keypad remain active in both modes. The table below describes the current implementation, including its gaps.
+**Mapping: Auto** selects a profile from the exact cartridge file's CRC, falls back to 8-way when there is no match, and changes profile after a resident game is selected. **Manual** lets you select a profile directly. Keyboard input, direct `A0`–`B9` bindings, CLEAR, and the on-screen keypad remain available in either mode.
 
-`D-pad 2/8/4/6` means up/down/left/right; an 8-way mapping uses `1/3/7/9` for diagonals.
+Gamepad 0 gets the controls for the title's primary one-player game or mode. That may be keypad A, keypad B (as in Squash), or a combination of both used by one player.
 
-| Profile | Exact gamepad mapping | Auto routing / limitation |
-|---|---|---|
-| None | No D-pad, Fire, or Extra mapping | Start still sends the detected selection key |
-| Cross | D-pad `2/8/4/6`, Fire `5`, Extra `0` | Gamepad 0 -> A, gamepad 1 -> B |
-| Space War | Fire -> `A2`; left/right -> `B4/B6` | One gamepad drives both keypads |
-| Freeway | Up/down -> `A2/A8`; left/right -> `B4/B6` | Resident Freeway expects `A4/A6`, so mapped steering is currently wrong |
-| Bowling | Up/down -> `A2/A8`; Fire -> `A5` | A only; alternating player B is not mapped |
-| Baseball | Gamepad 0 Fire -> `A5`; gamepad 1 up/down/Fire -> `B2/B8/B5` | Fixed batter-A/pitcher-B mapping; role-swapped A movement is missing |
-| Homebrew | D-pad -> A 8-way and B cross; Fire -> `B0` | One gamepad drives both; Start varies by recognized title |
-| Gunfighter | D-pad `B2/B8/B4/B6`, Fire `B5`, Extra `B0` | One gamepad on B; **Players: 2** splits the same layout across A/B |
-| 8-way | D-pad `1`–`9`, Fire `5`, Extra `0` | One gamepad sends the same mapping to A and B |
-| Doodle | D-pad B 8-way, Fire `B5`, Extra `B0` | Always gamepad 0 on B; Start selects `A1` |
-| 2P Homebrew | D-pad `2/8/4/6`, Fire `0` | Gamepad 0 -> A, gamepad 1 -> B |
-| Clear-only | No profile inputs, including Start | Select/CLEAR and direct bindings still work |
-| Paddle | Up/down `B2/B8`, left/right `B4/B6`, Fire `B5` | B only; two-player paddle control is not implemented |
+The profile system is not yet complete. There are some issues. Use the Manual option, etc. if needed.
 
-**Players: Auto** uses the routing above. **1** makes gamepad 0 drive every implemented side; **2** normally routes gamepad 0 to A and gamepad 1 to B. Doodle remains gamepad 0/B-only; Paddle remains B-only (gamepad 1 in mode 2); Bowling remains A-only.
+## Numstick (On-screen keypad)
 
-Start normally sends the one selection key stored for the detected cartridge; it is not a macro for mode, difficulty, or game-code setup. Gunfighter, 8-way, and Doodle always send `A1`; Clear-only sends none. Consequently, the generic 8-way fallback does not send the `A0` required by Visicom cartridges—bind/use `A0` directly. Auto detection is file-specific and fallback mappings are only conveniences, not verified controls for every title.
+**Numstick** assigns the numstick overlay to A or B. The right stick selects 1–9, the left stick selects 0, and holding a direction for about half a second registers it. Nudge and release the right stick for 5.
 
-## On-screen keypad
-
-**Stick Keypad** assigns the numstick overlay to A or B. The right stick selects 1–9, the left stick selects 0, and holding a direction for about half a second registers it. Nudge and release the right stick for 5.
+I plan on changing this to allow control of one keypad's 1-9 square with each stick, with A0 and B0 being automapped to L / R potentially for full coverage. Not entirely sure yet. At
+the very least it will be useful for testing, so it will probably be useful to others as well.
 
 ## Project information
-
-Current implementation notes and known verification gaps are in [docs/development.md](docs/development.md); planned work is in [roadmap.md](roadmap.md).
 
 Original core by Jason Coombes, with MiSTer integration and early Pixie work by Flandango and later contributions by Alan Steremberg and Elle Ball. See the [full credits](CREDITS.md) for detailed acknowledgements. GPL-2.0-or-later; see file headers and [LICENSE](LICENSE).

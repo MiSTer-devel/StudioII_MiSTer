@@ -1,11 +1,11 @@
-# CLAUDE.md — permanent repository rules
+# AGENTS.md — permanent repository rules
 
 Read this entire file every session. It is deliberately limited to durable agent guidance; project state and implementation detail belong in focused documentation.
 
 ## Authority and reading
 
 - Current RTL, tests, and reports define implemented behavior; primary documentation and measured hardware define the target. Resolve disagreement explicitly.
-- Read only the relevant authority: `Readme.md` for installation/profile behavior, `docs/development.md` for architecture/build state, `docs/how-to-play.md` for game controls, `docs/beeper-status.md` for Studio II audio, `docs/analog-video.md` for direct video, and `roadmap.md` for future work.
+- Read only the relevant authority: `Readme.md` for installation and user-facing behavior, `docs/development.md` for architecture and build mechanics, `docs/controller.md` for controller implementation, `docs/how-to-play.md` for game controls, `docs/beeper-status.md` for Studio II audio, `docs/analog-video.md` for direct video, and `roadmap.md` for future work.
 - Keep mutable status, measurements, investigations, and release notes out of this file. Update the focused authority when a change makes it stale.
 
 ## Repository boundaries
