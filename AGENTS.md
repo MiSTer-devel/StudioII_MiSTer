@@ -44,5 +44,5 @@ Read this entire file every session. It is deliberately limited to durable agent
 
 - Make the smallest change that completely solves the problem. Words and abstractions are maintenance liabilities too.
 - Tests must target the changed failure class; never present emulator agreement as complete hardware accuracy or simulation success as proof of FPGA RAM inference.
-- Keep comments focused on non-obvious constraints and reasons. Remove dated diary material once its durable conclusion is recorded in the proper document.
+- Keep code comments terse: explain only non-obvious operation, constraints, rationale, or hardware-source correspondence. Do not restate code or narrate ordinary bug history, failed approaches, or fix chronology; put those in focused docs and distill only recurring high-risk traps back into code.
 - Finish by reviewing the complete diff, reporting what was and was not verified, and identifying any user-run build, Quartus, or hardware check still required.

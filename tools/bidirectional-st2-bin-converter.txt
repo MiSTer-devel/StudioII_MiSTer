@@ -6,7 +6,7 @@ this tool converts RCA Studio II cartridge files between .st2 and .bin formats. 
 
 note: not round-trip lossless, as .bin files do not contain .st2 header information. bin->st2 merely prepends a valid header and cannot reconstruct the missing header.
 
-1. drag and drop the .bin or .st2 files onto Convert_ST2_BIN.bat 
+1. drag and drop the .bin or .st2 files onto Convert_ST2_BIN.bat
 2. command prompt remains open to review results
 
 details:

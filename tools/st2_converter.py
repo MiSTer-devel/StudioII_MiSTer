@@ -36,7 +36,7 @@ def convert_st2_to_bin(filepath):
         page = data[64 + i]
         if page == 0:
             continue  # Unused page slot
-        
+
         block_start = 256 + (i * 256)
         out_bin.extend(data[block_start : block_start + 256])
 
