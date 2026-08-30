@@ -207,8 +207,11 @@ assign BUTTONS = 0;
 localparam CONF_STR = {
 	"Studio-II;v9;",
 	"F1,ST2BINROM,Load Cartridge;",
-	"D3F3,CH8,Load CHIP-8;",
 	"F2,BINROM,Load Firmware;",
+	// Main sends chip8.bin from the selected program's directory before F3.
+	"f,!chip8.bin;",
+	// Loading only allowed on Studio II and Studio III, not Visicom.
+	"D3F3,CH8,Load CHIP-8;",
 	"-;",
 	// Machine held until Apply and reset
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
@@ -216,7 +219,7 @@ localparam CONF_STR = {
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
 	// Order must match localparams in rtl/rcastudioii.sv
-	"D2O[5:2],Joystick,None,Cross,Space War,Freeway,Bowling,Baseball,Homebrew,Gunfighter,8-way,Doodle,2P Homebrew,Clear-only,Paddle;",
+	"D2O[5:2],Joystick,None,Cross,Space War,Freeway,Bowling,Baseball,Homebrew,Gunfighter,8-way,Doodle,2P Homebrew,Clear-only,Paddle,CHIP-8;",
 	"O[8:7],Players,Auto,1,2;",
 	"O[10:9],Numstick,Off,Pad A,Pad B;",
 	"-;",
@@ -412,7 +415,6 @@ wire VSync;
 wire [2:0] video;   	// {R,G,B} from the core
 wire       video_bg;    // ...at background luminance (CDP1864 BCKGND)
 wire [1:0] vis_index;   // Visicom: one of its four fixed colours
-wire       chip8_fw_loaded;
 
 rcastudioii rcastudio
 (
@@ -443,7 +445,6 @@ rcastudioii rcastudio
 	.machine(machine_active),
 	.video_bg(video_bg),
 	.joy_manual(status[6]),
-	.chip8_fw_loaded(chip8_fw_loaded),
 	.auto_profile(auto_profile),
 	.players(status[8:7]),
 	.osk_a(osk_a),
@@ -498,12 +499,10 @@ always @(posedge clk_sys) begin
 end
 
 // D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
-// CHIP-8 picker until boot4.rom is present, and whenever the applied machine is
-// the unsupported Visicom. Use machine_active so a staged selection does not
+// CHIP-8 picker on Visicom. Use machine_active so a staged selection does not
 // take effect before Apply and reset.
-wire disable_chip8_loader = (machine_active == 2'd3) || !chip8_fw_loaded;
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
-	                     (disable_chip8_loader ? 16'h0008 : 16'h0000);
+	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 

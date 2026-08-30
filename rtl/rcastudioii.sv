@@ -98,7 +98,7 @@ wire machine_mpt02   = (machine == MACHINE_S3_PAL);   // has the CDP1864
 wire machine_visicom = (machine == MACHINE_VISICOM);
 reg  chip8_loaded = 1'b0;
 reg  chip8_write_seen = 1'b0;
-reg  boot4_start_seen = 1'b0;
+reg  chip8_fw_start_seen = 1'b0;
 wire chip8_active = chip8_loaded && !machine_visicom;
 wire preserve_sync_reset = reset && !video_reset;
 
@@ -372,6 +372,8 @@ localparam [3:0] MAP_PADDLE     = 4'd12;  // TODO: fix 2-player to work when sel
 										  // that mode. Single-player, keypad B
                                           // only. Up/down map to 2/8; left/fire/right map
                                           // to the one-time racket-size choices B4/B5/B6.
+localparam [3:0] MAP_CHIP8      = 4'd13;  // common CHIP-8 movement cluster: 5/7/8/9
+                                          // on pad A; Start 1, Fire F, Extra 0.
 
 reg [3:0] map_profile = MAP_NONE;
 
@@ -769,7 +771,7 @@ end
 // "0 = auto" value inside the profile enum, so every one of the 16 encodings --
 // MAP_NONE included -- is selectable, and the top level can display the
 // detected profile in the same row the user would edit (see Studio-II.sv).
-assign     auto_profile = chip8_active ? MAP_NONE : (no_cart ? builtin_profile : map_profile);
+assign     auto_profile = chip8_active ? MAP_CHIP8 : (no_cart ? builtin_profile : map_profile);
 wire [3:0] profile      = joy_manual ? joy_override : auto_profile;
 
 // ---- profile -> keypad presses ---------------------------------------------
@@ -861,6 +863,11 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 		end
 		MAP_PADDLE: ;                        // no A-side function: Start alone lives on
 										  // keypad A, gameplay is entirely keypad B
+		MAP_CHIP8: begin                     // common WASD-shaped CHIP-8 cluster
+			if (j[3]) k[5] = 1'b1;   if (j[2]) k[8] = 1'b1;
+			if (j[1]) k[7] = 1'b1;   if (j[0]) k[9] = 1'b1;
+			if (j[5]) k[0] = 1'b1;           // Extra
+		end
 		default: ;
 		endcase
 		map_padA = k;
@@ -942,6 +949,8 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
 			if (j[4]) k[5] = 1'b1;
 		end
+		MAP_CHIP8:                           // Fire = virtual F = physical B6
+			if (j[4]) k[6] = 1'b1;
 		default: ;                           // Bowling: keypad B unused
 		endcase
 		map_padB = k;
@@ -955,7 +964,8 @@ wire profile_1p = (profile == MAP_SPACEWAR) || (profile == MAP_FREEWAY) ||
                   (profile == MAP_BOWLING)  || (profile == MAP_NONE) ||
                   (profile == MAP_HOMEBREW) || (profile == MAP_GUNFIGHTER) ||
                   (profile == MAP_8WAY)     || (profile == MAP_DOODLE) ||
-                  (profile == MAP_CLEAR_ONLY) || (profile == MAP_PADDLE);
+                  (profile == MAP_CLEAR_ONLY) || (profile == MAP_PADDLE) ||
+                  (profile == MAP_CHIP8);
 wire one_player = (players == 2'd1) || ((players == 2'd0) && profile_1p);
 
 // Direct A0..A9/B0..B9 bindings and Start work from either stick: MiSTer maps
@@ -970,7 +980,8 @@ always @* begin
 	end
 end
 wire       start_press = joystick_0[6] | joystick_1[6];
-wire [3:0] active_start_key = ((profile == MAP_GUNFIGHTER) || (profile == MAP_DOODLE)) ? 4'd1 : start_key;
+wire [3:0] active_start_key = ((profile == MAP_GUNFIGHTER) || (profile == MAP_DOODLE) ||
+	                          (profile == MAP_CHIP8)) ? 4'd1 : start_key;
 wire [9:0] start_keys       = ((profile != MAP_CLEAR_ONLY) && start_press) ? (10'd1 << active_start_key) : 10'd0;
 
 // Gunfighter is the special case: in Auto/1P it is B-only (2/4/6/8 + 5 + 0 on
@@ -1499,14 +1510,20 @@ assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
 // The format is detected purely from the "RCA2" magic in the first four bytes.
 // The OSD extension index above ioctl_index[5:0] is deliberately not used.
 
-// Index 0 is bootN.rom autoload (slot in ioctl_index[15:6]); index 2 is the
+// Index 0 is bootN.rom autoload (slot in ioctl_index[7:6]); index 2 is the
 // OSD "Load Firmware" entry, whose upper bits carry the picked file's extension
 // index instead of a slot, so it routes to the selected machine's slot below.
-wire        boot_dl = ioctl_download && (ioctl_index[5:0] == 6'd0);
+// F3's main .ch8 file uses index $0003. Its configured chip8.bin companion is
+// sent first at supplemental index $0103 and fills the independent fifth slot.
+wire        boot_dl = ioctl_download && (ioctl_index[15:8] == 8'd0) &&
+	             (ioctl_index[5:0] == 6'd0);
 wire        fw_dl   = ioctl_download && (ioctl_index[5:0] == 6'd2);
 wire        bios_dl = boot_dl | fw_dl;
 wire        cart_dl = ioctl_download && (ioctl_index[5:0] == 6'd1);
-wire        ch8_dl  = ioctl_download && (ioctl_index[5:0] == 6'd3);
+wire        ch8_dl  = ioctl_download && (ioctl_index[15:8] == 8'd0) &&
+	             (ioctl_index[5:0] == 6'd3);
+wire        chip8_fw_dl = ioctl_download && (ioctl_index[15:8] == 8'd1) &&
+	                   (ioctl_index[5:0] == 6'd3);
 
 reg  [2:0]  st2_magic;                  // running match on "RCA"
 reg         st2_mode;                   // "RCA2" seen: treat as paged
@@ -1576,11 +1593,13 @@ always @(posedge clk_sys) begin
 	if (cart_we && cart_hi)                       cart_page[cart_a[10:8]] <= 1'b1;
 end
 
-// ---- Five BIOS BRAMs (boot0.rom … boot4.rom) ---------------------------------
+// ---- Four native BIOS BRAMs plus the CHIP-8 interpreter ---------------------
 //
-// MiSTer auto-loads bootN.rom with ioctl_index[5:0]==0 and the boot slot in
-// ioctl_index[15:6]. Each BRAM only accepts writes for its own slot, so boot4
-// cannot alias boot0. boot4 is the universal Studio-family CHIP-8 interpreter.
+// MiSTer auto-loads boot0.rom through boot3.rom with ioctl_index[5:0]==0 and
+// the slot in ioctl_index[7:6]. Each native BRAM only accepts writes for its
+// own slot. When F3 selects a .ch8 file, MiSTer Main first sends the user-supplied
+// chip8.bin beside it at supplemental index $0103. That universal Studio-family
+// interpreter goes into the fifth BRAM.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
 //   0 Studio II        → boot0.rom
@@ -1590,22 +1609,23 @@ end
 //
 // Manual "Load Firmware" (F2) lands in the *currently selected* machine's
 // slot: pick the machine, Apply, then load its firmware. (It cannot ride
-// ioctl_index[15:6] the way boot autoload does -- menu loads put the file's
+// ioctl_index[7:6] the way boot autoload does -- menu loads put the file's
 // extension index there, so a .rom would always land in slot 1.)
 //
 // Cartridge downloads (ioctl index 1) are written into the *currently
 // selected* machine's BRAM so the cart pages sit alongside that machine's
 // firmware. cart_page remains global.
 
-wire [9:0]  boot_slot = ioctl_index[15:6];
-wire [11:0] dl_a = ch8_dl ? ch8_a : (bios_dl ? ioctl_addr[11:0] : cart_a);
+wire [1:0]  bios_slot = fw_dl ? machine : ioctl_index[7:6];
+wire [11:0] dl_a = ch8_dl ? ch8_a
+	              : ((bios_dl || chip8_fw_dl) ? ioctl_addr[11:0] : cart_a);
 
 // BIOS write: only the matching boot-slot BRAM
-wire        bios_we0 = ioctl_wr && ((fw_dl && (machine == 2'd0)) || (boot_dl && (boot_slot == 10'd0)));
-wire        bios_we1 = ioctl_wr && ((fw_dl && (machine == 2'd1)) || (boot_dl && (boot_slot == 10'd1)));
-wire        bios_we2 = ioctl_wr && ((fw_dl && (machine == 2'd2)) || (boot_dl && (boot_slot == 10'd2)));
-wire        bios_we3 = ioctl_wr && ((fw_dl && (machine == 2'd3)) || (boot_dl && (boot_slot == 10'd3)));
-wire        bios_we4 = boot_dl && ioctl_wr && (boot_slot == 10'd4) && (ioctl_addr < 25'h300);
+wire        bios_we0 = bios_dl && ioctl_wr && (bios_slot == 2'd0);
+wire        bios_we1 = bios_dl && ioctl_wr && (bios_slot == 2'd1);
+wire        bios_we2 = bios_dl && ioctl_wr && (bios_slot == 2'd2);
+wire        bios_we3 = bios_dl && ioctl_wr && (bios_slot == 2'd3);
+wire        bios_we4 = chip8_fw_dl && ioctl_wr && (ioctl_addr < 25'h300);
 
 // Cart write: into the BRAM that belongs to the active machine
 wire        cart_we0 = cart_we && (machine == 2'd0);
@@ -1621,21 +1641,22 @@ wire        we4 = bios_we4 | ch8_we;
 
 wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q, rom4_q;
 
-// A truncated or absent boot4.rom must not enable F3. A valid interpreter is
+// A truncated or absent companion must not accept the following .ch8 file. A
+// valid interpreter is
 // 768 bytes, ending at $02FF; starting a replacement invalidates the old copy
 // until that final required byte arrives. Loading it never activates CHIP-8.
 initial chip8_fw_loaded = 1'b0;
 always @(posedge clk_sys) begin
-	if (!ioctl_download) boot4_start_seen <= 1'b0;
-	else if (bios_we4 && (ioctl_addr == 25'd0)) boot4_start_seen <= 1'b1;
+	if (!ioctl_download) chip8_fw_start_seen <= 1'b0;
+	else if (bios_we4 && (ioctl_addr == 25'd0)) chip8_fw_start_seen <= 1'b1;
 
-	if (boot_dl && !dl_d && (boot_slot == 10'd4)) chip8_fw_loaded <= 1'b0;
-	else if (bios_we4 && boot4_start_seen && (ioctl_addr == 25'h2FF)) chip8_fw_loaded <= 1'b1;
+	if (chip8_fw_dl && !dl_d) chip8_fw_loaded <= 1'b0;
+	else if (bios_we4 && chip8_fw_start_seen && (ioctl_addr == 25'h2FF)) chip8_fw_loaded <= 1'b1;
 
 	if (!ioctl_download) chip8_write_seen <= 1'b0;
 	else if (ch8_we)     chip8_write_seen <= 1'b1;
 
-	if ((cart_dl || fw_dl) && !dl_d) chip8_loaded <= 1'b0;
+	if ((cart_dl || fw_dl || chip8_fw_dl) && !dl_d) chip8_loaded <= 1'b0;
 	else if (dl_done && chip8_write_seen) chip8_loaded <= 1'b1;
 end
 

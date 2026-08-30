@@ -34,8 +34,12 @@ Many games treat `2/4/6/8` as up/left/right/down and `1/3/7/9` as diagonals. Thi
 
 ## CHIP-8 programs
 
-Install [Marcel van Tongeren's interpreter](https://www.emma02.hobby-site.com/studio_chip8.html)
-as `boot4.rom`, then choose a classic `.ch8` program with **Load CHIP-8**.
+Download [Marcel van Tongeren's interpreter](https://www.emma02.hobby-site.com/studio_chip8.html),
+name its 768-byte image `chip8.bin`, and keep it beside the classic `.ch8`
+programs. **Load CHIP-8** automatically sends the interpreter before the
+selected program. If programs are kept directly in `/media/fat/games/Studio-II/`,
+one copy there serves all of them; a program in a subdirectory needs another
+copy beside it.
 Virtual CHIP-8 keys `0`–`9` map to keypad A
 `0`–`9`; `A`–`F` map to keypad B `1`–`6`. Their keyboard equivalents are:
 
@@ -46,7 +50,9 @@ Key:    X 1 2 3 Q W E A S D  7 8 9 U I O
 
 There is no universal gamepad layout for CHIP-8 software. Use the keyboard,
 direct A/B keypad bindings, Numstick, or select a manual profile appropriate to
-the game. The loader supports the classic Studio-family interpreter only;
+the game. The automatic CHIP-8 profile maps D-pad up/left/down/right to virtual
+keys `5/7/8/9`, Start to `1`, Fire to `F`, and Extra to `0`.
+The loader supports the classic Studio-family interpreter only;
 CHIP-8X, Super-Chip, XO-CHIP, file offsets from `$900` onward, and Visicom are
 not supported. The `$900`-byte payload limit follows from loading at virtual
 `$0200` and requiring the program to end by `$0AFF`; it is not an `$0B00`-byte
@@ -58,6 +64,7 @@ This table records the minimum input shape needed for a useful controller profil
 
 | Game or program | Machine | Start / selection | Input shape |
 |---|---|---|---|
+| Classic CHIP-8 programs | Studio II / III | Load `.ch8` directly | D-pad `5/7/8/9`; Start `1`; Fire `F`; Extra `0` |
 | Resident Doodle / Patterns | Studio II | `A1` / `A2` | 8-way on B plus B5/B0 |
 | Resident Bowling | Studio II | `A3` | Cross plus center, alternating A/B |
 | Resident Freeway | Studio II | `A4`, then A5 | Cross on A; B5 selects difficult start |

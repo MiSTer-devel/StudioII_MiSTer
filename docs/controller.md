@@ -13,7 +13,8 @@ masks consumed through EF3 and EF4. CLEAR remains independent of both keypads.
 The OSD exposes `Mapping`, `Joystick`, `Players`, and `Numstick`. Automatic mode
 selects a profile from the cartridge CRC or resident-game key, writes it back to
 OSD bits `[5:2]`, and disables manual editing of that row. Manual mode uses the
-selected profile directly. CHIP-8 deliberately selects no automatic profile.
+selected profile directly. CHIP-8 selects its common `5/7/8/9` movement profile;
+Start maps to `1`, Fire to `F`, and Extra to `0`.
 
 ## Identification
 

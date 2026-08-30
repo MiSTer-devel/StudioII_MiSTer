@@ -39,10 +39,10 @@ run_case mpt02       "$ROOT/rom/studio3_pal.bin" "$FW" || exit 1
 run_case studio3ntsc "$ROOT/rom/studio3_ntsc.bin" "$FW" || exit 1
 run_case visicom     "$ROOT/rom/visicom.rom"      "$FW" || exit 1
 
-echo "CHIP-8 loader: missing boot4.rom"
+echo "CHIP-8 loader: missing chip8.bin companion"
 run_case studio2 "$ROOT/rom/studio2.rom" "" || exit 1
 
-echo "CHIP-8 loader: truncated boot4.rom"
+echo "CHIP-8 loader: truncated chip8.bin companion"
 run_case studio2 "$ROOT/rom/studio2.rom" "$TMP/truncated.rom" || exit 1
 
 echo "CHIP-8 loader checks passed"

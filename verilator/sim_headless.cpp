@@ -448,7 +448,7 @@ static void usage(const char* argv0) {
 "  Software\n"
 "    --bios FILE          BIOS image, ioctl index 0   (default ../rom/studio2.rom)\n"
 "    --cart FILE          cartridge image, ioctl index 1 (raw: Studio $0400, Visicom $0800)\n"
-"    --chip8-fw FILE      Marcel's 768-byte interpreter, boot4 index $0100\n"
+"    --chip8-fw FILE      Marcel's 768-byte companion, ioctl index $0103\n"
 "    --ch8 FILE           CHIP-8 program, ioctl index 3\n"
 "    --loader-check       verify all five ROM slots and CHIP-8 address mapping\n"
 "\n"
@@ -487,7 +487,7 @@ static void usage(const char* argv0) {
 "                         0 none/keypad-only, 1 cross, 2 spacewar, 3 freeway,\n"
 "                         4 bowling, 5 baseball, 6 homebrew, 7 gunfighter,\n"
 "                         8 8-way, 9 doodle, 10 2P homebrew, 11 unmapped,\n"
-"                         12 paddle (legacy). Omit for auto-detection.\n"
+"                         12 paddle (legacy), 13 CHIP-8. Omit for auto-detection.\n"
 "    --joy MASK@F[:H]     drive joystick 0 with MASK (bit0 right, 1 left, 2 down,\n"
 "                         3 up, 4 fire, 5 extra, 6 start, 17:8 A0..A9,\n"
 "                         27:18 B0..B9) at frame F for H frames.\n"
@@ -718,12 +718,12 @@ int main(int argc, char** argv) {
     top->players = players_mode;
 
     IoctlDriver io;
-    // The firmware goes into the selected machine's boot slot, exactly as
-    // MiSTer's bootN.rom autoload does: index[5:0]=0 with the slot in [15:6].
+    // The native firmware goes into the selected machine's boot slot, exactly
+    // as MiSTer's bootN.rom autoload does: index[5:0]=0 with slot in [7:6].
     // Loading with a flat index 0 would land every machine's BIOS in the
     // Studio II BRAM and machines 1-3 would boot from an empty ROM.
     io.add(bios, machine << 6);
-    if (!chip8_fw.empty()) io.add(chip8_fw, 0x0100);
+    if (!chip8_fw.empty()) io.add(chip8_fw, 0x0103);
     if (!cart.empty()) io.add(cart, 1);
     if (!ch8.empty()) io.add(ch8, 3);
 
@@ -1016,6 +1016,35 @@ int main(int argc, char** argv) {
                 failures++;
             }
         }
+
+        // The automatic CHIP-8 profile is one-player movement on keypad A:
+        // up/left/down/right -> 5/7/8/9, Start -> 1, Fire -> F, Extra -> 0.
+        top->machine = 0;
+        top->players = 0;
+        top->joy_manual = 0;
+        const int chip8_joy_bits[] = {3, 1, 2, 0, 6, 4, 5};
+        const int chip8_a_keys[]   = {5, 7, 8, 9, 1, -1, 0};
+        const int chip8_b_keys[]   = {-1, -1, -1, -1, -1, 6, -1};
+        for (size_t i = 0; i < sizeof(chip8_joy_bits) / sizeof(chip8_joy_bits[0]); i++) {
+            top->joystick_0 = 1u << chip8_joy_bits[i];
+            top->eval();
+            unsigned expected_a = chip8_a_keys[i] < 0 ? 0u : (1u << chip8_a_keys[i]);
+            unsigned expected_b = chip8_b_keys[i] < 0 ? 0u : (1u << chip8_b_keys[i]);
+            if ((unsigned)RS(joyA_active) != expected_a || (unsigned)RS(joyB_active) != expected_b) {
+                printf("FAIL CHIP-8 input bit %d mapped to A=$%03X B=$%03X, expected A=$%03X B=$%03X\n",
+                       chip8_joy_bits[i], (unsigned)RS(joyA_active), (unsigned)RS(joyB_active),
+                       expected_a, expected_b);
+                failures++;
+            }
+        }
+        if ((unsigned)RS(auto_profile) != 13u) {
+            printf("FAIL CHIP-8 auto profile = %u, expected 13\n", (unsigned)RS(auto_profile));
+            failures++;
+        }
+        top->joystick_0 = 0;
+        top->players = players_mode;
+        top->joy_manual = joy_manual;
+        top->joy_override = joy_override;
         top->machine = machine;
 
         // A machine reset/CLEAR must retain the selected game.
@@ -1030,9 +1059,11 @@ int main(int argc, char** argv) {
             failures++;
         }
 
-        // F1 and F2 each exit CHIP-8. Exercise both classifications without a
-        // write; activation policy changes at transfer start, not by file size.
-        for (int index = 1; index <= 2; index++) {
+        // F1, F2, and the companion pre-load each exit CHIP-8. Exercise all
+        // three classifications without a write; activation changes at
+        // transfer start, not by size.
+        const int exit_indices[] = {1, 2, 0x0103};
+        for (int index : exit_indices) {
             RS(chip8_loaded) = 1;
             top->ioctl_index = index;
             top->ioctl_download = 1;
@@ -1043,6 +1074,10 @@ int main(int argc, char** argv) {
             top->eval();
             if (RS(chip8_loaded)) {
                 printf("FAIL ioctl index %d did not clear chip8_loaded\n", index);
+                failures++;
+            }
+            if (index == 0x0103 && RS(chip8_fw_loaded)) {
+                printf("FAIL replacement interpreter did not invalidate chip8_fw_loaded\n");
                 failures++;
             }
             top->ioctl_download = 0;

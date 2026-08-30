@@ -232,7 +232,7 @@ static void usage(const char* a0) {
 	printf("Usage: %s [options]\n"
 	       "  --bios FILE   BIOS image, ioctl index 0 (default ./boot.rom)\n"
 	       "  --cart FILE   cartridge, ioctl index 1 (raw .bin, loads at $0400)\n"
-	       "  --chip8-fw FILE  Marcel's interpreter, boot4 index $0100\n"
+	       "  --chip8-fw FILE  Marcel's companion, ioctl index $0103\n"
 	       "  --ch8 FILE    CHIP-8 program, ioctl index 3\n"
 	       "  --run         start with the simulation already running\n"
 	       "  --press K@F[:H]  press key K at frame F, hold H frames (default 4).\n"
@@ -344,7 +344,7 @@ int main(int argc, char** argv, char** env) {
 	if (opt_chip8_fw) {
 		if (FILE* f = fopen(opt_chip8_fw, "rb")) { fclose(f); }
 		else { fprintf(stderr, "error: cannot open CHIP-8 firmware '%s'\n", opt_chip8_fw); return 1; }
-		bus.QueueDownload(opt_chip8_fw, 0x0100, true);
+		bus.QueueDownload(opt_chip8_fw, 0x0103, true);
 	}
 	if (opt_cart) {
 		if (FILE* f = fopen(opt_cart, "rb")) { fclose(f); }
