@@ -104,9 +104,9 @@ Studio II / Studio III NTSC base behavior:
 
 Studio III may use 4 KB firmware and has 64 mirrored 3-bit colour cells in `$0B00-$0BFF`. A DMA offset selects `{offset[7:5], offset[2:0]}`, so one cell covers eight pixels by four logical bitmap rows.
 
-Visicom uses `$0000-$0FFF` for ROM/cartridge, `$1000-$11FF` for 512-byte RAM and plane 0, `$1300-$13FF` for plane 1, and leaves `$1200-$12FF` empty. Its two plane bits select one of four fixed colours.
+Visicom uses `$0000-$07FF` for resident ROM and `$0800-$0FFF` for the current cartridge, `$1000-$11FF` for 512-byte RAM and plane 0, `$1300-$13FF` for plane 1, and leaves `$1200-$12FF` empty. Cartridge pages omitted by the current image read as open bus (`$FF`), even if an earlier cartridge wrote those BRAM locations. Its two plane bits select one of four fixed colours.
 
-Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Visicom. `.st2` is detected from `RCA2` magic and uses its header page table. Page ownership permits cartridge pages `$0C/$0D` to replace the normal RAM mirror. Studio II rejects system pages `$00-$03` and RAM pages `$08-$09`; Studio III also reserves colour page `$0B`; Visicom accepts `$04-$0F` because its RAM is above the cartridge bank. Pages `$10+` are dropped.
+Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Visicom. `.st2` is detected from `RCA2` magic and uses its header page table. Page ownership permits cartridge pages `$0C/$0D` to replace the normal RAM mirror. Studio II rejects system pages `$00-$03` and RAM pages `$08-$09`; Studio III also reserves colour page `$0B`; Visicom accepts only its cartridge pages `$08-$0F`, preserving resident pages `$00-$07`. Pages `$10+` are dropped.
 
 F3 `.ch8` bytes `$000-$4FF` map to physical ROM `$0300-$07FF`; bytes
 `$500-$8FF` map to `$0C00-$0FFF`; bytes from `$900` onward are dropped. This
@@ -175,7 +175,7 @@ Canonical paths are `rom/` for firmware, `software/` for the corpus, `tools/refe
 
 Quartus commands are `tools/quartus-build.sh`, `tools/quartus-build.sh map`, and `tools/quartus-build.sh clean`. The script uses the amd64 Quartus 17 container with `--parallel=1`, which is required under Apple Silicon emulation. After RAM changes, inspect `output_files/Studio-II.map.rpt` for inferred `altsyncram` instances.
 
-Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/tone-test.sh`, `tools/visicom-test.sh`, and `tools/verify-beeper.sh`. The older corpus sweeps are diagnostics, not release gates.
+Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, `tools/visicom-test.sh`, and `tools/verify-beeper.sh`. The older corpus sweeps are diagnostics, not release gates.
 
 ## References and provenance
 

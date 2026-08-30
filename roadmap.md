@@ -30,6 +30,14 @@ technical documents; completed milestones belong in release notes and Git.
 - Produce focused test ROMs with known Q-high/Q-low intervals.
 - Seek direct electrical or line-level captures with a recorded Q trace.
 
+### Studio III audio
+
+- Add an optional PAL/NTSC programmable-tone pitch setting independent of the
+  selected video standard. The default should follow the machine standard, while
+  the override lets NTSC games use the lower PAL tuning.
+- Change only the tone divider selection; do not reset or fork generator state,
+  and do not alter video or machine timing.
+
 ### Visicom video
 
 - Derive a supported four-colour palette from stable regions across the supplied

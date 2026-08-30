@@ -1128,14 +1128,15 @@ wire  [7:0]  ram_d;  // CPU write data
 wire [15:0]  ram_a;  // CPU address
 wire  [7:0]  ram_q;  // data returned to the CPU (and to the 1861 during DMA)
 
-// Which of pages $0A-$0F the loaded cartridge actually supplies. Only $0C/$0D
-// change behaviour: with cartridge ROM paged there they are ROM, without it
-// they are the RAM mirror. Cleared when a new cartridge starts downloading;
+// Which of pages $08-$0F the loaded cartridge actually supplies. On the Studio
+// machines only $0A-$0F can be claimed; on the Visicom all eight bits gate its
+// cartridge window. Cleared when a new cartridge starts downloading;
 // deliberately not cleared on reset, since CLEAR does not unplug the cart.
 reg  [7:0]  cart_page = 8'h00;    // indexed by address bits [10:8]: page $08..$0F
 
 wire        bank0    = (ram_a[15:12] == 4'h0);
-wire        rom_sel  = bank0 && (!ram_a[11] || machine_visicom);   // $0000-$07FF ($0000-$0FFF on the Visicom)
+wire        rom_sel  = bank0 && (!ram_a[11] ||
+	                   (machine_visicom && cart_page[ram_a[10:8]]));
 // Studio III puts a second ROM region at $0C00-$0FFF -- MAME's mpt02_map has
 // .rom() there as well as at $0000-$07FF, and the BIOS is a 4K image covering
 // both. Marcel's interpreter needs the same window on Studio II while CHIP-8 is
@@ -1154,10 +1155,7 @@ wire        cart_sel = bank0 && ram_a[11] && cart_page[ram_a[10:8]] &&
 // $0FFF. From Emma 02's Visicom/standard.xml:
 //
 //   $0000-$07FF  ROM   2K image: BIOS, and the built-in games at $0400-$07FF
-//                      (Emma declares the window as $0000-$03FF and lets the
-//                      cartridge overlay $0400-$07FF, which is the Studio II
-//                      arrangement stated differently)
-//   $0800-$0FFF  ROM   further cartridge space
+//   $0800-$0FFF  ROM   current cartridge; pages absent from its image are open bus
 //   $1000-$11FF  RAM   512 bytes: scratch at $1000-$10FF, bit plane 0 at $1100
 //   $1300-$13FF  RAM   256 bytes: bit plane 1
 //   $1200-$12FF        nothing
@@ -1560,27 +1558,29 @@ end
 wire  [5:0] st2_blk   = ioctl_addr[13:8] - 6'd1;
 wire  [7:0] st2_pg    = st2_page[st2_blk];
 
-// A page is loadable if it is cartridge space inside the 4k bank we model: not the
-// system ROM ($00-$03), not RAM ($08-$09), and below $10. $0C/$0D ARE legal --
+// On a Studio, a page is loadable if it is cartridge space inside the 4k bank
+// we model: not system ROM ($00-$03), not RAM ($08-$09), and below $10.
+// $0C/$0D ARE legal --
 // race.st2 pages ROM over the default RAM mirror there, which is why the memory
 // map calls $C00-$DFF "RAM/ROM". $00 is also the format's "unused block" marker.
 // Page $0B is the CDP1864's colour RAM, not cartridge space, so a cartridge must
 // not be able to page ROM over it on that machine. (On the Studio II $0B is an
 // ordinary cartridge window and stays loadable, which is why this is gated.)
 // On the Visicom RAM is not in this bank at all -- it sits at $1000 and above --
-// so $08 and $09 are ordinary cartridge space there. Every one of Emma 02's six
-// Visicom cartridges pages exactly $08-$0F, which the Studio II rule rejects
-// outright: without this the whole image is dropped and the machine boots to its
-// built-in games as though no cartridge were inserted.
-wire        st2_pg_ok = (st2_pg[7:4] == 4'h0) && (st2_pg[3:0] > 4'h3)
-                        && (machine_visicom || ((st2_pg[3:0] != 4'h8) && (st2_pg[3:0] != 4'h9)))
-                        && !(is_studio3 && (st2_pg[3:0] == 4'hB));
+// so its cartridge owns $08-$0F while resident firmware and games remain in
+// $00-$07. Every one of Emma 02's six Visicom cartridges pages exactly $08-$0F.
+wire        st2_pg_ok = (st2_pg[7:4] == 4'h0) &&
+	                    (machine_visicom ? st2_pg[3]
+	                     : ((st2_pg[3:0] > 4'h3) &&
+	                        (st2_pg[3:0] != 4'h8) && (st2_pg[3:0] != 4'h9) &&
+	                        !(is_studio3 && (st2_pg[3:0] == 4'hB))));
 
 wire        st2_data  = ioctl_addr >= 16'd256;          // past the header
 wire [11:0] raw_base  = machine_visicom ? 12'h800 : 12'h400;
 wire [11:0] cart_a    = st2_mode ? {st2_pg[3:0], ioctl_addr[7:0]}
                                  : (ioctl_addr[11:0] + raw_base);
-wire        cart_we   = cart_dl && ioctl_wr && (!st2_mode || (st2_data && st2_pg_ok));
+wire        raw_ok    = !machine_visicom || (ioctl_addr < 25'h800);
+wire        cart_we   = cart_dl && ioctl_wr && (st2_mode ? (st2_data && st2_pg_ok) : raw_ok);
 
 // Marcel van Tongeren's interpreter translates the two discontiguous Studio
 // ROM windows into CHIP-8 program space $0200-$0AFF. Ordinary .ch8 files begin
@@ -1592,14 +1592,18 @@ wire [11:0] ch8_a = (ioctl_addr < 25'h500)
 wire        ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
 	                 !machine_visicom && (ioctl_addr < 25'h900);
 
-// Pages $0A-$0F, the ones the decode has to be told about. Pages $08/$09 are
-// RAM and can never be claimed: st2_pg_ok already rejects them, and the
-// (A10|A9) term means an over-long raw .bin cannot claim them either.
-wire        cart_hi   = cart_a[11] && (cart_a[10] | cart_a[9]);
+// On the Studio machines only pages $0A-$0F can be claimed; $08/$09 are RAM.
+// The Visicom uses the whole $08-$0F cartridge window. Do not count the first
+// three undecided magic bytes as raw data: at byte 3 the format is known, and a
+// real ST2 header must not make page $08 look supplied by its "RCA2" signature.
+wire        cart_claim = cart_a[11] && (machine_visicom || cart_a[10] || cart_a[9]);
+wire        raw_known  = (ioctl_addr > 25'd3) ||
+	                     ((ioctl_addr == 25'd3) && !((ioctl_dout == 8'h32) && st2_magic[2]));
+wire        cart_page_we = cart_we && cart_claim && (st2_mode || raw_known);
 
 always @(posedge clk_sys) begin
 	if (cart_dl && ioctl_wr && (ioctl_addr == 0)) cart_page <= 8'h00;   // new cartridge
-	if (cart_we && cart_hi)                       cart_page[cart_a[10:8]] <= 1'b1;
+	if (cart_page_we)                             cart_page[cart_a[10:8]] <= 1'b1;
 end
 
 // ---- Four native BIOS BRAMs plus the CHIP-8 interpreter ---------------------

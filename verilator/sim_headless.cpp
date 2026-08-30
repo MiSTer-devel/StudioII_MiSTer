@@ -80,6 +80,71 @@ static std::vector<uint8_t> read_binary(const std::string& path) {
     return data;
 }
 
+// Apply one cartridge image to an expected ROM image and return its final
+// $08-$0F page-ownership mask. This mirrors the RTL loader closely enough to
+// check sequential downloads without treating stale BRAM bytes as visible ROM.
+static uint8_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& path, int machine) {
+    const std::vector<uint8_t> data = read_binary(path);
+    const bool st2 = data.size() >= 4 && data[0] == 'R' && data[1] == 'C' &&
+                     data[2] == 'A' && data[3] == '2';
+    uint8_t pages = 0;
+
+    for (size_t i = 0; i < data.size(); i++) {
+        size_t addr;
+        bool write = false;
+
+        if (st2) {
+            // The four magic bytes reach the raw base before st2_mode latches.
+            // They are intentionally not page ownership; valid payload replaces
+            // them when page $08 is actually supplied.
+            if (i < 4) {
+                addr = ((machine == 3 ? 0x800u : 0x400u) + i) & 0xfffu;
+                write = true;
+            } else if (i >= 0x100) {
+                size_t block = (i >> 8) - 1;
+                if (block < 64 && 0x40 + block < data.size()) {
+                    uint8_t page = data[0x40 + block];
+                    bool valid = (page & 0xf0) == 0 &&
+                        (machine == 3
+                            ? (page & 0x08) != 0
+                            : page > 3 && page != 8 && page != 9 &&
+                              !((machine == 1 || machine == 2) && page == 0x0b));
+                    if (valid) {
+                        addr = ((size_t)(page & 0x0f) << 8) | (i & 0xff);
+                        write = true;
+                    }
+                }
+            }
+        } else if (machine != 3 || i < 0x800) {
+            addr = ((machine == 3 ? 0x800u : 0x400u) + i) & 0xfffu;
+            write = true;
+        }
+
+        if (!write) continue;
+        rom[addr] = data[i];
+        bool claim = (addr & 0x800) && (machine == 3 || (addr & 0x600));
+        bool format_known = st2 ? i >= 0x100 : i >= 3;
+        if (claim && format_known) pages |= (uint8_t)(1u << ((addr >> 8) & 7));
+    }
+    return pages;
+}
+
+// Put the CPU bus on one address for a clock so the synchronous ROM and its
+// registered decode select are observed together, exactly as the CPU sees them.
+static uint8_t read_cpu_bus(uint16_t addr) {
+    top->clk_48 = 0;
+    CPU(state) = 2;       // EXECUTE
+    CPU(IR) = 0x01;       // LDN R1: read R1 without changing it
+    CPU(R)[1] = addr;
+    top->eval();
+    top->clk_48 = 1;
+    top->eval();
+    uint8_t data = (uint8_t)RS(ram_q);
+    top->clk_48 = 0;
+    top->eval();
+    return data;
+}
+
 // ---------------------------------------------------------------------------
 // PNG writer (zlib, 8-bit RGB, no external image library)
 // ---------------------------------------------------------------------------
@@ -820,7 +885,7 @@ int main(int argc, char** argv) {
         if (++clk24_div >= 2) { clk24_div = 0; top->clk_24 = !top->clk_24; }
         top->eval();
 
-        if (loader_check && io.finished && !io.active) break;
+        if (loader_check && io.finished && !io.active && (swap_frame < 0 || swap_done)) break;
 
         // CPU instruction trace. FETCH puts the PC on the bus; the opcode is
         // valid one state later, in EXECUTE (the dpram has 1 cycle latency).
@@ -968,6 +1033,10 @@ int main(int argc, char** argv) {
         const std::vector<uint8_t> bios_data = read_binary(bios);
         for (size_t i = 0; i < bios_data.size() && i < 0x1000; i++) expected[machine][i] = bios_data[i];
 
+        uint8_t expected_pages = 0;
+        if (!cart.empty()) expected_pages = apply_cart_image(expected[machine], cart, machine);
+        if (!swap_file.empty()) expected_pages = apply_cart_image(expected[machine], swap_file, machine);
+
         bool fw_valid = false;
         if (!chip8_fw.empty()) {
             const std::vector<uint8_t> fw_data = read_binary(chip8_fw);
@@ -1008,6 +1077,31 @@ int main(int argc, char** argv) {
             printf("FAIL chip8_loaded = %u, expected %u\n",
                    (unsigned)RS(chip8_loaded), ch8_accepted ? 1u : 0u);
             failures++;
+        }
+
+        if ((uint8_t)RS(cart_page) != expected_pages) {
+            printf("FAIL cart_page = %02X, expected %02X\n",
+                   (unsigned)RS(cart_page), (unsigned)expected_pages);
+            failures++;
+        }
+
+        // Visicom's resident half is always visible. Its cartridge half is
+        // visible page by page, and an omitted page must return $FF even though
+        // a preceding cartridge's bytes remain physically present in ROM3.
+        if (machine == 3) {
+            for (int page = 0; page < 16; page++) {
+                for (int offset : {0x00, 0xff}) {
+                    int addr = (page << 8) | offset;
+                    bool visible = page < 8 || (expected_pages & (1u << (page - 8)));
+                    uint8_t want = visible ? expected[3][addr] : 0xff;
+                    uint8_t got = read_cpu_bus((uint16_t)addr);
+                    if (got != want) {
+                        printf("FAIL Visicom bus[$%03X] = %02X, expected %02X\n",
+                               addr, got, want);
+                        failures++;
+                    }
+                }
+            }
         }
 
         // Activation follows the applied machine without discarding the game:
