@@ -34,6 +34,10 @@ Asteroids (2013.03.29) (Paul Robson) (PD)
   1973  Asteroids (2013.03.29) (Paul Robson) (PD) (broken).bin
   2B4D  Asteroids (2013.03.29) (Paul Robson) (PD).st2
 
+Asteroids Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  6EE1  Asteroids Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  A008  Asteroids Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
+
 Baseball-2K [AUD_2464_09_B41_ID07]
   CC6D  Baseball-2K [AUD_2464_09_B41_ID07].bin
   82E9  Baseball-2K [AUD_2464_09_B41_ID07].st2
@@ -45,6 +49,14 @@ Basic Videomate 3 Game Package [AUD_2464_09_B41_ID05_02]
 Berzerk (2013.04.15) (Paul Robson) (PD)
   787D  Berzerk (2013.04.15) (Paul Robson) (PD).bin
   E080  Berzerk (2013.04.15) (Paul Robson) (PD).st2
+
+Berzerk Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg)
+  2E9E  Berzerk Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  2143  Berzerk Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+
+Berzerk Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg)
+  7C7D  Berzerk Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+  73A0  Berzerk Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).st2
 
 Biorhythm [AUD_2464_09_B41_ID08_01]
   5D70  Biorhythm [AUD_2464_09_B41_ID08_01].bin
@@ -124,6 +136,10 @@ Combat v3 (2016.09.15) (Paul Robson) (PD)
   ABBA  Combat v3 (2016.09.15) (Paul Robson) (PD).bin
   4009  Combat v3 (2016.09.15) (Paul Robson) (PD).st2
 
+Combat Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  B70E  Combat Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  650C  Combat Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
+
 Concentration + Match (Europe) (1978) (Richard Peterson)
   7A43  Concentration + Match (Europe) (1978) (Richard Peterson).bin
   0ECC  Concentration + Match (Europe) (1978) (Richard Peterson).st2
@@ -179,9 +195,21 @@ Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD)
   DE71  Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).bin
   D753  Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).st2
 
+Hockey Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg)
+  0D17  Hockey Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+  E320  Hockey Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+
+Hockey Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg)
+  63E5  Hockey Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+  8DD2  Hockey Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+
 Reikan (CAS-190) (Japan) (1978) (unknown, Jef Winsor)
   C7C6  Inspiration (Fortunetelling & Biorhythm) (CAS-190) (Japan) (1978) (unknown, Jef Winsor).bin
   E4C4  Inspiration (Fortunetelling & Biorhythm) (CAS-190) (Japan) (1978) (unknown, Jef Winsor).st2
+
+Invaders Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  A9DA  Invaders Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  FB00  Invaders Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 
 Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD)
   ADAB  Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD).bin
@@ -204,6 +232,10 @@ Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD)
 Kaboom (2013.03.22) (Paul Robson) (PD)
   DFCF  Kaboom (2013.03.22) (Paul Robson) (PD).bin
   8551  Kaboom (2013.03.22) (Paul Robson) (PD).st2
+
+Kaboom Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  18DB  Kaboom Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  08D3  Kaboom Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 
 New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01]
   B555  New Studio 2-5 Game Set [AUD_2464_09_B41_ID03_01].bin
@@ -228,6 +260,10 @@ Outbreak v1.00 (2013.06.15) (Lee Romanow) (PD)
 Pacman (2013.03.26) (Paul Robson) (PD)
   F4A1  Pacman (2013.03.26) (Paul Robson) (PD).bin
   E00A  Pacman (2013.03.26) (Paul Robson) (PD).st2
+
+Pacman Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  9AF1  Pacman Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  62B4  Pacman Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 
 Paul's Printer [AUD_2464_09_B41_ID13_01]
   31EC  Paul's Printer [AUD_2464_09_B41_ID13_01].bin
@@ -257,6 +293,10 @@ Rocket v1.01 (2010.08.23) (Lee Romanow) (PD)
 Scramble (2013.04.13) (Paul Robson) (PD)
   FAA9  Scramble (2013.04.13) (Paul Robson) (PD).bin
   1280  Scramble (2013.04.13) (Paul Robson) (PD).st2
+
+Scramble Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD)
+  D9F3  Scramble Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+  D341  Scramble Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 
 Secret Number [AUD_2464_09_B41_ID08_02]
   9784  Secret Number [AUD_2464_09_B41_ID08_02].bin

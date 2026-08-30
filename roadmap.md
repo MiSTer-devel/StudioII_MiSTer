@@ -19,6 +19,10 @@ technical documents; completed milestones belong in release notes and Git.
 
 ### Studio II audio
 
+- Add an optional Low/Medium/High beeper-pitch setting. Medium must preserve the
+  accepted hardware-derived tuning; Low and High should scale the complete
+  pitch contour without changing its envelope, retrigger behavior, duty ratio,
+  or generator state.
 - Apply one release estimator to the untrimmed archival and retail recordings
   before deciding whether the accepted upward recovery is too slow.
 - Better constrain the early-attack knee without moving the accepted endpoints
@@ -65,6 +69,8 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Keyboard and keypad options
 
+- Redesign Numstick so the two analog sticks can cover both 1–9 keypad squares,
+  with an explicit, discoverable mapping for A0 and B0.
 - Add optional physical numpad support, assigning the MiSTer keyboard's numeric
   keypad to console keypad A or B.
 - Consider an Emma 02-style two-player layout: player one uses the keyboard

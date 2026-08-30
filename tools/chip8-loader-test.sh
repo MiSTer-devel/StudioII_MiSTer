@@ -23,11 +23,16 @@ open(sys.argv[3], "wb").write(open(sys.argv[2], "rb").read(0x2ff))
 PY
 
 run_case() {
-    local machine=$1 bios=$2 fw=$3
+    local machine=$1 bios=$2 fw=$3 source=${4:-auto}
     echo "CHIP-8 loader: $machine"
     if [[ -n "$fw" ]]; then
-        "$SIM" --machine "$machine" --bios "$bios" --chip8-fw "$fw" \
-            --ch8 "$TMP/boundaries.ch8" --loader-check --quiet
+        if [[ "$source" == manual ]]; then
+            "$SIM" --machine "$machine" --bios "$bios" --manual-chip8-fw "$fw" \
+                --ch8 "$TMP/boundaries.ch8" --loader-check --quiet
+        else
+            "$SIM" --machine "$machine" --bios "$bios" --chip8-fw "$fw" \
+                --ch8 "$TMP/boundaries.ch8" --loader-check --quiet
+        fi
     else
         "$SIM" --machine "$machine" --bios "$bios" \
             --ch8 "$TMP/boundaries.ch8" --loader-check --quiet
@@ -38,6 +43,9 @@ run_case studio2     "$ROOT/rom/studio2.rom"      "$FW" || exit 1
 run_case mpt02       "$ROOT/rom/studio3_pal.bin" "$FW" || exit 1
 run_case studio3ntsc "$ROOT/rom/studio3_ntsc.bin" "$FW" || exit 1
 run_case visicom     "$ROOT/rom/visicom.rom"      "$FW" || exit 1
+
+echo "CHIP-8 loader: manual interpreter cache"
+run_case studio2 "$ROOT/rom/studio2.rom" "$FW" manual || exit 1
 
 echo "CHIP-8 loader: missing chip8.bin companion"
 run_case studio2 "$ROOT/rom/studio2.rom" "" || exit 1

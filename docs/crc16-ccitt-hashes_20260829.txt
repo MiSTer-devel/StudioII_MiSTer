@@ -1,7 +1,7 @@
 # RCA Studio II CRC16-CCITT inventory
 # Polynomial: 0x1021; initial value: 0xFFFF; input: exact file bytes
 # Scan root: folder containing this script
-# Files: 460
+# Files: 480
 #
 CRC16	Bytes	Extension	Relative path
 2526	1280	.st2	Conic_StudioIII-Cartridges\baseball.st2
@@ -305,8 +305,14 @@ A6F8	1024	.bin	RCA-Studio-II-Fullset\Non-Retail\Tag-Race (Joyce) [AUD_2464_09_B4
 B03D	1280	.st2	RCA-Studio-II-Fullset\Non-Retail\Tag-Race (Joyce) [AUD_2464_09_B41_ID17_01].st2
 1943	3072	.bin	RCA-Studio-II-Fullset\Public Domain\Asteroids (2013.03.29) (Paul Robson) (PD).bin
 2B4D	1792	.st2	RCA-Studio-II-Fullset\Public Domain\Asteroids (2013.03.29) (Paul Robson) (PD).st2
+6EE1	1792	.bin	RCA-Studio-II-Fullset\Public Domain\Asteroids Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+A008	2048	.st2	RCA-Studio-II-Fullset\Public Domain\Asteroids Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 787D	1536	.bin	RCA-Studio-II-Fullset\Public Domain\Berzerk (2013.04.15) (Paul Robson) (PD).bin
 E080	1792	.st2	RCA-Studio-II-Fullset\Public Domain\Berzerk (2013.04.15) (Paul Robson) (PD).st2
+2E9E	1792	.bin	RCA-Studio-II-Fullset\Public Domain\Berzerk Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+2143	2048	.st2	RCA-Studio-II-Fullset\Public Domain\Berzerk Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+7C7D	1792	.bin	RCA-Studio-II-Fullset\Public Domain\Berzerk Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+73A0	2048	.st2	RCA-Studio-II-Fullset\Public Domain\Berzerk Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).st2
 AD6A	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Climber v1.00 (2013.05.15) (Lee Romanow) (PD).bin
 1139	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Climber v1.00 (2013.05.15) (Lee Romanow) (PD).st2
 54C7	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Combat v1 (2000.10.11) (Paul Robson) (PD).bin
@@ -315,6 +321,8 @@ AD6A	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Climber v1.00 (2013.05.15) (L
 D87F	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Combat v2 (2013.04.12) (Paul Robson) (PD).st2
 ABBA	3072	.bin	RCA-Studio-II-Fullset\Public Domain\Combat v3 (2016.09.15) (Paul Robson) (PD).bin
 4009	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Combat v3 (2016.09.15) (Paul Robson) (PD).st2
+B70E	1280	.bin	RCA-Studio-II-Fullset\Public Domain\Combat Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+650C	1536	.st2	RCA-Studio-II-Fullset\Public Domain\Combat Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 3244	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).bin
 F7A3	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Fifteen Puzzle (2017.12.12) (Lee Romanow) (PD).st2
 6D1D	2048	.bin	RCA-Studio-II-Fullset\Public Domain\Flappy Pixel (2026.02.13) (FLiP) (PD).bin
@@ -325,6 +333,12 @@ D124	2304	.st2	RCA-Studio-II-Fullset\Public Domain\Flappy Pixel (2026.02.13) (FL
 D5DE	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Hockey v2 (Four Sports) (2013.04.12) (Paul Robson) (PD).st2
 DE71	3072	.bin	RCA-Studio-II-Fullset\Public Domain\Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).bin
 D753	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Hockey v3 (Four Sports) (2016.09.16) (Paul Robson) (PD).st2
+0D17	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Hockey Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+E320	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Hockey Visicom v1 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+63E5	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Hockey Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).bin
+8DD2	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Hockey Visicom v2 (2026.08.29) (Paul Robson, Alan Steremberg).st2
+A9DA	1280	.bin	RCA-Studio-II-Fullset\Public Domain\Invaders Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+FB00	1536	.st2	RCA-Studio-II-Fullset\Public Domain\Invaders Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 ADAB	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD).bin
 6F69	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Invaders v1 (Space Invaders) (2000.09.15) (Paul Robson) (PD).st2
 7A5E	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Invaders v2 (Space Invaders) (2013.04.12) (Paul Robson) (PD).bin
@@ -335,6 +349,8 @@ ADAB	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Invaders v1 (Space Invaders) 
 D481	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Invasion, The v1.00 (2019.01.01) (Lee Romanow) (PD).st2
 DFCF	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Kaboom (2013.03.22) (Paul Robson) (PD).bin
 8551	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Kaboom (2013.03.22) (Paul Robson) (PD).st2
+18DB	1280	.bin	RCA-Studio-II-Fullset\Public Domain\Kaboom Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+08D3	1536	.st2	RCA-Studio-II-Fullset\Public Domain\Kaboom Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 D706	256	.bin	RCA-Studio-II-Fullset\Public Domain\noshaders (2018.08.25) (Realm Of Illusion) (frog) (PD).bin
 13B3	1280	.st2	RCA-Studio-II-Fullset\Public Domain\noshaders (2018.08.25) (Realm Of Illusion) (frog) (PD).st2
 DF91	1024	.bin	RCA-Studio-II-Fullset\Public Domain\noshaders2 (2025.01.05) (Realm Of Illusion) (frog) (PD).bin
@@ -343,12 +359,16 @@ A83F	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Outbreak v1.00 (2013.06.15) (
 BE58	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Outbreak v1.00 (2013.06.15) (Lee Romanow) (PD).st2
 F4A1	1536	.bin	RCA-Studio-II-Fullset\Public Domain\Pacman (2013.03.26) (Paul Robson) (PD).bin
 E00A	1792	.st2	RCA-Studio-II-Fullset\Public Domain\Pacman (2013.03.26) (Paul Robson) (PD).st2
+9AF1	2048	.bin	RCA-Studio-II-Fullset\Public Domain\Pacman Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+62B4	2304	.st2	RCA-Studio-II-Fullset\Public Domain\Pacman Visicom (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 5638	2560	.bin	RCA-Studio-II-Fullset\Public Domain\Race (2020.08.07) (azya52) (PD).bin
 47EA	2816	.st2	RCA-Studio-II-Fullset\Public Domain\Race (2020.08.07) (azya52) (PD).st2
 127F	256	.bin	RCA-Studio-II-Fullset\Public Domain\Rocket v1.01 (2010.08.23) (Lee Romanow) (PD).bin
 D2F0	512	.st2	RCA-Studio-II-Fullset\Public Domain\Rocket v1.01 (2010.08.23) (Lee Romanow) (PD).st2
 FAA9	1536	.bin	RCA-Studio-II-Fullset\Public Domain\Scramble (2013.04.13) (Paul Robson) (PD).bin
 1280	1792	.st2	RCA-Studio-II-Fullset\Public Domain\Scramble (2013.04.13) (Paul Robson) (PD).st2
+D9F3	1792	.bin	RCA-Studio-II-Fullset\Public Domain\Scramble Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).bin
+D341	2048	.st2	RCA-Studio-II-Fullset\Public Domain\Scramble Color (2026.08.29) (Paul Robson, Alan Steremberg) (PD).st2
 D8C2	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Studio II Programming Examples by Joseph Weisbecker\Move 1 (Joseph Weisbecker) (PD).bin
 A6EF	1280	.st2	RCA-Studio-II-Fullset\Public Domain\Studio II Programming Examples by Joseph Weisbecker\Move 1 (Joseph Weisbecker) (PD).st2
 FF76	1024	.bin	RCA-Studio-II-Fullset\Public Domain\Studio II Programming Examples by Joseph Weisbecker\Move 2 (Joseph Weisbecker) (PD).bin

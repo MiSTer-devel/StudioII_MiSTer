@@ -58,13 +58,17 @@ reproduces on MiSTer.
   direct bindings for all 20 keypad keys, and an analog-stick keypad overlay.
 - Integer scaling options and HDMI sync preservation across CLEAR, cartridge
   loads, firmware loads, and same-standard machine resets.
+- Automatic per-program or manually cached loading of the user-supplied
+  `chip8.bin` interpreter for classic Studio-family CHIP-8 programs.
 - Independent Studio II beeper and Studio III programmable-tone implementations
   with a shared output-only sound control.
 
 ## Build and acceptance
 
-A 4-seed DSE build was run, and the best build was selected. All builds met timing 
-comfortably, with the selected build showing a worst-case slack of +0.370 ns.
+The release candidate was built with the supported Quartus 17.0.2 toolchain
+using seed 3. The full flow completed successfully, with worst-case setup slack
+of +0.462 ns and worst-case hold slack of +0.249 ns. The map report retains the
+five firmware/cartridge ROMs and both machine RAMs as block memory.
 
 Remaining work—analog/direct-video testing, broader controller-profile coverage,
 and possible research into the beeper's hardest early-attack knee—is documented

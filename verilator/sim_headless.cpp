@@ -449,6 +449,7 @@ static void usage(const char* argv0) {
 "    --bios FILE          BIOS image, ioctl index 0   (default ../rom/studio2.rom)\n"
 "    --cart FILE          cartridge image, ioctl index 1 (raw: Studio $0400, Visicom $0800)\n"
 "    --chip8-fw FILE      Marcel's 768-byte companion, ioctl index $0103\n"
+"    --manual-chip8-fw FILE  same image through the F4 OSD path, ioctl index 4\n"
 "    --ch8 FILE           CHIP-8 program, ioctl index 3\n"
 "    --loader-check       verify all five ROM slots and CHIP-8 address mapping\n"
 "\n"
@@ -528,6 +529,7 @@ int main(int argc, char** argv) {
     std::string bios = "../rom/studio2.rom";
     std::string cart;
     std::string chip8_fw;
+    int chip8_fw_index = 0x0103;
     std::string ch8;
     std::string outdir = "out";
     std::string prefix;
@@ -574,7 +576,14 @@ int main(int argc, char** argv) {
         if      (a == "--help" || a == "-h") { usage(argv[0]); return 0; }
         else if (a == "--bios")       bios = next("--bios");
         else if (a == "--cart")       cart = next("--cart");
-        else if (a == "--chip8-fw")   chip8_fw = next("--chip8-fw");
+        else if (a == "--chip8-fw") {
+            chip8_fw = next("--chip8-fw");
+            chip8_fw_index = 0x0103;
+        }
+        else if (a == "--manual-chip8-fw") {
+            chip8_fw = next("--manual-chip8-fw");
+            chip8_fw_index = 4;
+        }
         else if (a == "--ch8")        ch8 = next("--ch8");
         else if (a == "--loader-check") loader_check = true;
         else if (a == "--outdir")     outdir = next("--outdir");
@@ -723,7 +732,7 @@ int main(int argc, char** argv) {
     // Loading with a flat index 0 would land every machine's BIOS in the
     // Studio II BRAM and machines 1-3 would boot from an empty ROM.
     io.add(bios, machine << 6);
-    if (!chip8_fw.empty()) io.add(chip8_fw, 0x0103);
+    if (!chip8_fw.empty()) io.add(chip8_fw, chip8_fw_index);
     if (!cart.empty()) io.add(cart, 1);
     if (!ch8.empty()) io.add(ch8, 3);
 
@@ -1059,10 +1068,10 @@ int main(int argc, char** argv) {
             failures++;
         }
 
-        // F1, F2, and the companion pre-load each exit CHIP-8. Exercise all
-        // three classifications without a write; activation changes at
+        // F1, F2, and either interpreter load path each exit CHIP-8. Exercise
+        // all four classifications without a write; activation changes at
         // transfer start, not by size.
-        const int exit_indices[] = {1, 2, 0x0103};
+        const int exit_indices[] = {1, 2, 4, 0x0103};
         for (int index : exit_indices) {
             RS(chip8_loaded) = 1;
             top->ioctl_index = index;
@@ -1076,7 +1085,7 @@ int main(int argc, char** argv) {
                 printf("FAIL ioctl index %d did not clear chip8_loaded\n", index);
                 failures++;
             }
-            if (index == 0x0103 && RS(chip8_fw_loaded)) {
+            if ((index == 4 || index == 0x0103) && RS(chip8_fw_loaded)) {
                 printf("FAIL replacement interpreter did not invalidate chip8_fw_loaded\n");
                 failures++;
             }

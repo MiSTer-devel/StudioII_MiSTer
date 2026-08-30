@@ -2,23 +2,25 @@
 
 MiSTer FPGA core for the RCA Studio II, Studio III/MPT-02 family, and Toshiba Visicom COM-100.
 
-## Status
-
-All outstanding high priority fixes are done: NE555 beeper fine-tuning and pitch-modeling is implemented, Visicom instability is resolved, and the Studio III NTSC horizontal line issue related to using the wrong BIOS is resolved (check the BIOS hashes below; they have been corrected since the initial core release). The beeper emulation is now modeled directly on reference recordings for pitch range and curve, retrigger behavior, and timbre. While still imperfect, in my opinion this core represents the best currently available sound emulation for this hardware.
-
 ## Install and play
 
-1. Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
-2. Put the four native firmware files below and the user-supplied `chip8.bin`
-   in `/media/fat/games/Studio-II/`.
-3. Launch the core from `/_Console/` (or wherever you placed it).
-4. Use **Load Cartridge** for a `.st2`, `.bin`, or `.rom` game, or **Load
-   CHIP-8** for a classic `.ch8` program. Use **Load Firmware** only to replace
-   the active machine's native firmware temporarily.
+Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
+
+Put the four native firmware files below in `/media/fat/games/Studio-II/`.
+
+Put the user-supplied `chip8.bin` in the same directory as your CHIP-8 games
+for automatic loading, or load it manually.
+
+Launch the core from `/_Console/` (or wherever you placed it).
+
+Use **Load Cartridge** for a `.st2`, `.bin`, or `.rom` game, or **Load
+CHIP-8** for a classic `.ch8` program. Use **Load Firmware** only to replace
+the active machine's native firmware temporarily; use **Load CHIP-8
+Interpreter** only for the separate `chip8.bin` cache.
 
 `Machine` selects between `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, and `Visicom`, in that order. Changes won't take effect until you `Apply and reset`.
 
-| Machine | Required filename | Common filename | Size | MD5 |
+| Machine | Autoload filename | Common filename | Size | MD5 |
 |---|---|---|---:|---|
 | Studio II | `boot0.rom` | `studio2.rom` | 2 KB | `B37205BF19B197682F00619D05DA194B` |
 | Studio III PAL | `boot1.rom` | `studio3_pal.bin` | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
@@ -27,15 +29,8 @@ All outstanding high priority fixes are done: NE555 beeper fine-tuning and pitch
 | CHIP-8 interpreter | `chip8.bin` | `chip8.bin` | 768 bytes | `9F037435B6721BE9EE91DC93293E52CE` |
 
 [Marcel van Tongeren's Studio-family interpreter](https://www.emma02.hobby-site.com/studio_chip8.html)
-is required but is not bundled: its available terms include a non-commercial
-restriction and are not GPL-compatible. Name the user-supplied 768-byte image
-`chip8.bin` and keep it in the same directory as the `.ch8` programs. When a
-program is selected, MiSTer automatically loads that companion first and then
-selects the interpreter on Studio II or either Studio III. With the layout
-above, keep `.ch8` files directly in `/media/fat/games/Studio-II/`; a program in
-a subdirectory needs another `chip8.bin` beside it. Loading a normal cartridge
-or native firmware returns to that machine's previous firmware. CHIP-8 loading
-is disabled on Visicom.
+is supported but is not bundled. Supply its 768-byte image as `chip8.bin` and
+either load it manually or place it in the same directory as your CHIP-8 games.
 
 The Studio II firmware contains five games: `A1` Doodle, `A2` Patterns, `A3` Bowling, `A4` Freeway, and `A5` Addition. Play instructions for these and more are in [docs/how-to-play.md](docs/how-to-play.md).
 
@@ -57,11 +52,11 @@ The keyboard is mapped like this:
 | Keypad B | `7` | `8` | `9` | `U` | `I` | `O` | `J` | `K` | `L` | `,` |
 
 For CHIP-8, virtual keys `0`–`9` use keypad A `0`–`9`, while `A`–`F` use
-keypad B `1`–`6` (keyboard `7`, `8`, `9`, `U`, `I`, `O`). Games choose their
-own layouts, but the common movement cluster is useful enough for one automatic
-profile: D-pad up/left/down/right maps to CHIP-8 `5/7/8/9`, Start maps to `1`,
-Fire to `F`, and Extra to `0`. Keyboard, direct keypad bindings, manual profiles,
-and Numstick remain available when a program uses something else.
+keypad B `1`–`6` (keyboard `7`, `8`, `9`, `U`, `I`, `O`). The automatic
+gamepad profile maps D-pad up/left/down/right to CHIP-8 `5/7/8/9`, Start to
+`1`, Fire to `F`, and Extra to `0`. Programs choose their own layouts, so
+keyboard input, direct keypad bindings, manual profiles, and Numstick remain
+available when a program uses something else.
 
 The interpreter targets classic Studio-family CHIP-8 with program space
 `$0200`–`$0AFF` and about `$A0` bytes of writable game RAM at virtual
@@ -78,14 +73,12 @@ tone generator. Turning sound back on resumes the live beeper or tone state.
 
 Gamepad 0 gets the controls for the title's primary one-player game or mode. That may be keypad A, keypad B (as in Squash), or a combination of both used by one player.
 
-The profile system is not yet complete. There are some issues. Use the Manual option, etc. if needed.
+Automatic profile coverage is intentionally incomplete. Use **Mapping: Manual**
+when a title has no verified profile or needs different controls.
 
 ## Numstick (On-screen keypad)
 
 **Numstick** assigns the numstick overlay to A or B. The right stick selects 1–9, the left stick selects 0, and holding a direction for about half a second registers it. Nudge and release the right stick for 5.
-
-I plan on changing this to allow control of one keypad's 1-9 square with each stick, with A0 and B0 being automapped to L / R potentially for full coverage. Not entirely sure yet. At
-the very least it will be useful for testing, so it will probably be useful to others as well.
 
 ## Project information
 

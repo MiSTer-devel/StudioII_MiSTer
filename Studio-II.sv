@@ -208,6 +208,7 @@ localparam CONF_STR = {
 	"Studio-II;v9;",
 	"F1,ST2BINROM,Load Cartridge;",
 	"F2,BINROM,Load Firmware;",
+	"F4,BIN,Load CHIP-8 Interpreter;",
 	// Main sends chip8.bin from the selected program's directory before F3.
 	"f,!chip8.bin;",
 	// Loading only allowed on Studio II and Studio III, not Visicom.
@@ -326,7 +327,8 @@ wire clear_request = status[1] | clear_key | joy_clear;
 // Preserve raster timing on soft resets
 wire      user_download_now = (ioctl_index[5:0] == 6'd1) ||
 	                          (ioctl_index[5:0] == 6'd2) ||
-	                          (ioctl_index[5:0] == 6'd3);
+	                          (ioctl_index[5:0] == 6'd3) ||
+	                          (ioctl_index[5:0] == 6'd4);
 reg       download_soft_latched = 1'b0;
 reg [7:0] download_reset_cnt = 8'd0;
 wire      download_reset = ioctl_download | (download_reset_cnt != 0);

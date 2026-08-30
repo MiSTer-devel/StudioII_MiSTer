@@ -72,6 +72,7 @@ CPU/machine reset and raster reset are separate. `reset` restarts machine state;
 | Cartridge load (F1) | sync-preserving | remains live |
 | CHIP-8 load (F3) | sync-preserving | remains live |
 | Manual firmware load (F2) | sync-preserving | remains live |
+| Manual CHIP-8 interpreter load (F4) | sync-preserving | remains live |
 | Same-standard Apply and reset | sync-preserving | remains live |
 | PAL/NTSC Apply and reset | hard | restarts |
 | CLEAR | sync-preserving | remains live |
@@ -86,9 +87,9 @@ The Machine OSD field is staged until **Apply and reset**, except for the short 
 | Studio III PAL | `boot1.rom` |
 | Studio III NTSC | `boot2.rom` |
 | Visicom | `boot3.rom` |
-| Marcel's CHIP-8 interpreter | F3 companion (`chip8.bin`) |
+| Marcel's CHIP-8 interpreter | F3 companion or F4 manual cache (`chip8.bin`) |
 
-Studio II firmware is normally 2 KB; each resident BRAM is 4 KB so Studio III firmware fits. F2 writes the active machine's slot. MiSTer Main autoloads `boot0.rom` through `boot3.rom`, using index `[7:6]` for those four slots. The lowercase `f,!chip8.bin` entry immediately before F3 instead asks Main to send `chip8.bin` from the selected `.ch8` file's directory at supplemental index `$0103`; the main program follows at `$0003`. A complete 768-byte companion fills the fifth 4 KB BRAM, which also holds the loaded game. The companion does not activate CHIP-8 by itself, and the main transfer is rejected unless that image completed. F3 is disabled on Visicom.
+Studio II firmware is normally 2 KB; each resident BRAM is 4 KB so Studio III firmware fits. F2 writes the active machine's slot. MiSTer Main autoloads `boot0.rom` through `boot3.rom`, using index `[7:6]` for those four slots. The lowercase `f,!chip8.bin` entry immediately before F3 asks Main to send `chip8.bin` from the selected `.ch8` file's directory at supplemental index `$0103`; F4 sends a manually selected `.bin` at `$0004`. Either path caches a complete 768-byte interpreter in the fifth 4 KB BRAM, which also holds the loaded game. Loading the interpreter does not activate CHIP-8 by itself; the F3 main program follows at `$0003` and is rejected unless the cached image completed. The manual cache lasts for the core session and lets one interpreter serve programs in multiple directories. F3 is disabled on Visicom.
 
 ## Memory and cartridge model
 
@@ -109,12 +110,13 @@ Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Vis
 
 F3 `.ch8` bytes `$000-$4FF` map to physical ROM `$0300-$07FF`; bytes
 `$500-$8FF` map to `$0C00-$0FFF`; bytes from `$900` onward are dropped. This
-path requires the complete `chip8.bin` companion and rejects Visicom in RTL as
-well as in the OSD.
+path requires a complete cached `chip8.bin`, loaded automatically or manually,
+and rejects Visicom in RTL as well as in the OSD.
 Activation selects the fifth ROM on Studio II and both Studio III variants,
 without changing the native RAM or Studio III colour-RAM windows. CLEAR, Reset,
-and machine switches retain the game; F1 and F2 exit CHIP-8 mode. The companion
-pre-load also clears the prior program before the replacement arrives.
+and machine switches retain the game; F1, F2, and either interpreter-loading
+path exit CHIP-8 mode. Loading a replacement interpreter also clears the prior
+program before the replacement arrives.
 
 [Marcel van Tongeren's interpreter map](https://www.emma02.hobby-site.com/studio_chip8.html)
 accounts for the complete physical 4 KB bank:

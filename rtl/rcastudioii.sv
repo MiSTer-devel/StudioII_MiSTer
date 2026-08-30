@@ -456,38 +456,41 @@ always @(posedge clk_sys) begin
 			// Homebrew: single-player (Paul Robson scheme)
 			// ----------------------------------------------------------------
 
-			// Asteroids
-			16'h1943, 16'hFBEF, 16'h1973, 16'h2B4D: begin
+			// Asteroids / Asteroids Visicom
+			16'h1943, 16'hFBEF, 16'h1973, 16'h2B4D,
+			16'h6EE1, 16'hA008: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd5;
 			end
 
-			// Berzerk
-			16'h4F61, 16'hAEC7, 16'h787D, 16'hE080: begin
+			// Berzerk / Berzerk Visicom v1/v2
+			16'h4F61, 16'hAEC7, 16'h787D, 16'hE080,
+			16'h2E9E, 16'h2143, 16'h7C7D, 16'h73A0: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd5;
 			end
 
-			// Invaders v1/v2/v3
-			16'h6F69, 16'hADAB, 16'h0D1D, 16'h69AA, 16'h2D86, 16'h5AC5: begin
+			// Invaders v1/v2/v3 / Invaders Color (MPT-02)
+			16'h6F69, 16'hADAB, 16'h0D1D, 16'h69AA, 16'h2D86, 16'h5AC5,
+			16'hA9DA, 16'hFB00: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd0;
 			end
 
-			// Kaboom
-			16'h6793, 16'hDFCF, 16'h8551: begin
+			// Kaboom / Kaboom Color (MPT-02)
+			16'h6793, 16'hDFCF, 16'h8551, 16'h18DB, 16'h08D3: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd0;
 			end
 
-			// Pacman
-			16'hC556, 16'h5359, 16'hF4A1, 16'hE00A: begin
+			// Pacman / Pacman Visicom
+			16'hC556, 16'h5359, 16'hF4A1, 16'hE00A, 16'h9AF1, 16'h62B4: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd0;
 			end
 
-			// Scramble
-			16'hBA0B, 16'hE45F, 16'hFAA9, 16'h1280: begin
+			// Scramble / Scramble Color (MPT-02)
+			16'hBA0B, 16'hE45F, 16'hFAA9, 16'h1280, 16'hD9F3, 16'hD341: begin
 				map_profile <= MAP_HOMEBREW;
 				start_key   <= 4'd6;
 			end
@@ -497,16 +500,18 @@ always @(posedge clk_sys) begin
 			// Homebrew: two-player (Paul Robson scheme)
 			// ----------------------------------------------------------------
 
-			// Combat v1/v2/v3
+			// Combat v1/v2/v3 / Combat Visicom
 			16'h4ADA, 16'h188E, 16'hD87F,
-			16'h54C7, 16'h4AA2, 16'hABBA, 16'h4009: begin
+			16'h54C7, 16'h4AA2, 16'hABBA, 16'h4009,
+			16'hB70E, 16'h650C: begin
 				map_profile <= MAP_HB2P;
 				start_key   <= 4'd1;
 			end
 
-			// Hockey v1/v2/v3
+			// Hockey v1/v2/v3 / Hockey Visicom v1/v2
 			16'h114A, 16'h4F55, 16'hD5DE,
-			16'h554B, 16'h1154, 16'hDE71, 16'hD753: begin
+			16'h554B, 16'h1154, 16'hDE71, 16'hD753,
+			16'h0D17, 16'hE320, 16'h63E5, 16'h8DD2: begin
 				map_profile <= MAP_HB2P;
 				start_key   <= 4'd1;
 			end
@@ -1514,7 +1519,9 @@ assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
 // OSD "Load Firmware" entry, whose upper bits carry the picked file's extension
 // index instead of a slot, so it routes to the selected machine's slot below.
 // F3's main .ch8 file uses index $0003. Its configured chip8.bin companion is
-// sent first at supplemental index $0103 and fills the independent fifth slot.
+// sent first at supplemental index $0103. The separate F4 OSD row sends a
+// manually selected interpreter at index $0004. Both fill the independent
+// fifth slot without activating it.
 wire        boot_dl = ioctl_download && (ioctl_index[15:8] == 8'd0) &&
 	             (ioctl_index[5:0] == 6'd0);
 wire        fw_dl   = ioctl_download && (ioctl_index[5:0] == 6'd2);
@@ -1522,8 +1529,10 @@ wire        bios_dl = boot_dl | fw_dl;
 wire        cart_dl = ioctl_download && (ioctl_index[5:0] == 6'd1);
 wire        ch8_dl  = ioctl_download && (ioctl_index[15:8] == 8'd0) &&
 	             (ioctl_index[5:0] == 6'd3);
-wire        chip8_fw_dl = ioctl_download && (ioctl_index[15:8] == 8'd1) &&
-	                   (ioctl_index[5:0] == 6'd3);
+wire        chip8_fw_auto_dl = ioctl_download && (ioctl_index[15:8] == 8'd1) &&
+	                        (ioctl_index[5:0] == 6'd3);
+wire        chip8_fw_manual_dl = ioctl_download && (ioctl_index[5:0] == 6'd4);
+wire        chip8_fw_dl = chip8_fw_auto_dl | chip8_fw_manual_dl;
 
 reg  [2:0]  st2_magic;                  // running match on "RCA"
 reg         st2_mode;                   // "RCA2" seen: treat as paged
@@ -1597,9 +1606,10 @@ end
 //
 // MiSTer auto-loads boot0.rom through boot3.rom with ioctl_index[5:0]==0 and
 // the slot in ioctl_index[7:6]. Each native BRAM only accepts writes for its
-// own slot. When F3 selects a .ch8 file, MiSTer Main first sends the user-supplied
-// chip8.bin beside it at supplemental index $0103. That universal Studio-family
-// interpreter goes into the fifth BRAM.
+// own slot. MiSTer Main can send the user-supplied chip8.bin automatically from
+// beside an F3 selection at supplemental index $0103, or the user can cache it
+// manually through F4 at index $0004. That universal Studio-family interpreter
+// goes into the fifth BRAM.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
 //   0 Studio II        → boot0.rom
@@ -1641,7 +1651,7 @@ wire        we4 = bios_we4 | ch8_we;
 
 wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q, rom4_q;
 
-// A truncated or absent companion must not accept the following .ch8 file. A
+// A truncated or absent cached interpreter must not accept a .ch8 file. A
 // valid interpreter is
 // 768 bytes, ending at $02FF; starting a replacement invalidates the old copy
 // until that final required byte arrives. Loading it never activates CHIP-8.

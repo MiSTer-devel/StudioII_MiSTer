@@ -35,11 +35,11 @@ Many games treat `2/4/6/8` as up/left/right/down and `1/3/7/9` as diagonals. Thi
 ## CHIP-8 programs
 
 Download [Marcel van Tongeren's interpreter](https://www.emma02.hobby-site.com/studio_chip8.html),
-name its 768-byte image `chip8.bin`, and keep it beside the classic `.ch8`
-programs. **Load CHIP-8** automatically sends the interpreter before the
-selected program. If programs are kept directly in `/media/fat/games/Studio-II/`,
-one copy there serves all of them; a program in a subdirectory needs another
-copy beside it.
+and name its 768-byte image `chip8.bin`. **Load CHIP-8** automatically sends an
+interpreter found beside the selected program. You can instead use **Load
+CHIP-8 Interpreter** once per core session; the cached copy then serves `.ch8`
+programs in any directory. Loading the interpreter alone leaves the native
+machine active, and the next **Load CHIP-8** selection enters CHIP-8 mode.
 Virtual CHIP-8 keys `0`–`9` map to keypad A
 `0`–`9`; `A`–`F` map to keypad B `1`–`6`. Their keyboard equivalents are:
 
