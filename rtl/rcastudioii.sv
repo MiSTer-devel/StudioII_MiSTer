@@ -41,6 +41,7 @@ module rcastudioii
 	input              joy_manual,     // OSD "Mapping": 0 = auto-detect, 1 = use joy_override
 	output       [3:0] auto_profile,   // the detected profile, for the top level to show in the OSD
 	input        [1:0] players,        // OSD: 0 = auto, 1 = one player, 2 = two players
+	input        [2:0] beeper_tune,    // OSD: 0 = medium/reference, 1 = low, 2 = high; others reserved
 	input        [9:0] osk_a,          // on-screen keypad presses for keypad A (bit = key)
 	input        [9:0] osk_b,          // and for keypad B
 	output reg         chip8_fw_loaded,
@@ -1230,11 +1231,12 @@ assign ram_q = pl1_sel_q ? pl1_q
 ////////////////// SOUND ////////////////////////////////////////////////////
 //
 // Behavioral model of the Q-gated NE555, fitted to the reference recordings in
-// docs/beeper-status.md. A fresh note holds near 628.4Hz for 20ms, then descends
-// to the measured 505.2Hz floor. Q low reverses pitch through the audible release
-// while a faster hidden control trajectory preserves the gap-dependent starts
-// heard in Gunfighter. A fresh Q-high drive contour prevents retriggers from
-// accumulating pitch drop.
+// docs/beeper-status.md. The internal contour holds near 628.4Hz for 20ms, then
+// descends to 505.2Hz; the output period is scaled as one curve for the selected
+// console tuning. Q low reverses pitch through the audible release while a faster
+// hidden control trajectory preserves the gap-dependent starts heard in
+// Gunfighter. A fresh Q-high drive contour prevents retriggers from accumulating
+// pitch drop.
 localparam [15:0] SND_HALF_TOP    = 16'd1400;
 localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
 localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms
@@ -1245,12 +1247,19 @@ localparam [12:0] SND_ATTACK_STEP  = 13'd14;  // ~2ms zero-to-full
 localparam  [4:0] SND_DUTY_HIGH_PARTS = 5'd11;
 localparam  [4:0] SND_DUTY_PARTS      = 5'd17;
 localparam  [4:0] SND_DUTY_ROUND      = 5'd8;
+// Q14 full-period multipliers. Medium is the December 1976 RCA demonstration
+// unit (0.9945 of the internal reference frequency); Low and High are 31/32 and
+// 32/31 of Medium. Codes 3--7 deliberately fall back to Medium until assigned.
+localparam [14:0] SND_TUNE_LOW_Q14    = 15'd17006;
+localparam [14:0] SND_TUNE_MEDIUM_Q14 = 15'd16475;
+localparam [14:0] SND_TUNE_HIGH_Q14   = 15'd15960;
 
 reg [15:0] snd_half;          // audible oscillator period
 reg [15:0] snd_drive_half;    // fresh Q-high contour
 reg [15:0] snd_control_half;  // recovered control state for a retrigger
 reg [15:0] snd_cnt;
 reg [15:0] snd_cycle_base;    // selected tick length shared by one high/low pair
+reg [14:0] snd_cycle_scale;   // tuning held for the same complete oscillator cycle
 reg [12:0] snd_curve_cnt;
 reg [15:0] snd_control_cnt;
 reg [15:0] snd_on_ticks;
@@ -1260,6 +1269,16 @@ reg  [9:0] snd_eb_frac;
 reg  [7:0] snd_amp;
 reg        snd_q_prev;
 reg        snd_out;
+
+function automatic [14:0] snd_tune_period_scale(input [2:0] tuning);
+begin
+	case (tuning)
+		3'd1: snd_tune_period_scale = SND_TUNE_LOW_Q14;
+		3'd2: snd_tune_period_scale = SND_TUNE_HIGH_Q14;
+		default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;
+	endcase
+end
+endfunction
 
 // Divider-only approximation of the rounded ~190ms driven descent.
 function automatic [12:0] snd_decay_interval(input [15:0] half_period);
@@ -1318,9 +1337,14 @@ wire        snd_eb_long = (snd_eb_sum >= 11'd1024);
 wire [15:0] snd_next_base = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
 	                         ? 16'd1400 : snd_half + 16'd1;
 
-// Split the former two equal phases into the measured 11:6 ratio. The rounded
-// high phase and residual low phase always sum to the same full period.
-wire [16:0] snd_full_ticks = {snd_cycle_base, 1'b0};
+// Scale the complete period before splitting it into the measured 11:6 ratio.
+// Explicitly widened operands retain all Q14 product bits. Rounding once per
+// full period keeps the high and residual low phases on one common tuning.
+wire [16:0] snd_base_full_ticks = {snd_cycle_base, 1'b0};
+wire [31:0] snd_tune_product = ({15'd0, snd_base_full_ticks}
+	                            * {17'd0, snd_cycle_scale});
+wire [31:0] snd_tune_rounded = snd_tune_product + 32'd8192;
+wire [16:0] snd_full_ticks = snd_tune_rounded[30:14];
 wire [20:0] snd_high_scaled = ({4'd0, snd_full_ticks}
 	                           * {16'd0, SND_DUTY_HIGH_PARTS})
 	                           + {16'd0, SND_DUTY_ROUND};
@@ -1337,6 +1361,7 @@ always @(posedge clk_sys) begin
 		snd_control_half <= SND_HALF_TOP;
 		snd_cnt        <= 16'd0;
 		snd_cycle_base <= 16'd1400;
+		snd_cycle_scale <= SND_TUNE_MEDIUM_Q14;
 		snd_curve_cnt  <= 13'd0;
 		snd_control_cnt <= 16'd0;
 		snd_on_ticks   <= 16'd0;
@@ -1485,6 +1510,7 @@ always @(posedge clk_sys) begin
 				// Select its base once so both phases use the same fractional period.
 				if (!snd_out) begin
 					snd_cycle_base <= snd_next_base;
+					snd_cycle_scale <= snd_tune_period_scale(beeper_tune);
 					if (snd_half == SND_HALF_TOP)
 						snd_eb_frac <= snd_eb_sum[9:0]; // modulo 1024
 					else

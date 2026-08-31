@@ -12,6 +12,7 @@ module top(
    input         joy_manual/*verilator public_flat*/,
    input [1:0]   players/*verilator public_flat*/,
    input [1:0]   machine/*verilator public_flat*/,
+   input [2:0]   beeper_tune/*verilator public_flat*/,
 
    output [7:0] VGA_R/*verilator public_flat*/,
    output [7:0] VGA_G/*verilator public_flat*/,
@@ -144,6 +145,7 @@ rcastudioii rcastudio
 	.auto_profile(),
 	.chip8_fw_loaded(chip8_fw_loaded),
 	.players(players),
+	.beeper_tune(beeper_tune),
 	.machine(machine),
 	.osk_a(10'd0),
 	.osk_b(10'd0),

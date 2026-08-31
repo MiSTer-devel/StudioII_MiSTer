@@ -559,6 +559,7 @@ static void usage(const char* argv0) {
 "                         27:18 B0..B9) at frame F for H frames.\n"
 "    --joy2 MASK@F[:H]    same, joystick 1\n"
 "    --players N          OSD Players setting: 0 auto, 1 one player, 2 two\n"
+"    --beeper-tune NAME   Studio II tuning: medium (default), low, or high\n"
 "    --swap FILE@FRAME    download another cartridge at frame F, like an OSD\n"
 "                         load while the machine is running\n"
 "    --press KEY@F[:H]    press KEY at frame F, hold H frames (default 4).\n"
@@ -621,6 +622,7 @@ int main(int argc, char** argv) {
     uint8_t  joy_override = 0;   // applied once top exists
     bool     joy_manual   = false;
     uint8_t  machine = 0;   // 0 studio2, 1 studio3 PAL, 2 studio3 NTSC, 3 Visicom
+    uint8_t  beeper_tune = 0; // 0 medium/reference, 1 low, 2 high
     bool     ce_div4 = false;  // run the hardware's /4 pixel enable (4x slower)
     uint32_t ram_junk_seed = 0;  // pre-fill RAM with junk (0 = boot with zeroed RAM)
     long     press_phase = 0;    // delay key events N clks past their frame boundary
@@ -731,6 +733,13 @@ int main(int argc, char** argv) {
             else if (m == "visicom" || m == "com100") machine = 3;
             else { fprintf(stderr, "error: --machine must be studio2, mpt02/studio3, studio3ntsc or visicom\n"); return 1; }
         }
+        else if (a == "--beeper-tune") {
+            std::string t = next("--beeper-tune");
+            if      (t == "medium") beeper_tune = 0;
+            else if (t == "low")    beeper_tune = 1;
+            else if (t == "high")   beeper_tune = 2;
+            else { fprintf(stderr, "error: --beeper-tune must be low, medium or high\n"); return 1; }
+        }
         else if (a == "--joy-map") { joy_override = (uint8_t)atoi(next("--joy-map")); joy_manual = true; }
         else if (a == "--trace-q")    trace_q = true;
         else if (a == "--frame-log")  frame_log = true;
@@ -788,6 +797,7 @@ int main(int argc, char** argv) {
     top->joy_override = joy_override;
     top->joy_manual   = joy_manual;
     top->machine = machine;
+    top->beeper_tune = beeper_tune;
     top->ce_div4 = ce_div4 ? 1 : 0;
     top->players = players_mode;
 

@@ -5,8 +5,12 @@ measurement uncertainty. Release chronology belongs in release notes and Git.
 
 ## Behavioral baseline
 
-- Fresh-note pitch is approximately 628.4 Hz; the sustained floor is
-  approximately 505.2 Hz. Console tolerance is expected.
+- The retail-reference contour has a fresh-note pitch near 628.4 Hz and a
+  sustained floor near 505.2 Hz. Console tolerance is expected.
+- Medium, the default, scales that complete contour by approximately `0.9945`
+  to the December 1976 RCA demonstration unit: about 625 Hz fresh and
+  502.4--502.5 Hz sustained. Low and High scale Medium by `31/32` and `32/31`,
+  producing approximately 605.5/486.8 Hz and 645.1/518.6 Hz endpoints.
 - Q high holds the upper pitch for about 20 ms, then follows a rounded descent
   that settles in roughly 210--220 ms.
 - Q low does not mute or reset the oscillator. Pitch recovers upward continuously
@@ -20,8 +24,8 @@ measurement uncertainty. Release chronology belongs in release notes and Git.
 
 The December 1976 demonstration recordings independently show the same pitch
 span and driven-curve family at about `0.9945` of the accepted absolute tuning.
-That scale is consistent with unit/component tolerance and is not a reason to
-retune the default model.
+That proportional agreement and Paul Robson's approximately 625 Hz circuit
+description make the demonstration unit the Medium/default reference.
 
 ## Circuit description
 
@@ -57,9 +61,16 @@ separately: the live pitch follows the release tail, while a hidden divider
 tracks recovery. On Q rising, live pitch glides to the recovered state without a
 discontinuous edge, then rejoins the driven contour.
 
-High and low phase lengths are derived from one latched full period. Their sum
-preserves the pitch curve, and the fractional-period accumulator advances once
-per full cycle. The signed sample path is independent of the Studio III
+The selected tuning scales the complete oscillator period while the drive,
+release, retrigger, and amplitude timings remain unchanged. The scale is latched
+with the period so its high and low phases cannot use different settings. Those
+phases are then derived in an 11:6 ratio whose sum preserves the tuned full
+period. The fractional-period accumulator advances once per full cycle.
+
+The OSD reserves a three-bit tuning field. Code 0 is Medium, 1 is Low, and 2 is
+High; codes 3--7 currently fall back to Medium so later non-reference settings
+can be added without narrowing the interface. The setting affects only the
+Studio II beeper. The signed sample path remains independent of the Studio III
 programmable-tone path.
 
 `Studio-II.sv` implements `Sound: On/Off` by gating `AUDIO_L` and `AUDIO_R` to
@@ -73,8 +84,9 @@ demonstration archive, ROM/simulator Q cadence, and MiSTer listening. Acoustic
 analysis uses cycle periods, spectral ridges, and harmonics; recordings do not
 provide direct electrical Q or control-voltage timing.
 
-`tools/beeper-curve-test.py` checks endpoints, descent, release, retrigger
-families, phase-length sums, duty ratio, and protected game cases.
+`tools/beeper-curve-test.py` checks all three tuning endpoints, reserved-code
+fallback, descent, release, retrigger families, phase-length sums, duty ratio,
+and protected game cases.
 `tools/verify-beeper.sh` runs the focused audio checks. Synthesis reports must
 still be inspected separately for timing and inference, and MiSTer listening is
 required for release acceptance.
@@ -88,5 +100,5 @@ required for release acceptance.
   acoustic onset ambiguity.
 
 Any refinement must improve aggregate hardware agreement without moving the
-accepted endpoints, special-casing a title, or regressing the protected rapid,
-long-note, release, and close-retrigger cases.
+accepted normalized contour, special-casing a title, or regressing the protected
+rapid, long-note, release, and close-retrigger cases.

@@ -25,6 +25,11 @@ The CPU, DMA video, raw and paged cartridges, four native firmware slots plus th
 
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, memory maps, cartridge loader, keypad/controller mapping, Studio II beeper, and machine selection.
 
+The Studio II beeper tuning selector occupies `status[19:17]`. Medium is code 0,
+Low is 1, and High is 2; the five reserved codes decode to Medium. Tuning scales
+the latched full oscillator period before its 11:6 phase split, leaving the
+accepted state trajectory and all time-domain envelope behavior unchanged.
+
 Live video modules:
 
 - `rtl/pixie/cdp1861.v` — Studio II, Studio III NTSC, and Visicom timing/DMA.
@@ -35,7 +40,7 @@ Live video modules:
 
 `clk_sys` is about 7.040229 MHz. `ce_pix` divides it by four to the approximately 1.760 MHz machine timebase; CPU machine cycles occur every eight `ce_pix` pulses. MiSTer video is resampled into `clk_vid` at about 42.24 MHz and presented to `video_mixer` at about 7.04 MHz, repeating each native pixel four times.
 
-The Verilator harness normally holds `ce_pix` high. Use `--ce4` for reset release, CLEAR, DMA/CPU phase, or other clock-structure work, and `--press-phase N` to sweep phase-sensitive input. The harness instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS boot ordering, Apply classification, or F1/F2 sync preservation.
+The Verilator harness normally holds `ce_pix` high. Use `--ce4` for reset release, CLEAR, DMA/CPU phase, or other clock-structure work, `--press-phase N` to sweep phase-sensitive input, and `--beeper-tune low|medium|high` to select the Studio II tuning. The harness instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS boot ordering, Apply classification, or F1/F2 sync preservation.
 
 ## Video behavior
 

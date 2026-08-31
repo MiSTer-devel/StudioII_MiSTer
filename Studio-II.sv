@@ -205,7 +205,7 @@ assign BUTTONS = 0;
 
 `include "build_id.v"
 localparam CONF_STR = {
-	"Studio-II;v9;",
+	"Studio-II;v10;",
 	"F1,ST2BINROM,Load Cartridge;",
 	"F2,BINROM,Load Firmware;",
 	"F4,BIN,Load CHIP-8 Interpreter;",
@@ -225,6 +225,9 @@ localparam CONF_STR = {
 	"O[10:9],Numstick,Off,Pad A,Pad B;",
 	"-;",
 	"O[16],Sound,On,Off;",
+	// Medium is first so fresh and unconfigured systems use the RCA reference.
+	// The three-bit field reserves five codes for later non-reference tunings.
+	"D4O[19:17],Beeper tuning,Medium,Low,High;",
 	"-;",
 	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
@@ -449,6 +452,7 @@ rcastudioii rcastudio
 	.joy_manual(status[6]),
 	.auto_profile(auto_profile),
 	.players(status[8:7]),
+	.beeper_tune(status[19:17]),
 	.osk_a(osk_a),
 	.osk_b(osk_b),
 	.clear_key(clear_request)
@@ -501,10 +505,12 @@ always @(posedge clk_sys) begin
 end
 
 // D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
-// CHIP-8 picker on Visicom. Use machine_active so a staged selection does not
-// take effect before Apply and reset.
+// CHIP-8 picker on Visicom. D4 disables Studio II beeper tuning on machines
+// without that circuit. Use machine_active so a staged selection does not take
+// effect before Apply and reset.
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
-	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000);
+	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000) |
+	                     ((machine_active != 2'd0) ? 16'h0010 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 

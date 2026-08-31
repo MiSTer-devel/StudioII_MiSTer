@@ -113,11 +113,10 @@ fi
 
 # And the Studio II must be untouched: it keeps its discrete 555 and ignores
 # OUT 4 entirely. Testing that by absolute frequency would be wrong, because the
-# 555 model deliberately droops -- ~547 Hz fresh, decaying to ~274 Hz over 0.4s,
-# which is the "warpy" power-up sound. Over a
-# window this long the average lands nearer the decayed end. So test the property
-# that matters instead: two very different latch values must give the *same*
-# frequency, because neither reaches the beeper.
+# default Medium model deliberately droops from about 625 Hz toward 502.5 Hz.
+# Over a window this long the average lands nearer the sustained end. Test the
+# property that matters here instead: two very different latch values must give
+# the *same* frequency, because neither reaches the beeper.
 build 1   "$TMP/s2a.bin" 1
 build 255 "$TMP/s2b.bin" 1
 read -r a af <<<"$(measure "$TMP/s2a.bin" studio2)"
@@ -129,7 +128,7 @@ a,b=$ahz,$bhz
 print(1 if a>0 and b>0 and abs(a-b)/max(a,b) < 0.02 else 0)")
 if [[ "$same" == "1" ]]; then
     printf "  ok    Studio II ignores OUT 4: %s Hz and %s Hz for latch 1 vs 255\n" "$ahz" "$bhz"
-    echo   "        (its 555 droops from ~547 to ~274 Hz, so the absolute value depends"
+    echo   "        (its Medium 555 tuning droops from ~625 to ~502.5 Hz, so the average depends"
     echo   "         on the window; what matters is that the latch cannot change it)"
 else
     printf "  FAIL  Studio II frequency moved with the tone latch: %s Hz vs %s Hz\n" "$ahz" "$bhz"

@@ -67,6 +67,12 @@ Visicom is unsupported.
 **Sound: Off** silences the output without stopping or resetting the selected machine's
 tone generator. Turning sound back on resumes the live beeper or tone state.
 
+**Beeper tuning** affects the Studio II only. Medium is the default and follows
+the December 1976 RCA demonstration unit at approximately 625 Hz fresh and
+502.4--502.5 Hz sustained. Low and High retain the same pitch curve, timing,
+release, and retrigger behavior while scaling the complete curve downward or
+upward. The option is disabled for the Studio III and Visicom.
+
 ## Controller profiles
 
 **Mapping: Auto** selects a profile from the exact cartridge file's CRC, falls back to 8-way when there is no match, and changes profile after a resident game is selected. **Manual** lets you select a profile directly. Keyboard input, direct `A0`–`B9` bindings, CLEAR, and the on-screen keypad remain available in either mode.

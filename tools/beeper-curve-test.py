@@ -9,6 +9,8 @@ import re
 PIXEL_CLOCK = 1_760_229
 RTL = Path(__file__).resolve().parents[1] / "rtl" / "rcastudioii.sv"
 TEXT = RTL.read_text(encoding="utf-8")
+TOP_LEVEL = RTL.parents[1] / "Studio-II.sv"
+TOP_TEXT = TOP_LEVEL.read_text(encoding="utf-8")
 
 
 def parameter(name: str) -> int:
@@ -27,6 +29,11 @@ ATTACK_STEP = parameter("SND_ATTACK_STEP")
 DUTY_HIGH_PARTS = parameter("SND_DUTY_HIGH_PARTS")
 DUTY_PARTS = parameter("SND_DUTY_PARTS")
 DUTY_ROUND = parameter("SND_DUTY_ROUND")
+TUNE_LOW = parameter("SND_TUNE_LOW_Q14")
+TUNE_MEDIUM = parameter("SND_TUNE_MEDIUM_Q14")
+TUNE_HIGH = parameter("SND_TUNE_HIGH_Q14")
+TUNE_DENOMINATOR = 1 << 14
+TUNE_ROUND = 1 << 13
 
 bands = [
     (int(limit), int(interval))
@@ -220,8 +227,21 @@ def check(label: str, condition: bool, detail: str) -> None:
     print(f"ok  {label}: {detail}")
 
 
-def phase_lengths(base_ticks: int):
-    full_ticks = 2 * base_ticks
+def tune_scale(code: int) -> int:
+    if code == 1:
+        return TUNE_LOW
+    if code == 2:
+        return TUNE_HIGH
+    return TUNE_MEDIUM
+
+
+def tuned_full_ticks(base_ticks: int, tune_code: int) -> int:
+    product = 2 * base_ticks * tune_scale(tune_code)
+    return (product + TUNE_ROUND) // TUNE_DENOMINATOR
+
+
+def phase_lengths(base_ticks: int, tune_code: int):
+    full_ticks = tuned_full_ticks(base_ticks, tune_code)
     high_ticks = (full_ticks * DUTY_HIGH_PARTS + DUTY_ROUND) // DUTY_PARTS
     return high_ticks, full_ticks - high_ticks
 
@@ -232,26 +252,59 @@ check(
     f"{DUTY_HIGH_PARTS}:{DUTY_PARTS - DUTY_HIGH_PARTS} high/low target",
 )
 
-for label, base_ticks in (
-    ("top short", TOP),
-    ("top long", TOP + 1),
-    ("bottom", BOTTOM + 1),
-):
-    high_ticks, low_ticks = phase_lengths(base_ticks)
-    full_ticks = 2 * base_ticks
+check(
+    "three-bit tuning selector",
+    'O[19:17],Beeper tuning,Medium,Low,High' in TOP_TEXT
+    and ".beeper_tune(status[19:17])" in TOP_TEXT,
+    "status[19:17] reserves eight codes and exposes Medium/Low/High",
+)
+check(
+    "reserved tuning fallback",
+    all(tune_scale(code) == TUNE_MEDIUM for code in range(3, 8))
+    and "default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;" in TEXT,
+    "codes 3-7 decode to Medium",
+)
+
+tuning_targets = {
+    "Low": (1, (605.2, 605.8), (486.5, 487.1)),
+    "Medium": (0, (624.6, 625.1), (502.2, 502.8)),
+    "High": (2, (644.8, 645.4), (518.3, 519.0)),
+}
+for tune_name, (tune_code, top_window, bottom_window) in tuning_targets.items():
+    for label, base_ticks in (
+        ("top short", TOP),
+        ("top long", TOP + 1),
+        ("bottom", BOTTOM + 1),
+    ):
+        high_ticks, low_ticks = phase_lengths(base_ticks, tune_code)
+        full_ticks = tuned_full_ticks(base_ticks, tune_code)
+        check(
+            f"{tune_name} {label} phase lengths",
+            high_ticks + low_ticks == full_ticks
+            and abs(high_ticks - full_ticks * 11 / 17) <= 0.5,
+            f"{high_ticks}+{low_ticks}={full_ticks} ticks, "
+            f"{high_ticks / full_ticks:.3%} high",
+        )
+
+    short_ticks = tuned_full_ticks(TOP, tune_code)
+    long_ticks = tuned_full_ticks(TOP + 1, tune_code)
+    top_ticks = short_ticks * (1 - 574 / 1024) + long_ticks * (574 / 1024)
+    top_hz = PIXEL_CLOCK / top_ticks
+    bottom_hz = PIXEL_CLOCK / tuned_full_ticks(BOTTOM + 1, tune_code)
     check(
-        f"{label} phase lengths",
-        high_ticks + low_ticks == full_ticks
-        and abs(high_ticks - full_ticks * 11 / 17) <= 0.5,
-        f"{high_ticks}+{low_ticks}={full_ticks} ticks, {high_ticks / full_ticks:.3%} high",
+        f"{tune_name} tuning fundamentals",
+        top_window[0] <= top_hz <= top_window[1]
+        and bottom_window[0] <= bottom_hz <= bottom_window[1],
+        f"top {top_hz:.2f} Hz, bottom {bottom_hz:.2f} Hz",
     )
 
-top_hz = PIXEL_CLOCK / (2 * (TOP + 574 / 1024))
-bottom_hz = PIXEL_CLOCK / (2 * (BOTTOM + 1))
+reference_top_hz = PIXEL_CLOCK / (2 * (TOP + 574 / 1024))
+reference_bottom_hz = PIXEL_CLOCK / (2 * (BOTTOM + 1))
 check(
-    "duty-cycle fundamentals",
-    628.3 <= top_hz <= 628.5 and 505.1 <= bottom_hz <= 505.3,
-    f"top {top_hz:.2f} Hz, bottom {bottom_hz:.2f} Hz",
+    "internal reference contour",
+    628.3 <= reference_top_hz <= 628.5
+    and 505.1 <= reference_bottom_hz <= 505.3,
+    f"top {reference_top_hz:.2f} Hz, bottom {reference_bottom_hz:.2f} Hz",
 )
 
 
