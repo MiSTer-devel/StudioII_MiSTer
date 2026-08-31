@@ -40,6 +40,8 @@ technical documents; completed milestones belong in release notes and Git.
 
 ### Visicom video
 
+- Keep the evidence, current comparison, and future runtime-selection contract
+  synchronized in `docs/visicom-palettes.md`.
 - Derive a supported four-colour palette from stable regions across the supplied
   hardware captures, accounting for matrix, transfer, black level, gain, gamma,
   chroma phase, and compression uncertainty.
@@ -110,6 +112,12 @@ technical documents; completed milestones belong in release notes and Git.
 - Add two-entry, 1-bit palette support for Studio II foreground and background.
 - Add four-entry, 2-bit palette support for Visicom. Its four indexed colours
   are a natural fit for Game Boy-style palette sets.
+- Provide named Visicom presets, initially including the current/MAME, Emma 02,
+  and preferred Nicole Express source-look tables, plus a user-loadable
+  four-entry 24-bit RGB palette. Applying a custom palette must not require HDL
+  edits, synthesis, or a machine reset.
+- Label any optional flyer-, manual-, or capture-derived preset as a source
+  *look*, not as the accepted hardware palette.
 - Consider an optional expanded eight-entry palette for Studio III after the
   Studio II and Visicom paths are settled. Studio III already has a carefully
   matched hardware default, and its colour banding makes this a lower priority,

@@ -156,7 +156,7 @@ Press CLEAR before selecting a game.
 
 In Guess the Number, enter guesses on the active keypad. The three-digit clue counts correct digits and positions: `000` means none correct and `006` means the number is solved. Intermediate totals combine correctly placed and misplaced digits. Digits may repeat and zero is valid.
 
-In Reverse, reorder 1–9 by pressing `B2`–`B9`; the digit says how many leading positions to reverse.
+The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–9 in no more than 30 moves by pressing `B2`–`B9`; the digit says how many leading positions to reverse.
 
 ### TV Arcade III - Tennis + Squash
 
@@ -164,8 +164,8 @@ In Reverse, reorder 1–9 by pressing `B2`–`B9`; the digit says how many leadi
 - `A2`: Tennis, two players using both keypads.
 - Each player chooses racquet size on their pad: `4` small, `5` medium, `6` large.
 - Player A selects ball speed and begins: `A7` slow, `A8` normal, `A9` fast.
-- During play, `2` moves a racquet up and `8` down on its player's keypad. `0` pauses/resumes.
-- Tennis is first to 21, winning by two; Squash ends at 200.
+- During play, `2` moves a racquet up and `8` down on its player's keypad. Between serves, `0` pauses/resumes.
+- Tennis is first to 21, winning by two. Squash ends after 21 misses or 200 completed volleys.
 
 ### TV Arcade IV - Baseball
 
@@ -174,6 +174,7 @@ In Reverse, reorder 1–9 by pressing `B2`–`B9`; the digit says how many leadi
 - Pitcher: `2` inside curve, `5` straight, `8` outside curve. Hold about a quarter-second for a change-up.
 - Fielders: `2` up and `8` down.
 - The lower-left result is `F` foul, `1/2/3` base hit, `H` home run, `W` walk or `O` out.
+- The game lasts nine innings. Ties continue into extra innings, up to 99 innings or until a player reaches 99 runs.
 
 ### TV Arcade Series - Gunfighter + Moonship Battle
 
@@ -217,38 +218,43 @@ In Reverse, reorder 1–9 by pressing `B2`–`B9`; the digit says how many leadi
 - `A1`: manual calling; press `A1` for each new number.
 - `A2`: automatic calling every 12 seconds; `A0` stops or `A1` returns to manual.
 - `A3`: verify mode. Enter a claimed winning card on keypad B; `OK` means a number was called and `NO` means it was not.
+- In verify mode, enter the five claimed numbers as two digits each and omit the free space. When all five show `OK`, press `A0` to display their point total and play the tune; `A3` restarts an incorrectly entered verification.
 - `A4`: play the bingo tune.
 
 ### TV Mystic Series - Biorhythm
 
 - Press `A0`.
 - Enter birth date and then chart start date on keypad B in `MM DD YYYY` form.
-- The chart labels physical (`P`), emotional (`E`) and intellectual (`I`) cycles.
+- The 32-day chart labels physical (`P`), emotional (`E`) and intellectual (`I`) cycles and marks seven-day intervals.
 
 ### TV School House I
 
 - `A1`: fast response, about 10 seconds. `A2`: slow response, about 20 seconds.
 - Choose quiz 1–9 and use the matching printed quiz booklet. The displayed letter A–H identifies the question.
-- Enter answers on the active player's numeric keypad; the one-player mode uses keypad B.
+- A solo player may answer on either keypad. With two players, each uses their own keypad and races to answer first.
+- A wrong answer locks that player out for the current question. Correct answers score 1–10 points depending on speed; the quiz ends after 12 questions.
 
 ### TV School House II - Math Fun
 
 - `A1`: slow response, about 20 seconds. `A2`: fast response, about 10 seconds.
 - Choose `1` addition, `2` subtraction, `3` multiplication, `4` division or `5` combination.
 - For the first four types, then choose difficulty 1–4.
-- Players enter answers on their own numeric keypads; the one-player mode uses keypad B.
+- A solo player may answer on either keypad. With two players, each uses their own keypad and races to answer first.
+- Correct answers score 1–10 points depending on speed; a wrong answer locks that player out for the problem. The game lasts ten problems.
+- After the final score, `A0` repeats the same setup; CLEAR returns to setup selection.
 
 ### Concentration + Match
 
 - Either player starts by pressing a digit on their own keypad. The first pad used becomes the first player.
 - The starting digit controls how long symbols are exposed: `0` shows none; `9` shows them longest.
-- During play, select two cards with keypad positions 1–9. Matching symbols score one point.
+- During play, keypad A positions `1`–`9` select the nine cards on the left and keypad B positions `1`–`9` select the nine on the right.
+- A match scores one point and keeps the turn; a miss passes it. After all nine pairs are found, a new layout begins with the other player. First to 25 points wins.
 
 ### Pinball
 
 - `A1`: one player, using keypad B. `A2`: two players, alternating pads.
 - On the active pad, `1` puts a ball in play, `4/6` operate the left/right flippers and `0` reverses the ball to simulate shoving the cabinet.
-- Repeated use of `0` causes TILT. Each player receives five balls; a score above 999 ends the game.
+- Bumpers change randomly between values 2–9. Repeated use of `0` causes TILT. Each player receives five balls; a score above 999 ends the game.
 
 ## Studio III / MPT-02 programs
 
@@ -257,7 +263,9 @@ Studio II-compatible cartridges above also run on several MPT-02-family machines
 ### Grand Pack
 
 - `A1` Doodle, `A2` Patterns, `A3` Bowling, `A4` Blackjack one-player and `A5` Blackjack two-player.
-- Doodle/Patterns/Bowling follow the resident-game controls above, with colour selection available on digits `3`–`9` and `0` where supported.
+- Doodle and Patterns use the resident-game movement and drawing controls above. Their keypad A colour/tone choices are `3` red/do, `4` blue/re, `5` violet/mi, `6` green/fa, `7` yellow/sol, `8` light blue/la, `9` white/si and `0` black/do.
+- Patterns stores up to 128 entries; a colour/tone change uses three entries. `B0` begins or resumes repetition and `B5` freezes it.
+- Bowling follows the resident controls and lasts ten frames; a strike scores 20, a spare 15 and a perfect game 200.
 - In Blackjack, players can bet $01–$99; active-pad actions are `1` hit, `2` double and `0` stand.
 
 The merged Grand Pack and its two split dumps represent the same package and should share mapping research.

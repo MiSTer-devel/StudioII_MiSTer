@@ -2,6 +2,18 @@
 
 MiSTer FPGA core for the RCA Studio II, Studio III/MPT-02 family, and Toshiba Visicom COM-100.
 
+Example hardware units:
+* RCA Studio II
+* RCA Studio III (unreleased)
+* Academy Apollo 80
+* Conic M-1200
+* Hanimex MPT-02
+* Mustang 9016
+* Sheen M-1200
+* Soundic Victory (MPT-02)
+* Toshiba Visicom COM-100
+* Trevi M-1200
+
 ## Install and play
 
 Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.

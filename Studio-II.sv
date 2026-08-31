@@ -533,17 +533,9 @@ wire [7:0] vid_lvl = video_bg ? 8'h80 : 8'hFF;
 // Visicom colours are fixed values so they cannot be expressed
 // on the {R,G,B} bus above.
 //
-// Emma 02 and MAME disagree on color values. Sampling a hardware capture of
-// Visicom Freeway Youtube gives:
-// #003700, #B1ECE6, #DCE12D and #FF3D46. Summed RGB distance from that:
-//
-//              Emma 02   MAME        (MAME's visicom.cpp VISICOM_PALETTE)
-//   colour 1      75       13        #70D0FF vs #AFDFE4
-//   colour 2      74       45           
-//   colour 3      66       18        #FF7070 vs #EF454A
-//   total        225       86
-//
-// We use MAME colors here which are closer to the capture samples.
+// The current default is MAME's four-entry table. Alternative emulator values,
+// source observations, and future selectable/custom palette requirements are
+// tracked in docs/visicom-palettes.md.
 wire machine_visicom = (machine_active == 2'd3);
 reg [23:0] vis_rgb;
 always @(*) begin
