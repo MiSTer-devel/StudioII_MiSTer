@@ -41,7 +41,8 @@ module rcastudioii
 	input              joy_manual,     // OSD "Mapping": 0 = auto-detect, 1 = use joy_override
 	output       [3:0] auto_profile,   // the detected profile, for the top level to show in the OSD
 	input        [1:0] players,        // OSD: 0 = auto, 1 = one player, 2 = two players
-	input        [2:0] beeper_tune,    // OSD: 0 = medium/reference, 1 = low, 2 = high; others reserved
+	input        [2:0] beeper_tune,    // OSD tuning; 0 = medium/reference
+	input              ntsc_pal_pitch, // Studio III NTSC: use the PAL divide-by-four tone stage
 	input        [9:0] osk_a,          // on-screen keypad presses for keypad A (bit = key)
 	input        [9:0] osk_b,          // and for keypad B
 	output reg         chip8_fw_loaded,
@@ -226,7 +227,8 @@ cdp1863 cdp1863
     // standalone 1863 does not, so the same latch sounds four times higher on
     // the NTSC machine. MAME: cdp1864 f = clk/8/4/(latch+1)/2 against cdp1863
     // f = clk/8/(latch+1)/2 from its clock2 input, which is where TPB goes.
-    .div4    (machine == MACHINE_S3_PAL),
+    .div4    ((machine == MACHINE_S3_PAL) ||
+              ((machine == MACHINE_S3_NTSC) && ntsc_pal_pitch)),
     .tone_we (io_out && (io_n == 3'd4)),
     .tone_d  (cpu_dout),
     .aoe     (Q),
@@ -1248,11 +1250,15 @@ localparam  [4:0] SND_DUTY_HIGH_PARTS = 5'd11;
 localparam  [4:0] SND_DUTY_PARTS      = 5'd17;
 localparam  [4:0] SND_DUTY_ROUND      = 5'd8;
 // Q14 full-period multipliers. Medium is the December 1976 RCA demonstration
-// unit (0.9945 of the internal reference frequency); Low and High are 31/32 and
-// 32/31 of Medium. Codes 3--7 deliberately fall back to Medium until assigned.
-localparam [14:0] SND_TUNE_LOW_Q14    = 15'd17006;
-localparam [14:0] SND_TUNE_MEDIUM_Q14 = 15'd16475;
-localparam [14:0] SND_TUNE_HIGH_Q14   = 15'd15960;
+// unit (0.9945 of the internal reference frequency). Each adjacent tuning
+// compounds the existing reciprocal 31:32 frequency step away from Medium.
+localparam [14:0] SND_TUNE_HIGHEST_Q14 = 15'd14978;
+localparam [14:0] SND_TUNE_HIGHER_Q14  = 15'd15461;
+localparam [14:0] SND_TUNE_HIGH_Q14    = 15'd15960;
+localparam [14:0] SND_TUNE_MEDIUM_Q14  = 15'd16475;
+localparam [14:0] SND_TUNE_LOW_Q14     = 15'd17006;
+localparam [14:0] SND_TUNE_LOWER_Q14   = 15'd17555;
+localparam [14:0] SND_TUNE_LOWEST_Q14  = 15'd18121;
 
 reg [15:0] snd_half;          // audible oscillator period
 reg [15:0] snd_drive_half;    // fresh Q-high contour
@@ -1273,8 +1279,12 @@ reg        snd_out;
 function automatic [14:0] snd_tune_period_scale(input [2:0] tuning);
 begin
 	case (tuning)
-		3'd1: snd_tune_period_scale = SND_TUNE_LOW_Q14;
-		3'd2: snd_tune_period_scale = SND_TUNE_HIGH_Q14;
+		3'd1: snd_tune_period_scale = SND_TUNE_HIGH_Q14;
+		3'd2: snd_tune_period_scale = SND_TUNE_HIGHER_Q14;
+		3'd3: snd_tune_period_scale = SND_TUNE_HIGHEST_Q14;
+		3'd4: snd_tune_period_scale = SND_TUNE_LOWEST_Q14;
+		3'd5: snd_tune_period_scale = SND_TUNE_LOWER_Q14;
+		3'd6: snd_tune_period_scale = SND_TUNE_LOW_Q14;
 		default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;
 	endcase
 end

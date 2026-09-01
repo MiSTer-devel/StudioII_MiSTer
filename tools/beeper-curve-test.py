@@ -29,9 +29,13 @@ ATTACK_STEP = parameter("SND_ATTACK_STEP")
 DUTY_HIGH_PARTS = parameter("SND_DUTY_HIGH_PARTS")
 DUTY_PARTS = parameter("SND_DUTY_PARTS")
 DUTY_ROUND = parameter("SND_DUTY_ROUND")
-TUNE_LOW = parameter("SND_TUNE_LOW_Q14")
-TUNE_MEDIUM = parameter("SND_TUNE_MEDIUM_Q14")
+TUNE_HIGHEST = parameter("SND_TUNE_HIGHEST_Q14")
+TUNE_HIGHER = parameter("SND_TUNE_HIGHER_Q14")
 TUNE_HIGH = parameter("SND_TUNE_HIGH_Q14")
+TUNE_MEDIUM = parameter("SND_TUNE_MEDIUM_Q14")
+TUNE_LOW = parameter("SND_TUNE_LOW_Q14")
+TUNE_LOWER = parameter("SND_TUNE_LOWER_Q14")
+TUNE_LOWEST = parameter("SND_TUNE_LOWEST_Q14")
 TUNE_DENOMINATOR = 1 << 14
 TUNE_ROUND = 1 << 13
 
@@ -228,11 +232,16 @@ def check(label: str, condition: bool, detail: str) -> None:
 
 
 def tune_scale(code: int) -> int:
-    if code == 1:
-        return TUNE_LOW
-    if code == 2:
-        return TUNE_HIGH
-    return TUNE_MEDIUM
+    return {
+        0: TUNE_MEDIUM,
+        1: TUNE_HIGH,
+        2: TUNE_HIGHER,
+        3: TUNE_HIGHEST,
+        4: TUNE_LOWEST,
+        5: TUNE_LOWER,
+        6: TUNE_LOW,
+        7: TUNE_MEDIUM,
+    }[code]
 
 
 def tuned_full_ticks(base_ticks: int, tune_code: int) -> int:
@@ -254,21 +263,25 @@ check(
 
 check(
     "three-bit tuning selector",
-    'O[19:17],Beeper tuning,Medium,Low,High' in TOP_TEXT
+    'O[19:17],Beeper tuning,Medium,High,Higher,Highest,Lowest,Lower,Low' in TOP_TEXT
     and ".beeper_tune(status[19:17])" in TOP_TEXT,
-    "status[19:17] reserves eight codes and exposes Medium/Low/High",
+    "status[19:17] exposes seven ordered tuning values",
 )
 check(
     "reserved tuning fallback",
-    all(tune_scale(code) == TUNE_MEDIUM for code in range(3, 8))
+    tune_scale(7) == TUNE_MEDIUM
     and "default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;" in TEXT,
-    "codes 3-7 decode to Medium",
+    "unused code 7 decodes to Medium",
 )
 
 tuning_targets = {
-    "Low": (1, (605.2, 605.8), (486.5, 487.1)),
     "Medium": (0, (624.6, 625.1), (502.2, 502.8)),
-    "High": (2, (644.8, 645.4), (518.3, 519.0)),
+    "High": (1, (644.8, 645.4), (518.3, 519.0)),
+    "Higher": (2, (665.6, 666.2), (535.1, 535.8)),
+    "Highest": (3, (687.0, 687.6), (552.4, 553.0)),
+    "Lowest": (4, (568.0, 568.6), (456.4, 457.0)),
+    "Lower": (5, (586.3, 586.9), (471.1, 471.8)),
+    "Low": (6, (605.2, 605.8), (486.5, 487.1)),
 }
 for tune_name, (tune_code, top_window, bottom_window) in tuning_targets.items():
     for label, base_ticks in (

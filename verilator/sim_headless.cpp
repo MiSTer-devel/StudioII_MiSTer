@@ -559,7 +559,9 @@ static void usage(const char* argv0) {
 "                         27:18 B0..B9) at frame F for H frames.\n"
 "    --joy2 MASK@F[:H]    same, joystick 1\n"
 "    --players N          OSD Players setting: 0 auto, 1 one player, 2 two\n"
-"    --beeper-tune NAME   Studio II tuning: medium (default), low, or high\n"
+"    --beeper-tune NAME   Studio II tuning: medium (default), high, higher,\n"
+"                         highest, low, lower, or lowest\n"
+"    --ntsc-tone-pitch P  Studio III NTSC pitch: original (default) or pal\n"
 "    --swap FILE@FRAME    download another cartridge at frame F, like an OSD\n"
 "                         load while the machine is running\n"
 "    --press KEY@F[:H]    press KEY at frame F, hold H frames (default 4).\n"
@@ -622,7 +624,8 @@ int main(int argc, char** argv) {
     uint8_t  joy_override = 0;   // applied once top exists
     bool     joy_manual   = false;
     uint8_t  machine = 0;   // 0 studio2, 1 studio3 PAL, 2 studio3 NTSC, 3 Visicom
-    uint8_t  beeper_tune = 0; // 0 medium/reference, 1 low, 2 high
+    uint8_t  beeper_tune = 0; // 0 medium/reference; remaining values follow the OSD
+    bool     ntsc_pal_pitch = false;
     bool     ce_div4 = false;  // run the hardware's /4 pixel enable (4x slower)
     uint32_t ram_junk_seed = 0;  // pre-fill RAM with junk (0 = boot with zeroed RAM)
     long     press_phase = 0;    // delay key events N clks past their frame boundary
@@ -735,10 +738,20 @@ int main(int argc, char** argv) {
         }
         else if (a == "--beeper-tune") {
             std::string t = next("--beeper-tune");
-            if      (t == "medium") beeper_tune = 0;
-            else if (t == "low")    beeper_tune = 1;
-            else if (t == "high")   beeper_tune = 2;
-            else { fprintf(stderr, "error: --beeper-tune must be low, medium or high\n"); return 1; }
+            if      (t == "medium")  beeper_tune = 0;
+            else if (t == "high")    beeper_tune = 1;
+            else if (t == "higher")  beeper_tune = 2;
+            else if (t == "highest") beeper_tune = 3;
+            else if (t == "lowest")  beeper_tune = 4;
+            else if (t == "lower")   beeper_tune = 5;
+            else if (t == "low")     beeper_tune = 6;
+            else { fprintf(stderr, "error: --beeper-tune must be medium, high, higher, highest, lowest, lower or low\n"); return 1; }
+        }
+        else if (a == "--ntsc-tone-pitch") {
+            std::string t = next("--ntsc-tone-pitch");
+            if      (t == "original") ntsc_pal_pitch = false;
+            else if (t == "pal")      ntsc_pal_pitch = true;
+            else { fprintf(stderr, "error: --ntsc-tone-pitch must be original or pal\n"); return 1; }
         }
         else if (a == "--joy-map") { joy_override = (uint8_t)atoi(next("--joy-map")); joy_manual = true; }
         else if (a == "--trace-q")    trace_q = true;
@@ -798,6 +811,7 @@ int main(int argc, char** argv) {
     top->joy_manual   = joy_manual;
     top->machine = machine;
     top->beeper_tune = beeper_tune;
+    top->ntsc_pal_pitch = ntsc_pal_pitch;
     top->ce_div4 = ce_div4 ? 1 : 0;
     top->players = players_mode;
 

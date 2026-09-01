@@ -81,9 +81,15 @@ tone generator. Turning sound back on resumes the live beeper or tone state.
 
 **Beeper tuning** affects the Studio II only. Medium is the default and follows
 the December 1976 RCA demonstration unit at approximately 625 Hz fresh and
-502.4--502.5 Hz sustained. Low and High retain the same pitch curve, timing,
-release, and retrigger behavior while scaling the complete curve downward or
-upward. The option is disabled for the Studio III and Visicom.
+502.4--502.5 Hz sustained. High/Higher/Highest and Low/Lower/Lowest retain the
+same pitch curve, timing, release, and retrigger behavior while scaling the
+complete curve upward or downward in cumulative steps. The option is disabled
+for the Studio III and Visicom.
+
+**NTSC tone pitch** is available only on the Studio III NTSC. Original uses the
+native CDP1863 pitch, four times the Studio III PAL pitch for the same tone
+latch. PAL (lower) selects the CDP1864 divide-by-four stage so NTSC software
+plays at the PAL pitch. Changing the setting does not restart the tone generator.
 
 ## Controller profiles
 

@@ -9,8 +9,9 @@ measurement uncertainty. Release chronology belongs in release notes and Git.
   sustained floor near 505.2 Hz. Console tolerance is expected.
 - Medium, the default, scales that complete contour by approximately `0.9945`
   to the December 1976 RCA demonstration unit: about 625 Hz fresh and
-  502.4--502.5 Hz sustained. Low and High scale Medium by `31/32` and `32/31`,
-  producing approximately 605.5/486.8 Hz and 645.1/518.6 Hz endpoints.
+  502.4--502.5 Hz sustained. Each Low/Lower/Lowest or High/Higher/Highest step
+  compounds the same reciprocal `31:32` frequency step away from Medium. The
+  outer choices span approximately 568.2/456.8 Hz to 687.3/552.7 Hz.
 - Q high holds the upper pitch for about 20 ms, then follows a rounded descent
   that settles in roughly 210--220 ms.
 - Q low does not mute or reset the oscillator. Pitch recovers upward continuously
@@ -67,10 +68,10 @@ with the period so its high and low phases cannot use different settings. Those
 phases are then derived in an 11:6 ratio whose sum preserves the tuned full
 period. The fractional-period accumulator advances once per full cycle.
 
-The OSD reserves a three-bit tuning field. Code 0 is Medium, 1 is Low, and 2 is
-High; codes 3--7 currently fall back to Medium so later non-reference settings
-can be added without narrowing the interface. The setting affects only the
-Studio II beeper. The signed sample path remains independent of the Studio III
+The OSD uses a three-bit tuning field. Codes 0--6 are Medium, High, Higher,
+Highest, Lowest, Lower, and Low so traversing the menu remains monotonic across
+its wrap; unused code 7 falls back to Medium. The setting affects only the Studio
+II beeper. The signed sample path remains independent of the Studio III
 programmable-tone path.
 
 `Studio-II.sv` implements `Sound: On/Off` by gating `AUDIO_L` and `AUDIO_R` to
@@ -84,7 +85,7 @@ demonstration archive, ROM/simulator Q cadence, and MiSTer listening. Acoustic
 analysis uses cycle periods, spectral ridges, and harmonics; recordings do not
 provide direct electrical Q or control-voltage timing.
 
-`tools/beeper-curve-test.py` checks all three tuning endpoints, reserved-code
+`tools/beeper-curve-test.py` checks all seven tuning endpoints, reserved-code
 fallback, descent, release, retrigger families, phase-length sums, duty ratio,
 and protected game cases.
 `tools/verify-beeper.sh` runs the focused audio checks. Synthesis reports must
