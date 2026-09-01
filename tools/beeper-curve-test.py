@@ -263,7 +263,7 @@ check(
 
 check(
     "three-bit tuning selector",
-    'O[19:17],Beeper tuning,Medium,High,Higher,Highest,Lowest,Lower,Low' in TOP_TEXT
+    'O[19:17],NE555 pitch,Original,High,Higher,Highest,Lowest,Lower,Low' in TOP_TEXT
     and ".beeper_tune(status[19:17])" in TOP_TEXT,
     "status[19:17] exposes seven ordered tuning values",
 )
@@ -271,16 +271,23 @@ check(
     "reserved tuning fallback",
     tune_scale(7) == TUNE_MEDIUM
     and "default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;" in TEXT,
-    "unused code 7 decodes to Medium",
+    "unused code 7 decodes to Original",
+)
+check(
+    "one/three/six-step tuning scales",
+    (TUNE_HIGHEST, TUNE_HIGHER, TUNE_HIGH, TUNE_MEDIUM,
+     TUNE_LOW, TUNE_LOWER, TUNE_LOWEST)
+    == (13617, 14978, 15960, 16475, 17006, 18121, 19932),
+    "Q14 endpoints follow cumulative -6/-3/-1/0/+1/+3/+6 period steps",
 )
 
 tuning_targets = {
-    "Medium": (0, (624.6, 625.1), (502.2, 502.8)),
+    "Original": (0, (624.6, 625.1), (502.2, 502.8)),
     "High": (1, (644.8, 645.4), (518.3, 519.0)),
-    "Higher": (2, (665.6, 666.2), (535.1, 535.8)),
-    "Highest": (3, (687.0, 687.6), (552.4, 553.0)),
-    "Lowest": (4, (568.0, 568.6), (456.4, 457.0)),
-    "Lower": (5, (586.3, 586.9), (471.1, 471.8)),
+    "Higher": (2, (687.0, 687.6), (552.4, 553.0)),
+    "Highest": (3, (755.7, 756.4), (607.5, 608.2)),
+    "Lowest": (4, (516.2, 516.9), (415.0, 415.7)),
+    "Lower": (5, (568.0, 568.6), (456.4, 457.0)),
     "Low": (6, (605.2, 605.8), (486.5, 487.1)),
 }
 for tune_name, (tune_code, top_window, bottom_window) in tuning_targets.items():

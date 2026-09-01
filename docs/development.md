@@ -26,11 +26,11 @@ The CPU, DMA video, raw and paged cartridges, four native firmware slots plus th
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, memory maps, cartridge loader, keypad/controller mapping, Studio II beeper, and machine selection.
 
 The Studio II beeper tuning selector occupies `status[19:17]`. Codes 0--6 are
-Medium, High, Higher, Highest, Lowest, Lower, and Low; unused code 7 decodes to
-Medium. Each step away from Medium compounds the original reciprocal 31:32
-frequency ratio. Tuning scales the latched full oscillator period before its
-11:6 phase split, leaving the accepted state trajectory and all time-domain
-envelope behavior unchanged.
+Original, High, Higher, Highest, Lowest, Lower, and Low; unused code 7 decodes to
+Original. Low/High, Lower/Higher, and Lowest/Highest apply one, three, and six
+cumulative steps of the original reciprocal 31:32 frequency ratio. Tuning
+scales the latched full oscillator period before its 11:6 phase split, leaving
+the accepted state trajectory and all time-domain envelope behavior unchanged.
 
 The Studio III NTSC tone-pitch selector occupies `status[20]`. Zero keeps the
 standalone CDP1863's native pitch; one selects the CDP1864 divide-by-four stage
@@ -48,7 +48,7 @@ Live video modules:
 
 `clk_sys` is about 7.040229 MHz. `ce_pix` divides it by four to the approximately 1.760 MHz machine timebase; CPU machine cycles occur every eight `ce_pix` pulses. MiSTer video is resampled into `clk_vid` at about 42.24 MHz and presented to `video_mixer` at about 7.04 MHz, repeating each native pixel four times.
 
-The Verilator harness normally holds `ce_pix` high. Use `--ce4` for reset release, CLEAR, DMA/CPU phase, or other clock-structure work, `--press-phase N` to sweep phase-sensitive input, `--beeper-tune medium|high|higher|highest|lowest|lower|low` to select the Studio II tuning, and `--ntsc-tone-pitch original|pal` to select the Studio III NTSC pitch. The harness instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS boot ordering, Apply classification, OSD menu masking, or F1/F2 sync preservation.
+The Verilator harness normally holds `ce_pix` high. Use `--ce4` for reset release, CLEAR, DMA/CPU phase, or other clock-structure work, `--press-phase N` to sweep phase-sensitive input, `--beeper-tune medium|high|higher|highest|lowest|lower|low` to select the Studio II tuning (`medium` selects Original), and `--ntsc-tone-pitch original|pal` to select the Studio III NTSC pitch. The harness instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS boot ordering, Apply classification, OSD menu masking, or F1/F2 sync preservation.
 
 ## Video behavior
 

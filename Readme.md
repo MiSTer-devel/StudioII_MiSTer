@@ -79,12 +79,12 @@ Visicom is unsupported.
 **Sound: Off** silences the output without stopping or resetting the selected machine's
 tone generator. Turning sound back on resumes the live beeper or tone state.
 
-**Beeper tuning** affects the Studio II only. Medium is the default and follows
+**Beeper tuning** affects the Studio II only. Original is the default and follows
 the December 1976 RCA demonstration unit at approximately 625 Hz fresh and
 502.4--502.5 Hz sustained. High/Higher/Highest and Low/Lower/Lowest retain the
 same pitch curve, timing, release, and retrigger behavior while scaling the
-complete curve upward or downward in cumulative steps. The option is disabled
-for the Studio III and Visicom.
+complete curve upward or downward by one, three, or six cumulative tuning
+steps. The option is disabled for the Studio III and Visicom.
 
 **NTSC tone pitch** is available only on the Studio III NTSC. Original uses the
 native CDP1863 pitch, four times the Studio III PAL pitch for the same tone

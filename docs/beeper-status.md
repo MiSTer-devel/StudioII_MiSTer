@@ -1,17 +1,18 @@
 # Studio II beeper
 
-This file records the accepted behavioral model, its evidence, and remaining
-measurement uncertainty. Release chronology belongs in release notes and Git.
+This file records the accepted behavioral model, its evidence, and verification
+boundary. Release chronology belongs in release notes and Git.
 
 ## Behavioral baseline
 
 - The retail-reference contour has a fresh-note pitch near 628.4 Hz and a
   sustained floor near 505.2 Hz. Console tolerance is expected.
-- Medium, the default, scales that complete contour by approximately `0.9945`
+- Original, the default, scales that complete contour by approximately `0.9945`
   to the December 1976 RCA demonstration unit: about 625 Hz fresh and
-  502.4--502.5 Hz sustained. Each Low/Lower/Lowest or High/Higher/Highest step
-  compounds the same reciprocal `31:32` frequency step away from Medium. The
-  outer choices span approximately 568.2/456.8 Hz to 687.3/552.7 Hz.
+  502.4--502.5 Hz sustained. Low/High, Lower/Higher, and Lowest/Highest apply
+  one, three, and six cumulative reciprocal `31:32` frequency steps away from
+  Original. The outer choices span approximately 516.5/415.3 Hz to
+  756.1/607.8 Hz.
 - Q high holds the upper pitch for about 20 ms, then follows a rounded descent
   that settles in roughly 210--220 ms.
 - Q low does not mute or reset the oscillator. Pitch recovers upward continuously
@@ -26,7 +27,7 @@ measurement uncertainty. Release chronology belongs in release notes and Git.
 The December 1976 demonstration recordings independently show the same pitch
 span and driven-curve family at about `0.9945` of the accepted absolute tuning.
 That proportional agreement and Paul Robson's approximately 625 Hz circuit
-description make the demonstration unit the Medium/default reference.
+description make the demonstration unit the Original/default reference.
 
 ## Circuit description
 
@@ -68,9 +69,9 @@ with the period so its high and low phases cannot use different settings. Those
 phases are then derived in an 11:6 ratio whose sum preserves the tuned full
 period. The fractional-period accumulator advances once per full cycle.
 
-The OSD uses a three-bit tuning field. Codes 0--6 are Medium, High, Higher,
+The OSD uses a three-bit tuning field. Codes 0--6 are Original, High, Higher,
 Highest, Lowest, Lower, and Low so traversing the menu remains monotonic across
-its wrap; unused code 7 falls back to Medium. The setting affects only the Studio
+its wrap; unused code 7 falls back to Original. The setting affects only the Studio
 II beeper. The signed sample path remains independent of the Studio III
 programmable-tone path.
 
@@ -92,14 +93,16 @@ and protected game cases.
 still be inspected separately for timing and inference, and MiSTer listening is
 required for release acceptance.
 
-## Remaining uncertainty
+## Accepted boundary
 
-- Archival release ridges suggest a faster upward recovery than the accepted
-  curve, but short-window endpoint bias can also produce impossible overshoot.
-- The hardest early-attack knee is not fully constrained.
-- Direct electrical or line-level captures with a recorded Q trace would remove
-  acoustic onset ambiguity.
+The Studio II beeper model and its seven tuning choices are complete. Original
+is the hardware-derived reference; Low/High provide a modest adjacent choice,
+Lower/Higher retain the broader expected console range, and Lowest/Highest add
+deliberately pronounced but still useful alternatives. Every choice preserves
+the same contour, envelope, release, retrigger behavior, duty ratio, and live
+generator state.
 
-Any refinement must improve aggregate hardware agreement without moving the
-accepted normalized contour, special-casing a title, or regressing the protected
-rapid, long-note, release, and close-retrigger cases.
+No beeper refinement is planned. Reconsider the accepted model only if materially
+better hardware evidence demonstrates an aggregate error without requiring a
+title-specific path or regressing the protected rapid, long-note, release, and
+close-retrigger cases.

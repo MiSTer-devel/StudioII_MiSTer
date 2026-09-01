@@ -51,6 +51,12 @@ that player's `0` pause key.
 
 ## Current boundary
 
-The compiled profile system remains the current source of truth. Keep additions
-in its shared CRC-to-profile table rather than adding parallel or title-specific
-RTL. Preserve manual keypad access and leave unknown controls unmapped.
+The controller system is accepted complete: verified cartridge and resident-game
+profiles, Auto/Manual mapping, Auto/1/2-player selection, Numstick assignment,
+and the manual keypad paths form one coherent input model. The compiled profile
+system remains its source of truth; no external replacement or parallel profile
+path is planned.
+
+Keep any evidence-backed additions in the shared CRC-to-profile table rather
+than adding title-specific RTL. Preserve manual keypad access and leave unknown
+controls unmapped.

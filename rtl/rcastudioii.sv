@@ -41,7 +41,7 @@ module rcastudioii
 	input              joy_manual,     // OSD "Mapping": 0 = auto-detect, 1 = use joy_override
 	output       [3:0] auto_profile,   // the detected profile, for the top level to show in the OSD
 	input        [1:0] players,        // OSD: 0 = auto, 1 = one player, 2 = two players
-	input        [2:0] beeper_tune,    // OSD tuning; 0 = medium/reference
+	input        [2:0] beeper_tune,    // OSD tuning; 0 = original/reference
 	input              ntsc_pal_pitch, // Studio III NTSC: use the PAL divide-by-four tone stage
 	input        [9:0] osk_a,          // on-screen keypad presses for keypad A (bit = key)
 	input        [9:0] osk_b,          // and for keypad B
@@ -1270,16 +1270,16 @@ localparam [12:0] SND_ATTACK_STEP  = 13'd14;  // ~2ms zero-to-full
 localparam  [4:0] SND_DUTY_HIGH_PARTS = 5'd11;
 localparam  [4:0] SND_DUTY_PARTS      = 5'd17;
 localparam  [4:0] SND_DUTY_ROUND      = 5'd8;
-// Q14 full-period multipliers. Medium is the December 1976 RCA demonstration
-// unit (0.9945 of the internal reference frequency). Each adjacent tuning
-// compounds the existing reciprocal 31:32 frequency step away from Medium.
-localparam [14:0] SND_TUNE_HIGHEST_Q14 = 15'd14978;
-localparam [14:0] SND_TUNE_HIGHER_Q14  = 15'd15461;
+// Q14 full-period multipliers. Original is the December 1976 RCA demonstration
+// unit (0.9945 of the internal reference frequency). The three choices on
+// either side are one, three, and six cumulative reciprocal 31:32 steps.
+localparam [14:0] SND_TUNE_HIGHEST_Q14 = 15'd13617;
+localparam [14:0] SND_TUNE_HIGHER_Q14  = 15'd14978;
 localparam [14:0] SND_TUNE_HIGH_Q14    = 15'd15960;
 localparam [14:0] SND_TUNE_MEDIUM_Q14  = 15'd16475;
 localparam [14:0] SND_TUNE_LOW_Q14     = 15'd17006;
-localparam [14:0] SND_TUNE_LOWER_Q14   = 15'd17555;
-localparam [14:0] SND_TUNE_LOWEST_Q14  = 15'd18121;
+localparam [14:0] SND_TUNE_LOWER_Q14   = 15'd18121;
+localparam [14:0] SND_TUNE_LOWEST_Q14  = 15'd19932;
 
 reg [15:0] snd_half;          // audible oscillator period
 reg [15:0] snd_drive_half;    // fresh Q-high contour
