@@ -67,7 +67,7 @@ This table records the minimum input shape needed for a useful controller profil
 | Classic CHIP-8 programs | Studio II / III | Load `.ch8` directly | D-pad `5/7/8/9`; Start `1`; Fire `F`; Extra `0` |
 | Resident Doodle / Patterns | Studio II | `A1` / `A2` | 8-way on B plus B5/B0 |
 | Resident Bowling | Studio II | `A3` | Cross plus center, alternating A/B |
-| Resident Freeway | Studio II | `A4`, then A5 | Cross on A; B5 selects difficult start |
+| Resident Freeway | Studio II | `A4`, then B0/A0 | B4/B6 steer; A2 accelerates; A8 brakes |
 | Resident Addition | Studio II | `A5` | Full numeric keypad |
 | Baseball | Studio II / Visicom | `A0` | A/B cross plus center; roles swap |
 | Biorhythm | Studio II | `A0` | Full numeric keypad B |
@@ -88,8 +88,10 @@ This table records the minimum input shape needed for a useful controller profil
 | Hockey | Studio II | `A1`–`A4`, then `A8/A9` | 2/8/0 on both pads |
 | Invaders | Studio II | `A0` restarts | A4/A6 movement, B0 fire |
 | Invasion, The | Studio II | `A1`–`A6` difficulty | A4/A6 movement, A5 fire |
+| Flappy Pixel | Studio II | not yet documented | A5 flap; existing 8-way profile fits |
 | Kaboom | Studio II | `A0` | A4/A6 movement |
 | Pacman | Studio II | `A0` | A2/A4/A6 and B8 |
+| Race | Studio II / Visicom | not yet documented | 8-way A; A2 acceleration can be held while steering |
 | Scramble | Studio II | `A6` or `B6` | 2/4/8/0; either pad |
 | Space Explorer | Studio II | program starts directly | 8-way B, B5 lock, A0 fire |
 | Visicom resident games | Visicom | `A1/A2/A3/A4/A7` | Varies; mostly cross/full keypad |
@@ -120,8 +122,8 @@ The standard Studio II firmware contains five selectable programs.
 
 ### Freeway — `A4`
 
-- `A5` starts the normal game; `B5` starts the difficult game.
-- `A2` accelerates, `A8` brakes, and `A4/A6` steer left/right.
+- `B0` starts the normal game; `A0` starts the difficult game.
+- `A2` accelerates, `A8` brakes, and `B4/B6` steer left/right.
 - Avoid the computer car. Distance is scored after two minutes.
 
 ### Addition — `A5`
@@ -165,6 +167,10 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - Each player chooses racquet size on their pad: `4` small, `5` medium, `6` large.
 - Player A selects ball speed and begins: `A7` slow, `A8` normal, `A9` fast.
 - During play, `2` moves a racquet up and `8` down on its player's keypad. Between serves, `0` pauses/resumes.
+- The `Tennis` controller profile starts `A1` Squash in Auto/1P and drives
+  keypad B from controller 1. With Players set to 2, Start selects `A2` Tennis
+  and controllers 1/2 drive keypads A/B. Extra supplies each player's `0`
+  pause key.
 - Tennis is first to 21, winning by two. Squash ends after 21 misses or 200 completed volleys.
 
 ### TV Arcade IV - Baseball
@@ -341,6 +347,11 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 - Only one missile can be active. Regular missiles disappear on impact; indestructible missiles must leave the screen before another shot can be fired.
 - A hit scores one point; the score rolls over after 255. The player begins with three lives. Difficulty increases every eight waves.
 
+### Flappy Pixel
+
+- `A5` flaps. The existing 8-way profile maps Fire to `A5` and therefore
+  supplies the documented play control.
+
 ### Kaboom
 
 - `A0` starts.
@@ -364,6 +375,13 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 - `A0` novice, `A1` standard, `A2` advanced, `A3` expert.
 - `A4/A6` move the reflector. Hold the corresponding `B4/B6` simultaneously for double speed.
 - After game over, `B1` plays again; CLEAR begins a fresh game.
+
+### Race
+
+- Move in eight directions on keypad A.
+- `A2` accelerates and may be held together with a direction key. The automatic
+  profile maps acceleration to Fire independently so steering remains available.
+- Physical-keypad handling of every `A2`-plus-direction chord is not yet verified.
 
 ### Rocket v1.01
 
@@ -440,7 +458,9 @@ Do not infer their controls merely from similarly named Studio II cartridges; ve
 
 The Fullset v12.1 also contains software for which the supplied sources give no dependable gameplay instructions. These are explicit research items for future profile work:
 
-- Public-domain games: Flappy Pixel, noshaders and Race.
+- Public-domain games: noshaders. Flappy Pixel and Race now have mapped play
+  controls, but their complete start/restart behavior is not yet documented;
+  Race's physical-keypad acceleration chords also need verification.
 - Non-retail/prototype software: Baseball-2K, Basic Videomate, Biorhythm prototype, Color Demo, Color Runs, Colors Stars and Trek, Gunfight, New Studio 2-5 Game Set, Numbers, Paul's Printer, Print Snoopy, Secret Number, Space War (512 Bytes), ST3CTA Tester 3, Studio 2 Quiz, the Studio II-TV Tennis variants and Tag-Race.
 - Utility/firmware images: AM4KBAS, the Studio IV interpreter images, VIP firmware and the 40th Anniversary Multi-Cart.
 
@@ -451,6 +471,7 @@ When filling a gap, record at minimum: exact Fullset filename and CRC, machine, 
 - Original RCA cartridge manuals and standalone manual transcriptions supplied with the software.
 - Paul Robson's author readmes for Asteroids, Berzerk, Combat, Hockey, Invaders, Kaboom, Pacman and Scramble.
 - Lee Romanow's author documentation for Climber, Fifteen Puzzle, Invasion, Outbreak, Rocket and TV Arcade 2012.
+- Direct project control testing for Flappy Pixel and Race.
 - Andrew Modla's `rca-studio2` data notes for Pinball, Space Explorer, the test cartridge and demonstration images.
 - Emma 02 how-to-play material for Studio II, MPT-02 and Visicom resident/cartridge software.
 - AtariAge user etxmato's documented controls for Visicom Inspiration.

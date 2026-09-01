@@ -455,11 +455,11 @@ static void dump_state(FILE* f, long frame, const FrameGrabber& fg, bool with_vr
 
     fprintf(f, "-- Cartridge mapping --\n");
     {
-        static const char* pn[] = {"NONE","CROSS","SPACEWAR","FREEWAY","BOWLING","BASEBALL","HOMEBREW","GUNFIGHTER","8WAY","DOODLE","HB2P","UNMAPPED","LEGACY-PADDLE"};
+        static const char* pn[] = {"NONE","CROSS","SPACEWAR","FREEWAY","BOWLING","BASEBALL","HOMEBREW","GUNFIGHTER","8WAY","DOODLE","HB2P","RACE","TENNIS","CHIP8","CLIMB","EXPLORER"};
         int pr = top->rootp->top__DOT__rcastudio__DOT__profile;
         fprintf(f, "  cart CRC16 %04X  ->  profile %d (%s)\n",
                 top->rootp->top__DOT__rcastudio__DOT__cart_crc, pr,
-                (pr >= 0 && pr < 7) ? pn[pr] : "?");
+                (pr >= 0 && pr < (int)(sizeof(pn) / sizeof(pn[0]))) ? pn[pr] : "?");
     }
     fprintf(f, "-- Pixie / video --\n");
     fprintf(f, "  display_enabled %d  dma_cnt %d  vcount %d  hcount %d\n",
@@ -552,8 +552,9 @@ static void usage(const char* argv0) {
 "    --joy-map N          OSD \"Joystick\" profile, and switch \"Mapping\" to Manual:\n"
 "                         0 none/keypad-only, 1 cross, 2 spacewar, 3 freeway,\n"
 "                         4 bowling, 5 baseball, 6 homebrew, 7 gunfighter,\n"
-"                         8 8-way, 9 doodle, 10 2P homebrew, 11 unmapped,\n"
-"                         12 paddle (legacy), 13 CHIP-8. Omit for auto-detection.\n"
+"                         8 8-way, 9 doodle, 10 2P homebrew, 11 Race,\n"
+"                         12 Tennis, 13 CHIP-8, 14 Climber/Outbreak,\n"
+"                         15 Space Explorer. Omit for auto-detection.\n"
 "    --joy MASK@F[:H]     drive joystick 0 with MASK (bit0 right, 1 left, 2 down,\n"
 "                         3 up, 4 fire, 5 extra, 6 start, 17:8 A0..A9,\n"
 "                         27:18 B0..B9) at frame F for H frames.\n"
@@ -1168,6 +1169,56 @@ int main(int argc, char** argv) {
             printf("FAIL CHIP-8 auto profile = %u, expected 13\n", (unsigned)RS(auto_profile));
             failures++;
         }
+
+        // Manual-profile spot checks cover simultaneous keypad presses,
+        // dedicated layouts, and profiles whose routing changes with Players.
+        auto expect_profile_players = [&](unsigned profile, unsigned player_mode,
+                                          uint32_t joy0, uint32_t joy1,
+                                          unsigned expected_a, unsigned expected_b,
+                                          const char* name) {
+            top->joy_manual = 1;
+            top->joy_override = profile;
+            top->players = player_mode;
+            top->joystick_0 = joy0;
+            top->joystick_1 = joy1;
+            top->eval();
+            if ((unsigned)RS(joyA_active) != expected_a ||
+                (unsigned)RS(joyB_active) != expected_b) {
+                printf("FAIL %s mapped to A=$%03X B=$%03X, expected A=$%03X B=$%03X\n",
+                       name, (unsigned)RS(joyA_active), (unsigned)RS(joyB_active),
+                       expected_a, expected_b);
+                failures++;
+            }
+        };
+        auto expect_profile = [&](unsigned profile, uint32_t joy, unsigned expected_a,
+                                  unsigned expected_b, const char* name) {
+            expect_profile_players(profile, 0, joy, 0, expected_a, expected_b, name);
+        };
+        expect_profile(3, (1u << 4) | (1u << 5) | (1u << 1),
+                       (1u << 2) | (1u << 0), 1u << 4,
+                       "Freeway accelerate+hard+left");
+        expect_profile(3, 1u << 6, 0, 1u << 0, "Freeway normal Start");
+        expect_profile(8, 1u << 4, 1u << 5, 0, "Flappy Fire");
+        expect_profile(11, (1u << 4) | (1u << 1), (1u << 2) | (1u << 4), 0,
+                       "Race accelerate+left");
+        expect_profile_players(12, 1, (1u << 3) | (1u << 4) | (1u << 5), 0,
+                               0, (1u << 2) | (1u << 5) | (1u << 0),
+                               "Squash one-player controls");
+        expect_profile_players(12, 1, 1u << 6, 0, 1u << 1, 0,
+                               "Squash one-player Start");
+        expect_profile_players(12, 2, (1u << 3) | (1u << 4) | (1u << 5),
+                               (1u << 2) | (1u << 0) | (1u << 5),
+                               (1u << 2) | (1u << 5) | (1u << 0),
+                               (1u << 8) | (1u << 6) | (1u << 0),
+                               "Tennis two-player controls");
+        expect_profile_players(12, 2, 1u << 6, 0, 1u << 2, 0,
+                               "Tennis two-player Start");
+        expect_profile(14, (1u << 5) | (1u << 1), 1u << 4, 1u << 4,
+                       "Outbreak fast-left");
+        expect_profile(14, 1u << 4, 0, 1u << 1, "Climber/Outbreak replay");
+        expect_profile(15, (1u << 4) | (1u << 5) | (1u << 3) | (1u << 1),
+                       1u << 0, (1u << 1) | (1u << 5), "Space Explorer lock+fire");
+
         top->joystick_0 = 0;
         top->players = players_mode;
         top->joy_manual = joy_manual;
