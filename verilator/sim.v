@@ -135,6 +135,8 @@ rcastudioii rcastudio
 
 	.video_de(video_de),
 	.bitmap_de(bitmap_de),
+	.bitmap_hblank(),
+	.bitmap_vblank(),
 	.video_bg(video_bg),
 
 	.video(video),

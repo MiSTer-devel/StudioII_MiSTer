@@ -205,7 +205,7 @@ assign BUTTONS = 0;
 
 `include "build_id.v"
 localparam CONF_STR = {
-	"Studio-II;v10;",
+	"Studio-II;v11;",
 	"F1,ST2BINROM,Load Cartridge;",
 	"F2,BINROM,Load Firmware;",
 	"F4,BIN,Load CHIP-8 Interpreter;",
@@ -229,7 +229,10 @@ localparam CONF_STR = {
 	"D5O[20],CDP1863 pitch,Original,PAL;",
 	"-;",
 	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
+	"d6O[21],Vertical Crop,Disabled,216p (5x);",
+	"d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"O[26],Borders,On,Off;",
 	"-;",
 	"T[1],Clear;",
 	"T[0],Reset;",
@@ -416,6 +419,8 @@ wire HBlank;
 wire HSync;
 wire VBlank;
 wire VSync;
+wire bitmap_hblank;
+wire bitmap_vblank;
 wire [2:0] video;   	// {R,G,B} from the core
 wire       video_bg;    // ...at background luminance (CDP1864 BCKGND)
 wire [1:0] vis_index;   // Visicom: one of its four fixed colours
@@ -440,6 +445,9 @@ rcastudioii rcastudio
 	.VBlank(VBlank),
 	.VSync(VSync),
 	.video_de(),
+	.bitmap_de(),
+	.bitmap_hblank(bitmap_hblank),
+	.bitmap_vblank(bitmap_vblank),
 	.video(video),
 	.vis_index(vis_index),
 	.audio(audio),
@@ -507,12 +515,14 @@ end
 // D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
 // CHIP-8 picker on Visicom. D4 disables Studio II beeper tuning on machines
 // without that circuit. D5 enables the NTSC tone-pitch selector only on the
-// Studio III NTSC. Use machine_active so a staged selection does not take effect
-// before Apply and reset.
+// Studio III NTSC. d6 enables 216p crop controls only for un-doubled 1080p.
+// Use machine_active so a staged selection does not take effect before Apply
+// and reset.
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000) |
 	                     ((machine_active != 2'd0) ? 16'h0010 : 16'h0000) |
-	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000);
+	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
+	                     (en216p ? 16'h0040 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 
@@ -563,6 +573,11 @@ wire [15:0] osk_r = osk_use_j1 ? joystick_r_analog_1 : joystick_r_analog_0;
 wire [11:0] osk_press;
 wire  [7:0] osk_vr, osk_vg, osk_vb;
 
+// Border hiding changes only the presented active window. Device counters and
+// sync pulses keep running at their native timings, as in SMS_MiSTer.
+wire output_hblank = status[26] ? bitmap_hblank : HBlank;
+wire output_vblank = status[26] ? bitmap_vblank : VBlank;
+
 numstick #(
 	.HOLD_CYCLES     (3520000),   // ~0.5s  @ 7.04MHz
 	.PRESS_CYCLES    (528000),    // ~75ms
@@ -581,8 +596,8 @@ numstick #(
 	.ce_pix   (ce_pix),
 	.reset    (reset),
 	.enable   (osk_mode != 2'd0),
-	.hblank   (HBlank),
-	.vblank   (VBlank),
+	.hblank   (output_hblank),
+	.vblank   (output_vblank),
 	.in_r     (vid_r),
 	.in_g     (vid_g),
 	.in_b     (vid_b),
@@ -610,8 +625,8 @@ wire       freeze_sync;
 // Resample the clk_sys-domain pixel stream (numstick overlay included) into
 // the clk_vid domain. Plain registers: the clocks share a PLL, so this is an
 // ordinary timed path, and sampling at 42 MHz then presenting on the 7.04 MHz
-// enable repeats each source pixel 4x. LINE_LENGTH follows the active width,
-// 88 -> 352.
+// enable repeats each source pixel 4x. LINE_LENGTH reserves the full 88-pixel
+// raster width (352 samples); Borders Off uses 256 of that capacity.
 reg [7:0] vmix_r, vmix_g, vmix_b;
 reg       vmix_hs, vmix_vs, vmix_hb, vmix_vb;
 always @(posedge clk_vid) begin
@@ -620,8 +635,8 @@ always @(posedge clk_vid) begin
 	vmix_b  <= osk_vb;
 	vmix_hs <= HSync;
 	vmix_vs <= VSync;
-	vmix_hb <= HBlank;
-	vmix_vb <= VBlank;
+	vmix_hb <= output_hblank;
+	vmix_vb <= output_vblank;
 end
 
 video_mixer #(.LINE_LENGTH(352), .GAMMA(1)) video_mixer
@@ -651,6 +666,18 @@ video_mixer #(.LINE_LENGTH(352), .GAMMA(1)) video_mixer
 
 wire [1:0] ar = status[122:121];
 
+// NES/SNES-style 216-line crop: at 1080p this permits an exact 5x vertical
+// scale. Other output modes retain the native 242/292-line raster window.
+wire       vcrop_en = status[21];
+wire [3:0] vcopt    = status[25:22];
+reg        en216p = 1'b0;
+reg  [4:0] voff    = 5'd0;
+always @(posedge CLK_VIDEO) begin
+	en216p <= (HDMI_WIDTH == 12'd1920) && (HDMI_HEIGHT == 12'd1080) &&
+	           !forced_scandoubler;
+	voff <= (vcopt < 4'd6) ? {vcopt, 1'b0} : ({vcopt, 1'b0} - 5'd24);
+end
+
 // Present VSync one output pixel later so DE falling edge and VSync 
 // rising edge are handled on separate enables.
 reg vf_vs = 1'b0;
@@ -675,8 +702,8 @@ video_freak video_freak
     .VGA_DE_IN(vga_de),
     .ARX(arx_val),
     .ARY(ary_val),
-	.CROP_SIZE(12'd0),
-	.CROP_OFF(5'd0),
+	.CROP_SIZE((en216p && vcrop_en) ? 12'd216 : 12'd0),
+	.CROP_OFF(voff),
     .SCALE({1'b0, status[12:11]})
 );
 

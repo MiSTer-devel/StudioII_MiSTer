@@ -91,6 +91,15 @@ native CDP1863 pitch, four times the Studio III PAL pitch for the same tone
 latch. PAL (lower) selects the CDP1864 divide-by-four stage so NTSC software
 plays at the PAL pitch. Changing the setting does not restart the tone generator.
 
+**Vertical Crop: 216p (5x)** is available when the HDMI scaler output is
+1920x1080 and the scandoubler is off. It crops the presented raster to 216 lines,
+allowing the integer scale modes to use an exact 5x vertical scale. **Crop
+Offset** moves that window up or down.
+
+**Borders: Off** presents only the 64x128 NTSC-family bitmap or the 64x192
+Studio III PAL bitmap. It changes blanking, not the native line/frame counters
+or sync pulses, so analog displays retain the same timing and lock.
+
 ## Controller profiles
 
 **Mapping: Auto** selects a profile from the exact cartridge file's CRC, falls back to 8-way when there is no match, and changes profile after a resident game is selected. **Manual** lets you select a profile directly. Keyboard input, direct `A0`–`B9` bindings, CLEAR, and the on-screen keypad remain available in either mode.

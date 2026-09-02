@@ -62,8 +62,11 @@ module rcastudioii
 	output reg         video_de,
 	// DE for the bitmap alone, as distinct from video_de (the whole raster). The
 	// simulation harness captures this so its frames stay 64x128 / 64x192 and the
-	// recorded scores keep their meaning. Unused by the FPGA top level.
+	// recorded scores keep their meaning. Separate bitmap blanking lets the FPGA
+	// top hide borders without changing the device raster or sync.
 	output reg         bitmap_de,
+	output reg         bitmap_hblank,
+	output reg         bitmap_vblank,
 	// {R,G,B}, one bit per channel -- this mirrors the hardware rather than
 	// inventing a format. The CDP1864 in the successor machines has exactly one
 	// RDATA, GDATA and BDATA pin, fed from colour RAM. The CDP1861
@@ -164,7 +167,9 @@ pixie_video pixie_video (
     .VBlank     (VBlank_61),  // O
     .HBlank     (HBlank_61),  // O
     .video_de   (de_61),      // O
-    .bitmap_de  (bde_61)      // O
+    .bitmap_de  (bde_61),     // O
+    .bitmap_hblank(bhb_61),
+    .bitmap_vblank(bvb_61)
 );
 
 // ---- CDP1864, the colour machines' video ---------------------------------
@@ -178,6 +183,7 @@ pixie_video pixie_video (
 // gives the opcodes: 61 or 69 enable interrupt and DMA, 6C disables them.
 wire       DMAO_64, INT_64, EFx_64;
 wire       VSync_64, HSync_64, VBlank_64, HBlank_64, de_64, bde_64, bg_64;
+wire       bhb_64, bvb_64;
 wire [2:0] video_64;
 
 cdp1864 cdp1864
@@ -207,7 +213,9 @@ cdp1864 cdp1864
     .VBlank     (VBlank_64),
     .HBlank     (HBlank_64),
     .video_de   (de_64),
-    .bitmap_de  (bde_64)
+    .bitmap_de  (bde_64),
+    .bitmap_hblank(bhb_64),
+    .bitmap_vblank(bvb_64)
 );
 
 // ---- tone generator -------------------------------------------------------
@@ -241,6 +249,7 @@ cdp1863 cdp1863
 wire       video_dot;
 wire       DMAO_61, INT_61, EFx_61;
 wire       VSync_61, HSync_61, VBlank_61, HBlank_61, de_61, bde_61;
+wire       bhb_61, bvb_61;
 wire [2:0] col61_dot, col61_bgc;
 wire       col61_bg;
 wire [2:0] video_61;
@@ -287,6 +296,8 @@ always @(*) begin
 	HBlank   = machine_mpt02 ? HBlank_64 : HBlank_61;
 	video_de = machine_mpt02 ? de_64     : de_61;
 	bitmap_de = machine_mpt02 ? bde_64   : bde_61;
+	bitmap_hblank = machine_mpt02 ? bhb_64 : bhb_61;
+	bitmap_vblank = machine_mpt02 ? bvb_64 : bvb_61;
 	video_bg  = machine_mpt02 ? bg_64    : bg_61;
 end
 

@@ -38,6 +38,12 @@ and matches PAL pitch. The OSD enables the field only when the active machine is
 Studio III NTSC. It changes only the divider-stage input to the shared generator,
 so the latch, counter, output phase, and reset behavior remain a single live state.
 
+Video crop enable occupies `status[21]`, crop offset `status[25:22]`, and border
+hiding `status[26]`. The crop follows the common NES/SNES MiSTer convention: it
+is enabled only for an un-doubled 1920x1080 scaler output and supplies a 216-line
+window to `video_freak`. Border hiding selects bitmap-window blanking while
+leaving device counters and HS/VS unchanged.
+
 Live video modules:
 
 - `rtl/pixie/cdp1861.v` — Studio II, Studio III NTSC, and Visicom timing/DMA.
@@ -62,7 +68,10 @@ rcastudioii sync + blanking + RGB
     -> MiSTer framework
 ```
 
-`video_mixer` derives raster DE from HBlank/VBlank. The core's `video_de`/`bitmap_de` is only for simulation and bitmap capture.
+`video_mixer` derives raster DE from HBlank/VBlank. The core's
+`video_de`/`bitmap_de` is only for simulation and bitmap capture.
+The top level may instead present the bitmap-specific HBlank/VBlank when Borders
+is Off; this changes the active window without changing raster or sync timing.
 
 The CDP1861 path has 112 native pixel times and 262 lines per frame. Raster active starts at pixel 24 and is 88 pixels wide. Bitmap DMA occupies pixels 40–103, leaving the authored window 16 pixels from the raster's left edge and eight from the right. Do not move the bitmap window to centre it; adjust porches/blanking and revalidate timing instead.
 
@@ -70,10 +79,15 @@ The CDP1864 path has 112 native pixel times, 312 lines, and a 192-line display. 
 
 Integer scaling depends on two top-level integration details:
 
-1. `video_mixer.LINE_LENGTH` is 352 (88 active source pixels x4).
+1. `video_mixer.LINE_LENGTH` is 352, the full 88-pixel raster width x4 and the
+   maximum needed when the optional 64-pixel borderless window is selected.
 2. VS is delayed by one `CE_PIXEL` only on the `video_freak` input so its final active-line count is not overwritten by a same-edge reset.
 
 The OSD exposes scale modes 0–3 with `.SCALE({1'b0, status[12:11]})`; mode 4 is intentionally absent.
+At a 1920x1080 scaler resolution, the optional 216-line vertical crop permits
+the existing integer modes to select 5x vertically. Crop offset uses the standard
+MiSTer `0, 2, 4, 8, 10, 12, -12, -10, -8, -6, -4, -2` choices. Other HDMI
+resolutions, Direct Video, and forced scandoubling leave vertical crop disabled.
 
 ## Reset and machine selection
 
