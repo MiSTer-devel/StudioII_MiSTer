@@ -220,7 +220,7 @@ localparam CONF_STR = {
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
 	// Order must match localparams in rtl/rcastudioii.sv
-	"D2O[5:2],Joystick,None,Cross,Space War,Freeway,Bowling,Baseball,Homebrew,Gunfighter,8-way,Doodle,2P Homebrew,Race,Tennis,CHIP-8,Climb/Outbreak,Space Explorer;",
+	"D2O[5:2],Joystick,None,Cross,Space War,Freeway,Bowling,Baseball,Homebrew,Visicom Art,8-way,Doodle,2P Homebrew,Race,Gunfighter/Tennis,CHIP-8,Climb/Outbreak,Space Explorer;",
 	"O[8:7],Players,Auto,1,2;",
 	"O[10:9],Numstick,Off,Pad A,Pad B;",
 	"-;",
@@ -471,9 +471,9 @@ rcastudioii rcastudio
 // On Auto, the core's CRC/built-in-game detection owns the Joystick row and the
 // menu is made to agree with it: hps_io's status_set hands the HPS a whole new
 // status word, so writing the detected profile into bits [5:2] is what makes the
-// OSD read "Gunfighter" after Gunfighter is loaded. On Manual nothing is
-// written, so the row holds the last detected profile and the user edits from
-// there rather than from a stale selection.
+// OSD read the combined "Gunfighter/Tennis" profile after either is loaded. On
+// Manual nothing is written, so the row holds the last detected profile and the
+// user edits from there rather than from a stale selection.
 
 wire [3:0]   auto_profile;
 reg  [127:0] status_in;

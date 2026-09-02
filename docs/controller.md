@@ -24,8 +24,8 @@ have different CRCs. Resident games are identified from the first recognized
 firmware selection key after reset. Studio II and both Studio III timings map
 Doodle/Patterns to the shared Doodle profile and Bowling to Bowling; Studio II
 Freeway uses its dedicated profile, while Studio III Blackjack remains
-keypad-only. Visicom maps Doodle, Patterns and Freeway to the shared eight-way
-profile, Bowling to Bowling, and Addition to keypad-only.
+keypad-only. Visicom maps Doodle and Patterns to Visicom Art, Bowling to
+Bowling, Freeway to Freeway, and Addition to keypad-only.
 
 The generic `8-way` fallback is the neutral controller profile. D-pad cardinals
 produce keypad A `2/4/6/8`, diagonals produce `1/3/7/9`, Fire produces `A5`,
@@ -52,15 +52,28 @@ to an independent `A2`. The core can therefore present `A2` acceleration and a
 direction key simultaneously; whether the original keypad accepts every such
 chord remains a hardware-testing question.
 
-The `Freeway` profile maps Start to `B0` for normal mode, Fire to `A2` for
-acceleration, Extra to `A0` for hard mode, and D-pad Down to the `A8` brake.
-Its left/right steering remains on `B4/B6`.
+The `Visicom Art` profile keeps all eight drawing directions on keypad B, maps
+Fire to `B5` to draw and Extra to `A5` for the next Doodle colour. Start retains
+the resident selection key: `A1` for Doodle and `A3` for Patterns, where
+releasing `A3` begins or resumes repetition.
 
-The `Tennis` profile defaults to one-player Squash: Start selects `A1` and the
-first controller drives keypad B. With Players set to two, Start selects `A2`
-Tennis and the controllers drive keypads A and B respectively. D-pad up/down
-maps to `2/8`, left/Fire/right selects racket size `4/5/6`, and Extra maps to
-that player's `0` pause key.
+The `Bowling` profile maps Up/Fire/Down to `2/5/8`. Auto mirrors controller 1
+onto both keypads so it follows the firmware's A/B player alternation. Players
+set to 2 separates controller 1 onto A and controller 2 onto B.
+
+The `Freeway` profile selects the firmware's machine-specific layout. On Studio
+II, Start is normal (`B0`), Extra is hard (`A0`), Fire accelerates (`A2`), Down
+brakes (`A8`), and Left/Right steer on `B4/B6`. On Visicom, Start selects
+License A/easy (`B0`), Extra selects License B/hard (`B5`), Fire duplicates
+D-pad Up acceleration (`B2`), and Down/Left/Right map to `B8/B4/B6`. The two
+difficulty choices remain mutually exclusive.
+
+Gunfighter and Tennis share one profile because their complete controller
+outputs and Auto/1P/2P routing are identical. It defaults to a one-player mode:
+Start selects `A1` and controller 1 drives keypad B. With Players set to 2,
+Start selects `A2` and the controllers drive keypads A and B respectively.
+D-pad up/down maps to `2/8`, left/Fire/right maps to `4/5/6`, and Extra maps to
+that player's `0` key (pause in Tennis/Squash).
 
 ## Current boundary
 
