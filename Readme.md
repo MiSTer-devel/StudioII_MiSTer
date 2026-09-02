@@ -119,6 +119,10 @@ Use **Mapping: Manual** when a title has no verified profile or needs different 
 
 **Numstick** assigns the numstick overlay to A or B. The right stick selects 1–9, the left stick selects 0, and holding a direction for about half a second registers it. Nudge and release the right stick for 5.
 
+## Studio IV
+
+**Studio IV** is not currently support due to significant hardware differences. The subject may be revisited in the future.
+
 ## Project information
 
 Original core by Jason Coombes, with MiSTer integration and early Pixie work by Flandango and later contributions by Alan Steremberg and Elle Ball. See the [full credits](CREDITS.md) for detailed acknowledgements. GPL-2.0-or-later; see file headers and [LICENSE](LICENSE).
