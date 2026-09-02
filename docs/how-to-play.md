@@ -94,7 +94,7 @@ This table records the minimum input shape needed for a useful controller profil
 | Race | Studio II | not yet documented | 8-way A; A2 acceleration can be held while steering |
 | Scramble | Studio II | `A6` or `B6` | 2/4/8/0; either pad |
 | Space Explorer | Studio II | program starts directly | 8-way B, B5 lock, A0 fire |
-| Visicom Doodle / Patterns | Visicom | `A1` / `A3` | 8-way B; B5 draws; A5 changes colour; A3 repeats/resumes |
+| Visicom Doodle / Patterns | Visicom | `A1` / `A3` | 8-way B; B5 draws; A5 next colour; Start repeats/resumes Patterns (A0 selects previous colour or stops repetition, but is unmapped) |
 | Visicom Freeway | Visicom | `A4`, then B0/B5 | B2/B8 accelerate/brake; B4/B6 steer |
 | Visicom Addition | Visicom | `A7` | Full numeric keypad A or B |
 | Visicom cartridges | Visicom | normally `A0` | Per-title; several remain unknown |

@@ -55,7 +55,9 @@ chord remains a hardware-testing question.
 The `Visicom Art` profile keeps all eight drawing directions on keypad B, maps
 Fire to `B5` to draw and Extra to `A5` for the next Doodle colour. Start retains
 the resident selection key: `A1` for Doodle and `A3` for Patterns, where
-releasing `A3` begins or resumes repetition.
+releasing `A3` begins or resumes repetition. `A0` selects the previous colour
+or stops repetition and remains available through Numstick A or a direct
+binding.
 
 The `Bowling` profile maps Up/Fire/Down to `2/5/8`. Auto mirrors controller 1
 onto both keypads so it follows the firmware's A/B player alternation. Players

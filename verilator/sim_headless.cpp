@@ -1243,8 +1243,7 @@ int main(int argc, char** argv) {
         top->eval();
 
         // Patterns uses A3 both to select the program and to begin/resume its
-        // repetition. The mapped Start button must preserve that key after the
-        // initial A3 has been released.
+        // repetition. A0 remains available through its direct binding or Numstick A.
         RS(builtin_sel) = 0;
         RS(builtin_profile) = 0;
         RS(playerA) = 1u << 3;
@@ -1343,7 +1342,7 @@ int main(int argc, char** argv) {
         expect_profile(7, (1u << 4) | (1u << 5) | (1u << 3) | (1u << 1),
                        1u << 5, (1u << 5) | (1u << 1),
                        "Visicom Art controls");
-        expect_profile(8, 1u << 4, 1u << 5, 0, "Flappy Fire");
+        expect_profile(8, 1u << 4, 1u << 5, 1u << 5, "Flappy Fire");
         expect_profile_players(12, 2, 1u << 6, 0, 1u << 2, 0,
                                "Gunfighter/Tennis two-player Start");
         expect_profile(11, (1u << 4) | (1u << 1), (1u << 2) | (1u << 4), 0,
