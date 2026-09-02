@@ -202,6 +202,10 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - `A1`: Speedway. `A2`: Tag.
 - Both players move with `2/4/6/8` on their own keypads.
 - Speedway is a nine-lap race; wall and car impacts slow the player.
+- Speedway does not allow a car to reverse. For example, pressing player A's
+  `A4` on a rightward straightaway has no effect; completing a normal lap
+  confirms that the left key is working, so this is game behavior rather than
+  a failed input.
 - Tag awards 10 points per tag. The role changes after a tag or about ten seconds. Highest score after two minutes wins, or first to 300.
 
 ### Star Wars
@@ -471,7 +475,7 @@ When filling a gap, record at minimum: exact Fullset filename and CRC, machine, 
 - Original RCA cartridge manuals and standalone manual transcriptions supplied with the software.
 - Paul Robson's author readmes for Asteroids, Berzerk, Combat, Hockey, Invaders, Kaboom, Pacman and Scramble.
 - Lee Romanow's author documentation for Climber, Fifteen Puzzle, Invasion, Outbreak, Rocket and TV Arcade 2012.
-- Direct project control testing for Flappy Pixel and Race.
+- Direct project control testing for Flappy Pixel, Race and Speedway.
 - Andrew Modla's `rca-studio2` data notes for Pinball, Space Explorer, the test cartridge and demonstration images.
 - Emma 02 how-to-play material for Studio II, MPT-02 and Visicom resident/cartridge software.
 - AtariAge user etxmato's documented controls for Visicom Inspiration.
