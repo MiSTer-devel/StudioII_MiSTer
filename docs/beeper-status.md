@@ -19,6 +19,12 @@ boundary. Release chronology belongs in release notes and Git.
   while an RC-like amplitude envelope fades over roughly 96 ms.
 - Pitch and amplitude remain continuous across close Q transitions. Retriggers
   recover according to the low-gap duration and do not stack independent notes.
+- FLiP's controlled Q-Sound Test gives steady retrigger crests at about 94.9%,
+  97.0%, 98.7%, and 99.3% of fresh pitch for its 30, 50, 80, and 100 delay
+  settings. The corresponding recorded low gaps are approximately 60.2, 105.5,
+  160.7, and 205.9 ms. The supplied `S2-100-*` series, with the 50 and 100
+  settings repeated at length 150, constrains the curve through 99.3%; the last
+  approach to the fresh-pitch asymptote remains a monotonic continuation.
 - Rapid pulses such as Speedway remain near the upper pitch. Concentration /
   Match and Gunfighter exercise close-retrigger behavior.
 - The output waveform uses an approximately 11:6 high/low duty ratio while
@@ -61,7 +67,9 @@ The surviving source was preserved from
 retrigger. Audible release and recovered next-start state are represented
 separately: the live pitch follows the release tail, while a hidden divider
 tracks recovery. On Q rising, live pitch glides to the recovered state without a
-discontinuous edge, then rejoins the driven contour.
+discontinuous audible edge, then rejoins the driven contour. Once the release
+has become silent, the stopped oscillator follows the recovered divider so a
+long-gap retrigger cannot expose a stale fresh-pitch interval during its attack.
 
 The selected tuning scales the complete oscillator period while the drive,
 release, retrigger, and amplitude timings remain unchanged. The scale is latched
@@ -82,9 +90,12 @@ pitch, phase, or envelope state.
 ## Evidence and verification
 
 The model is constrained by labeled retail-console recordings, the RCA
-demonstration archive, ROM/simulator Q cadence, and MiSTer listening. Acoustic
-analysis uses cycle periods, spectral ridges, and harmonics; recordings do not
-provide direct electrical Q or control-voltage timing.
+demonstration archive, FLiP's configurable Q-Sound Test ROM and recordings,
+ROM/simulator Q cadence, and MiSTer listening. Acoustic analysis uses cycle
+periods, narrow-band phase, spectral ridges, and harmonics; recordings do not
+provide direct electrical Q or control-voltage timing. Controlled Q-Sound Test
+measurements take precedence over earlier retrigger estimates inferred from game
+cadence.
 
 `tools/beeper-curve-test.py` checks all seven tuning endpoints, reserved-code
 fallback, descent, release, retrigger families, phase-length sums, duty ratio,

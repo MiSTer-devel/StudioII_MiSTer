@@ -154,6 +154,7 @@ class Beeper:
                     self.amp_count += 1
             else:
                 self.amp_count = 0
+                self.half = self.control_half
             return
 
         if previous_q:
@@ -344,6 +345,14 @@ check(
     all(a < b for a, b in zip(intervals, intervals[1:])),
     f"step intervals {intervals}",
 )
+control_intervals = [interval for _, interval in control_bands] + [
+    int(control_last.group(1))
+]
+check(
+    "monotonic recovery slowdown",
+    all(a < b for a, b in zip(control_intervals, control_intervals[1:])),
+    f"step intervals {control_intervals}",
+)
 
 pip = Beeper()
 pip.run_ms(19.5, True)
@@ -406,8 +415,10 @@ check(
 release.run_ms(19, False)
 check(
     "silent recovery",
-    release.amp == 0 and not release.q_prev,
-    f"level {release.amp}, continuing at {release.hz:.2f} Hz",
+    release.amp == 0
+    and not release.q_prev
+    and release.half == release.control_half,
+    f"level {release.amp}, synchronized at {release.hz:.2f} Hz",
 )
 
 retrigger = Beeper()
@@ -455,54 +466,70 @@ principal_interval = 1200 * math.log2(second_crest_hz / 628.4)
 trough_interval = 1200 * math.log2(second_crest_hz / first_trough_hz)
 check(
     "Concentration second-pulse crest",
-    558 <= second_crest_hz <= 562,
+    539 <= second_crest_hz <= 542,
     f"{second_crest_hz:.2f} Hz after a representative 120/12ms retrigger",
 )
 check(
     "Concentration pitch windows",
-    -205 <= principal_interval <= -195 and 130 <= trough_interval <= 140,
+    -265 <= principal_interval <= -255 and 70 <= trough_interval <= 80,
     f"{principal_interval:.1f} cents from principal, "
     f"+{trough_interval:.1f} cents from first trough",
 )
 
-# Gunfighter's ROM keeps a shot high for one 60Hz frame and a cactus high for
-# seven. The labeled hardware clips cover cactus-to-shot gaps of 2--9 Q-low
-# frames. Measure 11ms into the following shot, the center of its useful ridge.
-# These medians are acoustic estimates rather than exact electrical readings, so
-# the aggregate fit and monotonic contour are stronger constraints than any one
-# row. The former fixed-ceiling model misses the 2--4 frame cases by 27--38Hz.
-gunfighter_hardware = {
-    2: 596.8,
-    3: 605.4,
-    4: 613.4,
-    5: 616.0,
-    6: 618.7,
-    9: 626.6,
+# FLiP's Q-Sound Test drives the same long note followed by selectable low gaps.
+# The effective gaps come from the recorded pulse periods. Targets are the
+# steady retrigger crests, normalized to the 628.4Hz fresh pitch in each file.
+q_test_hardware = {
+    30: (60.238, 596.48),
+    50: (105.499, 609.24),
+    80: (160.692, 620.54),
+    100: (205.884, 623.75),
 }
-gunfighter_model = {}
-for gap_frames in gunfighter_hardware:
+q_test_model = {}
+for setting, (gap_ms, _) in q_test_hardware.items():
+    sequence = Beeper()
+    sequence.run_ms(205.884, True)
+    sequence.run_ms(gap_ms, False)
+    retrigger_hz = []
+    for _ in range(45):
+        sequence.run_ms(1, True)
+        retrigger_hz.append(sequence.hz)
+    q_test_model[setting] = max(retrigger_hz)
+
+q_test_rmse = math.sqrt(
+    sum(
+        (q_test_model[setting] - target) ** 2
+        for setting, (_, target) in q_test_hardware.items()
+    ) / len(q_test_hardware)
+)
+check(
+    "Q-Sound Test gap-dependent retrigger",
+    q_test_rmse <= 0.8
+    and all(
+        q_test_model[a] < q_test_model[b]
+        for a, b in zip(q_test_model, list(q_test_model)[1:])
+    ),
+    f"{q_test_rmse:.2f}Hz RMS error across "
+    + ", ".join(
+        f"{setting}={q_test_model[setting]:.1f}Hz" for setting in q_test_model
+    ),
+)
+
+# Preserve the game cadence as a monotonic family without treating earlier
+# frame-derived acoustic estimates as direct Q timing measurements.
+gunfighter_model = []
+for gap_frames in (2, 3, 4, 5, 6, 9):
     sequence = Beeper()
     sequence.run_ms(7 * 1000 / 60, True)
     sequence.run_ms(gap_frames * 1000 / 60, False)
     sequence.run_ms(11, True)
-    gunfighter_model[gap_frames] = sequence.hz
-
-gunfighter_rmse = math.sqrt(
-    sum(
-        (gunfighter_model[gap] - gunfighter_hardware[gap]) ** 2
-        for gap in gunfighter_hardware
-    ) / len(gunfighter_hardware)
-)
+    gunfighter_model.append(sequence.hz)
 check(
-    "Gunfighter gap-dependent retrigger",
-    gunfighter_rmse <= 3.5
-    and all(
-        gunfighter_model[a] < gunfighter_model[b]
-        for a, b in zip(gunfighter_model, list(gunfighter_model)[1:])
-    ),
-    f"{gunfighter_rmse:.2f}Hz RMS error across "
-    + ", ".join(
-        f"{gap}f={gunfighter_model[gap]:.1f}Hz" for gap in gunfighter_model
+    "Gunfighter retrigger ordering",
+    all(a < b for a, b in zip(gunfighter_model, gunfighter_model[1:])),
+    ", ".join(
+        f"{gap}f={hz:.1f}Hz"
+        for gap, hz in zip((2, 3, 4, 5, 6, 9), gunfighter_model)
     ),
 )
 

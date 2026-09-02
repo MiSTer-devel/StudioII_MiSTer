@@ -1268,9 +1268,9 @@ assign ram_q = pl1_sel_q ? pl1_q
 // docs/beeper-status.md. The internal contour holds near 628.4Hz for 20ms, then
 // descends to 505.2Hz; the output period is scaled as one curve for the selected
 // console tuning. Q low reverses pitch through the audible release while a faster
-// hidden control trajectory preserves the gap-dependent starts heard in
-// Gunfighter. A fresh Q-high drive contour prevents retriggers from accumulating
-// pitch drop.
+// hidden control trajectory preserves the gap-dependent starts measured with
+// FLiP's Q-Sound Test. A fresh Q-high drive contour prevents retriggers from
+// accumulating pitch drop.
 localparam [15:0] SND_HALF_TOP    = 16'd1400;
 localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
 localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms
@@ -1340,22 +1340,16 @@ begin
 end
 endfunction
 
-// Gap-dependent hidden recovery fitted to the Gunfighter retrigger series.
+// Gap-dependent hidden recovery fitted to the controlled Q-Sound Test series.
 function automatic [15:0] snd_control_interval(input [15:0] half_period);
 begin
-	if      (half_period >= 16'd1656) snd_control_interval = 16'd200;
-	else if (half_period >= 16'd1592) snd_control_interval = 16'd250;
-	else if (half_period >= 16'd1528) snd_control_interval = 16'd350;
-	else if (half_period >= 16'd1496) snd_control_interval = 16'd500;
-	else if (half_period >= 16'd1464) snd_control_interval = 16'd800;
-	else if (half_period >= 16'd1448) snd_control_interval = 16'd1300;
-	else if (half_period >= 16'd1432) snd_control_interval = 16'd1900;
-	else if (half_period >= 16'd1424) snd_control_interval = 16'd2700;
-	else if (half_period >= 16'd1416) snd_control_interval = 16'd3800;
-	else if (half_period >= 16'd1412) snd_control_interval = 16'd5400;
-	else if (half_period >= 16'd1408) snd_control_interval = 16'd7600;
-	else if (half_period >= 16'd1404) snd_control_interval = 16'd12600;
-	else if (half_period >= 16'd1402) snd_control_interval = 16'd25000;
+	if      (half_period >= 16'd1474) snd_control_interval = 16'd435;
+	else if (half_period >= 16'd1445) snd_control_interval = 16'd2750;
+	else if (half_period >= 16'd1418) snd_control_interval = 16'd3600;
+	else if (half_period >= 16'd1410) snd_control_interval = 16'd9900;
+	else if (half_period >= 16'd1406) snd_control_interval = 16'd15000;
+	else if (half_period >= 16'd1404) snd_control_interval = 16'd25000;
+	else if (half_period >= 16'd1402) snd_control_interval = 16'd45000;
 	else                               snd_control_interval = 16'd65000;
 end
 endfunction
@@ -1470,6 +1464,8 @@ always @(posedge clk_sys) begin
 			else begin
 				snd_amp_cnt <= 13'd0;
 				snd_out <= 1'b0;
+				// Once inaudible, keep the stopped oscillator with the recovered control.
+				snd_half <= snd_control_half;
 			end
 		end
 		else begin
