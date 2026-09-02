@@ -88,7 +88,7 @@ This table records the minimum input shape needed for a useful controller profil
 | Hockey | Studio II | `A1`–`A4`, then `A8/A9` | 2/8/0 on both pads |
 | Invaders | Studio II | `A0` restarts | A4/A6 movement, B0 fire |
 | Invasion, The | Studio II | `A1`–`A6` difficulty | A4/A6 movement, A5 fire |
-| Flappy Pixel | Studio II | not yet documented | A5 flap; existing 8-way profile fits |
+| Flappy Pixel | Studio II | `A1` | A5 flap; existing 8-way profile fits |
 | Kaboom | Studio II | `A0` | A4/A6 movement |
 | Pacman | Studio II | `A0` | A2/A4/A6 and B8 |
 | Race | Studio II | not yet documented | 8-way A; A2 acceleration can be held while steering |
