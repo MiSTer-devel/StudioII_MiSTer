@@ -40,9 +40,10 @@ Interpreter** only for the separate `chip8.bin` cache.
 | Visicom | `boot3.rom` | `visicom.rom` | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
 | CHIP-8 interpreter | `chip8.bin` | `chip8.bin` | 768 bytes | `9F037435B6721BE9EE91DC93293E52CE` |
 
-[Marcel van Tongeren's Studio-family interpreter](https://www.emma02.hobby-site.com/studio_chip8.html)
-is supported but is not bundled. Supply its 768-byte image as `chip8.bin` and
-either load it manually or place it in the same directory as your CHIP-8 games.
+[Marcel van Tongeren's Studio-family interpreter](https://www.emma02.hobby-site.com/studio_chip8.html) 
+`chip8.bin` is required for CHIP-8 support. You can find a copy in the Emma 02 GitHub 
+repository. Load it manually or place it in the same directory as 
+your CHIP-8 games.
 
 The Studio II firmware contains five games: `A1` Doodle, `A2` Patterns, `A3` Bowling, `A4` Freeway, and `A5` Addition. Play instructions for these and more are in [docs/how-to-play.md](docs/how-to-play.md).
 
@@ -72,9 +73,11 @@ available when a program uses something else.
 
 The interpreter targets classic Studio-family CHIP-8 with program space
 `$0200`–`$0AFF` and about `$A0` bytes of writable game RAM at virtual
-`$0B00`–`$0B9F`, backed by physical `$0800`–`$089F`. Programs needing self-modifying program memory, jumps/calls
-into `$0800`–`$0BFF`, more RAM, CHIP-8X, Super-Chip, or XO-CHIP may fail.
-Visicom is unsupported.
+`$0B00`–`$0B9F`, backed by physical `$0800`–`$089F`. Anything fancy
+or more complicated than a regular .ch8 file probably won't work.
+
+CHIP-8 on Visicom is not supported; there is not currently a CHIP-8 interpreter 
+for the platform.
 
 **Sound: Off** silences the output without stopping or resetting the selected machine's
 tone generator. Turning sound back on resumes the live beeper or tone state.
@@ -98,8 +101,8 @@ allowing the integer scale modes to use an exact 5x vertical scale. **Crop
 Offset** moves that window up or down.
 
 **Borders: Off** presents only the 64x128 NTSC-family bitmap or the 64x192
-Studio III PAL bitmap. It changes blanking, not the native line/frame counters
-or sync pulses, so analog displays retain the same timing and lock.
+Studio III PAL bitmap. Only blanking is changed to allow analog out to retain 
+sync and timing.
 
 ## Controller profiles
 
@@ -107,8 +110,7 @@ or sync pulses, so analog displays retain the same timing and lock.
 
 Gamepad 0 gets the controls for the title's primary one-player game or mode. That may be keypad A, keypad B (as in Squash), or a combination of both used by one player.
 
-Automatic profile coverage is intentionally incomplete. Use **Mapping: Manual**
-when a title has no verified profile or needs different controls.
+Use **Mapping: Manual** when a title has no verified profile or needs different controls.
 
 ## Numstick (On-screen keypad)
 
