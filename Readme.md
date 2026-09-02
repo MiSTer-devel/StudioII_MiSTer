@@ -45,7 +45,10 @@ Interpreter** only for the separate `chip8.bin` cache.
 repository. Load it manually or place it in the same directory as 
 your CHIP-8 games.
 
-The Studio II firmware contains five games: `A1` Doodle, `A2` Patterns, `A3` Bowling, `A4` Freeway, and `A5` Addition. Play instructions for these and more are in [docs/how-to-play.md](docs/how-to-play.md).
+The default firmware menus include resident games. In automatic mapping mode,
+the first recognized selection key after reset chooses that game's controller
+profile on Studio II, both Studio III timings, and Visicom. Play instructions
+and selection keys are in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Keypad and CLEAR
 

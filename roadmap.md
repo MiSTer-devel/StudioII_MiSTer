@@ -44,10 +44,6 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Controller and keypad refinements
 
-- Extend resident-game automapping across every supported firmware menu. Use
-  the first game-selection key to choose an existing shared profile or
-  keypad-only behavior; further profiles that branch internally among several
-  firmware games can remain deferred indefinitely.
 - Prevent the left analog stick from also generating ordinary profile movement
   while Numstick is using it to select `0`. Prefer automatic suppression while
   Numstick is active, unless an explicit left-stick option proves necessary.

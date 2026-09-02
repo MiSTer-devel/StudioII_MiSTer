@@ -733,11 +733,9 @@ always @(posedge clk_sys) begin
 end
 
 // ---- built-in games -------------------------------------------------------
-// With no cartridge there is nothing to CRC, so the five BIOS games are told
-// apart by the key that starts them (service manual pp.7-8): A1 Doodle,
-// A2 Patterns, A3 Bowling, A4 Freeway, A5 Addition. Only the *first* such press
-// after reset counts -- those keys are reused during play (A5 rolls the ball in
-// Bowling, for instance). 
+// With no cartridge there is nothing to CRC, so resident games are told apart
+// by the firmware menu key that starts them. Only the first recognized press
+// after reset counts because those keys are reused during play.
 
 wire       no_cart = !chip8_active && (cart_crc == 16'hFFFF);
 reg        builtin_sel;
@@ -755,12 +753,28 @@ always @(posedge clk_sys) begin
 		builtin_profile <= MAP_NONE;
 	end
 	else if (no_cart && !builtin_sel) begin
-		if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle: B-side 8-way
-		else if (builtin_padA[2] || (builtin_start_press && (active_start_key == 4'd2))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Patterns: B-side 8-way
-		// A3 = BOWLING; A4 = FREEWAY. If the service manual claims otherwise, it's wrong.
-		else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
-		else if (builtin_padA[4]) begin builtin_profile <= MAP_FREEWAY; builtin_sel <= 1'b1; end  // Freeway
-		else if (builtin_padA[5]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Addition: digits
+		case (machine)
+		MACHINE_STUDIO2: begin
+			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle
+			else if (builtin_padA[2] || (builtin_start_press && (active_start_key == 4'd2))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Patterns
+			// A3 = BOWLING; A4 = FREEWAY. If the service manual claims otherwise, it's wrong.
+			else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
+			else if (builtin_padA[4]) begin builtin_profile <= MAP_FREEWAY; builtin_sel <= 1'b1; end  // Freeway
+			else if (builtin_padA[5]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Addition
+		end
+		MACHINE_S3_PAL, MACHINE_S3_NTSC: begin
+			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle
+			else if (builtin_padA[2] || (builtin_start_press && (active_start_key == 4'd2))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Patterns
+			else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
+			else if (builtin_padA[4] || builtin_padA[5]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Blackjack
+		end
+		MACHINE_VISICOM: begin
+			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_8WAY; builtin_sel <= 1'b1; end  // Doodle
+			else if (builtin_padA[2]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
+			else if (builtin_padA[3] || builtin_padA[4]) begin builtin_profile <= MAP_8WAY; builtin_sel <= 1'b1; end  // Patterns / Freeway
+			else if (builtin_padA[7]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Addition
+		end
+		endcase
 	end
 end
 
@@ -1017,9 +1031,10 @@ always @* begin
 	end
 end
 wire       start_press = joystick_0[6] | joystick_1[6];
-wire [3:0] active_start_key = (profile == MAP_TENNIS) ? (one_player ? 4'd1 : 4'd2) :
-	                         (((profile == MAP_GUNFIGHTER) || (profile == MAP_DOODLE) ||
-	                           (profile == MAP_CHIP8)) ? 4'd1 : start_key);
+wire [3:0] active_start_key = ((profile == MAP_GUNFIGHTER) || (profile == MAP_TENNIS))
+	                         ? (one_player ? 4'd1 : 4'd2)
+	                         : (((profile == MAP_DOODLE) || (profile == MAP_CHIP8)) ? 4'd1
+	                                                                                 : start_key);
 wire       builtin_keypad_only = no_cart && builtin_sel && (builtin_profile == MAP_NONE);
 wire       start_enabled = (active_start_key < 4'd10) && (profile != MAP_FREEWAY) &&
 	                       (profile != MAP_EXPLORER) && !builtin_keypad_only;

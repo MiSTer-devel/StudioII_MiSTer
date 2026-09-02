@@ -20,8 +20,12 @@ Start maps to `1`, Fire to `F`, and Extra to `0`.
 
 Cartridge profiles use CRC16-CCITT over the exact downloaded bytes, with
 polynomial `0x1021` and initial value `0xFFFF`. Headered and raw images therefore
-have different CRCs. Resident games are identified from their firmware selection
-key.
+have different CRCs. Resident games are identified from the first recognized
+firmware selection key after reset. Studio II and both Studio III timings map
+Doodle/Patterns to the shared Doodle profile and Bowling to Bowling; Studio II
+Freeway uses its dedicated profile, while Studio III Blackjack remains
+keypad-only. Visicom maps Doodle, Patterns and Freeway to the shared eight-way
+profile, Bowling to Bowling, and Addition to keypad-only.
 
 The generic `8-way` fallback is the neutral controller profile. D-pad cardinals
 produce keypad A `2/4/6/8`, diagonals produce `1/3/7/9`, Fire produces `A5`,
@@ -66,13 +70,12 @@ manual keypad paths form one coherent input model. The compiled profile system
 remains its source of truth; no external replacement or parallel profile path is
 planned.
 
-Profile coverage is deliberately open to evidence-backed additions. The five
-standard Studio II firmware games currently select their profiles from the first
-selection key after reset; the other supported firmware menus do not yet have
-equivalent per-machine coverage. Numstick also consumes the analog sticks
-without suppressing ordinary left-stick profile movement, so selecting `0` can
-produce an unwanted direction. These focused refinements are tracked in the
-roadmap without reopening the controller architecture.
+Profile coverage is deliberately open to evidence-backed additions. All default
+firmware menus select an existing shared profile or keypad-only behavior from
+the first recognized selection key after reset. Numstick also consumes the
+analog sticks without suppressing ordinary left-stick profile movement, so
+selecting `0` can produce an unwanted direction. This focused refinement remains
+tracked in the roadmap without reopening the controller architecture.
 
 Keep any evidence-backed additions in the shared CRC-to-profile table rather
 than adding title-specific RTL or profiles that branch internally among several
