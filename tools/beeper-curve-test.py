@@ -268,6 +268,17 @@ check(
     "status[19:17] exposes seven ordered tuning values",
 )
 check(
+    "NE555 menu availability",
+    re.search(
+        r"\(machine_active == 2'd1\)\s*\|\|\s*"
+        r"\(machine_active == 2'd2\).*?16'h0010",
+        TOP_TEXT,
+        re.S,
+    )
+    is not None,
+    "Studio III PAL/NTSC hide the selector; Studio II and Visicom expose it",
+)
+check(
     "reserved tuning fallback",
     tune_scale(7) == TUNE_MEDIUM
     and "default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;" in TEXT,

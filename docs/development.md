@@ -17,7 +17,7 @@ Read the focused references when relevant:
 | Studio II | CDP1861, NTSC mono | discrete beeper | primary target |
 | Studio III PAL | CDP1864 | CDP1864 tone | 312-line PAL timing |
 | Studio III NTSC | CDP1861 + CDP1862 | CDP1863 | 1861 timing with separate colour |
-| Visicom COM-100 | CDP1861 + second DMA bitplane | none | separate memory map and fixed palette |
+| Visicom COM-100 | CDP1861 + second DMA bitplane | NE555 compatibility beeper | separate memory map and fixed palette |
 
 The CPU, DMA video, raw and paged cartridges, four native firmware slots plus the CHIP-8 interpreter slot, machine memory maps, controller profiles, on-screen keypad, integer scaling, and sync-preserving same-standard resets are implemented. The loader intentionally models only 4 KB of cartridge address space; high-page diagnostics such as ST3CTA Tester 3 remain unsupported.
 
@@ -25,12 +25,15 @@ The CPU, DMA video, raw and paged cartridges, four native firmware slots plus th
 
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, memory maps, cartridge loader, keypad/controller mapping, Studio II beeper, and machine selection.
 
-The Studio II beeper tuning selector occupies `status[19:17]`. Codes 0--6 are
-Original, High, Higher, Highest, Lowest, Lower, and Low; unused code 7 decodes to
-Original. Low/High, Lower/Higher, and Lowest/Highest apply one, three, and six
-cumulative steps of the original reciprocal 31:32 frequency ratio. Tuning
-scales the latched full oscillator period before its 11:6 phase split, leaving
-the accepted state trajectory and all time-domain envelope behavior unchanged.
+The Studio II/Visicom NE555 pitch selector occupies `status[19:17]`. Codes 0--6
+are Original, High, Higher, Highest, Lowest, Lower, and Low; unused code 7
+decodes to Original. Low/High, Lower/Higher, and Lowest/Highest apply one, three,
+and six cumulative steps of the original reciprocal 31:32 frequency ratio.
+Tuning scales the latched full oscillator period before its 11:6 phase split,
+leaving the accepted state trajectory and all time-domain envelope behavior
+unchanged.
+The OSD exposes the selector for Studio II and Visicom and hides it for both
+Studio III variants.
 
 The Studio III NTSC tone-pitch selector occupies `status[20]`. Zero keeps the
 standalone CDP1863's native pitch; one selects the CDP1864 divide-by-four stage

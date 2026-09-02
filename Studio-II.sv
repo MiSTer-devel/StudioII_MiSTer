@@ -191,8 +191,8 @@ assign HDMI_FREEZE = 0;
 assign HDMI_BLACKOUT = 0;
 assign HDMI_BOB_DEINT = 0;
 
-// Signed beeper/tone sample generated in rcastudioii.sv. Studio II path
-// includes release envelope; Studio III is a fixed-level square wave
+// Signed beeper/tone sample generated in rcastudioii.sv. The Studio II/Visicom
+// NE555 path includes release envelope; Studio III is a fixed-level square wave.
 wire signed [15:0] audio;
 assign AUDIO_S   = 1'b1;                                   // signed samples
 assign AUDIO_MIX = 2'd0;
@@ -513,14 +513,15 @@ always @(posedge clk_sys) begin
 end
 
 // D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
-// CHIP-8 picker on Visicom. D4 disables Studio II beeper tuning on machines
-// without that circuit. D5 enables the NTSC tone-pitch selector only on the
-// Studio III NTSC. d6 enables 216p crop controls only for un-doubled 1080p.
+// CHIP-8 picker on Visicom. D4 disables NE555 tuning on the Studio III machines.
+// D5 enables the NTSC tone-pitch selector only on the Studio III NTSC. d6
+// enables 216p crop controls only for un-doubled 1080p.
 // Use machine_active so a staged selection does not take effect before Apply
 // and reset.
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000) |
-	                     ((machine_active != 2'd0) ? 16'h0010 : 16'h0000) |
+	                     (((machine_active == 2'd1) ||
+	                       (machine_active == 2'd2)) ? 16'h0010 : 16'h0000) |
 	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
 	                     (en216p ? 16'h0040 : 16'h0000);
 

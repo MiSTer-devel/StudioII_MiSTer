@@ -69,11 +69,11 @@ with the period so its high and low phases cannot use different settings. Those
 phases are then derived in an 11:6 ratio whose sum preserves the tuned full
 period. The fractional-period accumulator advances once per full cycle.
 
-The OSD uses a three-bit tuning field. Codes 0--6 are Original, High, Higher,
-Highest, Lowest, Lower, and Low so traversing the menu remains monotonic across
-its wrap; unused code 7 falls back to Original. The setting affects only the Studio
-II beeper. The signed sample path remains independent of the Studio III
-programmable-tone path.
+The OSD uses a three-bit tuning field on Studio II and Visicom. Codes 0--6 are
+Original, High, Higher, Highest, Lowest, Lower, and Low so traversing the menu
+remains monotonic across its wrap; unused code 7 falls back to Original. The
+setting affects only the Studio II/Visicom NE555 path. The signed sample path
+remains independent of the Studio III programmable-tone path.
 
 `Studio-II.sv` implements `Sound: On/Off` by gating `AUDIO_L` and `AUDIO_R` to
 signed zero. It does not gate Q, reset either generator, or alter oscillator,
