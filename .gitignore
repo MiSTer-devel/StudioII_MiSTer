@@ -90,3 +90,5 @@ dse1_base.qsf
 dse1_base.qpf
 screenshots/
 untracked_docs/
+tools/vispalette/vispalette.exe
+tools/vispalette/vispalette
