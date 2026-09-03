@@ -375,7 +375,7 @@ localparam [3:0] MAP_BASEBALL   = 4'd5;   // bat A5; pitch B5 straight, B2/B8 cu
 localparam [3:0] MAP_HOMEBREW   = 4'd6;   // Paul Robson's 1P games: 8-way on pad A
                                           // (diagonals are keys 1/3/7/9), fire B0
 localparam [3:0] MAP_VIS_ART    = 4'd7;   // Visicom Doodle/Patterns: directions B,
-	                                          // Fire B5, Extra A5
+	                                          // Fire B5, Extra B0
 localparam [3:0] MAP_8WAY       = 4'd8;   // CROSS plus diagonals: 1/3/7/9, fire 5 + extra 0
 localparam [3:0] MAP_DOODLE     = 4'd9;   // Doodle/Patterns: B-side 8-way, fire 5, extra 0
 localparam [3:0] MAP_HB2P       = 4'd10;  // 2P homebrew (Hockey, Combat): cross plus
@@ -840,9 +840,7 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
 		end
-		MAP_VIS_ART: begin
-			if (j[5]) k[5] = 1'b1;           // next colour
-		end
+		MAP_VIS_ART: ;                         // drawing and colour controls are on B
 		MAP_BASEBALL:                        // bat
 			if (j[4]) k[5] = 1'b1;
 		MAP_HOMEBREW: begin
@@ -974,7 +972,7 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 			if (j[4]) k[0] = 1'b1;
 		end
 		MAP_RACE: ;                         // all controls are on keypad A
-		MAP_VIS_ART: begin                   // drawing and pattern directions
+		MAP_VIS_ART: begin                   // movement draws; 5/0 select colour/state
 			case (j[3:0])
 			4'b1010: k[1] = 1'b1;
 			4'b1001: k[3] = 1'b1;
@@ -985,7 +983,8 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
 			end
 			endcase
-			if (j[4]) k[5] = 1'b1;           // draw
+			if (j[4]) k[5] = 1'b1;           // next colour
+			if (j[5]) k[0] = 1'b1;           // previous colour / flashing
 		end
 		MAP_8WAY: begin                      // CROSS + 8-way diagonals: 1/3/7/9 on corners
 			case (j[3:0])

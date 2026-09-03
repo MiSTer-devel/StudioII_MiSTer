@@ -94,7 +94,7 @@ A few games have special handling:
 
 * Bowling mirrors controller 1 to both keypads for alternating play; **Players: 2** separates them.
 * Visicom Freeway uses Start for License A/easy, Extra for License B/hard, Fire or Up to accelerate, and Down to brake.
-* Visicom Art (Doodle/Patterns) uses the D-pad for movement, Fire to draw, Extra for the next colour, and Start to select or repeat the active mode. Enable Numstick A or bind `A0` directly for the previous colour or to stop repetition.
+* Visicom Art (Doodle/Patterns) draws while the D-pad moves. Fire selects the next colour, Extra selects the previous colour or flashing state, and Start selects or repeats the active mode. Enable Numstick A or bind `A0` directly to stop Patterns repetition.
 
 **Mapping: Manual** overrides automatic mappings and enables the Profile field.
 

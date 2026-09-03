@@ -94,7 +94,7 @@ This table records the minimum input shape needed for a useful controller profil
 | Race | Studio II | not yet documented | 8-way A; A2 acceleration can be held while steering |
 | Scramble | Studio II | `A6` or `B6` | 2/4/8/0; either pad |
 | Space Explorer | Studio II | program starts directly | 8-way B, B5 lock, A0 fire |
-| Visicom Doodle / Patterns | Visicom | `A1` / `A3` | 8-way B; B5 draws; A5 next colour; Start repeats/resumes Patterns (A0 selects previous colour or stops repetition, but is unmapped) |
+| Visicom Doodle / Patterns | Visicom | `A1` / `A3` | 8-way B draws; B5/B0 cycle colour forward/backward; Start repeats/resumes Patterns; A0 stops repetition |
 | Visicom Freeway | Visicom | `A4`, then B0/B5 | B2/B8 accelerate/brake; B4/B6 steer |
 | Visicom Addition | Visicom | `A7` | Full numeric keypad A or B |
 | Visicom cartridges | Visicom | normally `A0` | Per-title; several remain unknown |
@@ -423,9 +423,9 @@ Select the Visicom machine and use its firmware. Visicom cartridges normally ent
 
 | Game | Select | Controls |
 |---|---|---|
-| Doodle | `A1` | Move in eight directions on B and hold `B5` to draw. `A5` cycles red → yellow → blue → blinking; `A0` cycles in reverse. Move while blinking to reposition without drawing or retrace to erase. |
+| Doodle | `A1` | Moving in eight directions on B draws. `B5` cycles red → yellow → blue → blinking; `B0` cycles in reverse. Move while blinking to reposition without drawing or retrace to erase. |
 | Bowling | `A2` | A bowls first, then B; `2` hooks up, `5` rolls straight and `8` hooks down on the active pad. |
-| Patterns | `A3` | Press and release `A3`, then hold `B5` while drawing with the eight directions on B. `A3` begins/resumes repetition and `A0` stops it; repetition starts automatically after 130 inputs. While stopped, `A1` enters Doodle so a drawing can be overlaid. |
+| Patterns | `A3` | Press and release `A3`, then draw the seed with the eight directions on B; `B5/B0` cycle colour forward/backward as in Doodle. `A3` begins/resumes repetition and `A0` stops it; repetition starts automatically after 130 inputs. While stopped, `A1` enters Doodle so a drawing can be overlaid. |
 | Freeway | `A4` | All play controls are on B: `B0` starts License A/easy, `B5` starts License B/hard, and `B2/B8/B4/B6` accelerate/brake/steer left/steer right. The race lasts about two minutes. |
 | Addition | `A7` | Press and release `A7`. In one-player mode, enter the sum on either pad; in two-player mode, both pads race to answer. Twenty problems. |
 

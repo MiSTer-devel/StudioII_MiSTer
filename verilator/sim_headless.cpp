@@ -1340,7 +1340,7 @@ int main(int argc, char** argv) {
         expect_profile_players(4, 2, 1u << 3, 1u << 2, 1u << 2, 1u << 8,
                                "Bowling two-player split");
         expect_profile(7, (1u << 4) | (1u << 5) | (1u << 3) | (1u << 1),
-                       1u << 5, (1u << 5) | (1u << 1),
+                       0, (1u << 5) | (1u << 0) | (1u << 1),
                        "Visicom Art controls");
         expect_profile(8, 1u << 4, 1u << 5, 1u << 5, "Flappy Fire");
         expect_profile_players(12, 2, 1u << 6, 0, 1u << 2, 0,

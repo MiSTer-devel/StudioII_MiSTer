@@ -52,12 +52,12 @@ to an independent `A2`. The core can therefore present `A2` acceleration and a
 direction key simultaneously; whether the original keypad accepts every such
 chord remains a hardware-testing question.
 
-The `Visicom Art` profile keeps all eight drawing directions on keypad B, maps
-Fire to `B5` to draw and Extra to `A5` for the next Doodle colour. Start retains
-the resident selection key: `A1` for Doodle and `A3` for Patterns, where
-releasing `A3` begins or resumes repetition. `A0` selects the previous colour
-or stops repetition and remains available through Numstick A or a direct
-binding.
+The `Visicom Art` profile keeps all eight drawing directions and both colour
+controls on keypad B. Movement draws; Fire maps to `B5` to cycle forward and
+Extra maps to `B0` to cycle backward through red, yellow, blue, and the flashing
+move/erase state. Start retains the resident selection key: `A1` for Doodle and
+`A3` for Patterns, where releasing `A3` begins or resumes repetition. Patterns
+uses `A0` to stop repetition, available through Numstick A or a direct binding.
 
 The `Bowling` profile maps Up/Fire/Down to `2/5/8`. Auto mirrors controller 1
 onto both keypads so it follows the firmware's A/B player alternation. Players
