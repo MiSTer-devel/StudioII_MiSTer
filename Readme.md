@@ -20,17 +20,19 @@ Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
 
 Put the four native firmware files below in `/media/fat/games/Studio-II/`. For CHIP-8 support, put `chip8.bin` in the same directory as your CHIP-8 games, or load it manually. Firmware images are available in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
 
-Use **Load Cartridge** for `.st2`, `.bin`, or `.rom` games and **Load CHIP-8** for `.ch8` programs. **Load Firmware** temporarily replaces the active machine's native firmware; **Load CHIP-8 Interpreter** loads `chip8.bin` separately, where it is only used when a `.ch8` program is loaded.
+Use **Load Cartridge** for `.st2` or `.bin` games and **Load CHIP-8** for `.ch8` programs. **Load Firmware** temporarily replaces the active machine's native firmware; **Load CHIP-8 Interpreter** loads `chip8.bin` separately, where it is only used when a `.ch8` program is loaded.
 
 `Machine` selects `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, or `Visicom`. Changes take effect after **Apply and reset**.
 
-| Machine | Autoload filename | Common filename | Size | MD5 |
+| Machine | Autoload filename | Tested firmware | Size | MD5 |
 |---|---|---|---:|---|
 | Studio II | `boot0.rom` | `studio2.rom` | 2 KB | `B37205BF19B197682F00619D05DA194B` |
 | Studio III PAL | `boot1.rom` | `studio3_pal.bin` | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
 | Studio III NTSC | `boot2.rom` | `studio3_ntsc.bin` | 4 KB | `849A484AA4B2784ECE5C35C39D9D51A8` |
 | Visicom | `boot3.rom` | `visicom.rom` | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
 | CHIP-8 interpreter | `chip8.bin` | `chip8.bin` | 768 bytes | `9F037435B6721BE9EE91DC93293E52CE` |
+
+Other firmware images may work; those listed above were used during development and testing.
 
 [Marcel van Tongeren's Studio-family interpreter](https://www.emma02.hobby-site.com/studio_chip8.html) is required for CHIP-8 support and is available from the [Emma 02 GitHub repository](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin).
 
@@ -66,9 +68,9 @@ CHIP-8 uses the COSMAC VIP's 16-key hexadecimal keypad:
 
 This layout doesn't cleanly map to the Studio II inputs. In Marcel's interpreter, `0`–`9` map directly to the Studio II's keypad A and `A`–`F` to keypad B `1`–`6` (keyboard `7`, `8`, `9`, `U`, `I`, `O`).
 
-The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to `5/7/8/9`, Start to `1`, Fire to `F`, and Extra to `0`. Keyboard input, direct keypad bindings, manual profiles, and Numstick remain available for programs using other layouts.
+The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to `5/7/8/9`, Start to `1`, Fire to `F`, and Extra to `0`. There is probably a better mapping for Start, Fire, and Extra. Please create an issue if you have a suggestion for the default CHIP-8 profile.
 
-The Studio-family interpreter has some limitations on which CHIP-8 games are compatible. Anything fancy or more complicated than a regular `.ch8` file probably won't work.
+The Studio-family interpreter has some limitations on which CHIP-8 games are compatible. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details.
 
 CHIP-8 is not supported on Visicom because there is no available interpreter for the platform.
 
@@ -76,9 +78,11 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 **Sound: Off** mutes the core without stopping the machine's tone generator.
 
-**NE555 pitch** adjusts the Studio II and Visicom beeper. Original follows the measured December 1976 RCA demonstration unit at approximately 625 Hz initially and 502.5 Hz sustained. The other settings shift the same pitch curve higher or lower. This option does not apply to Studio III.
+**NE555 pitch** adjusts the Studio II and Visicom beeper. Original follows the measured December 1976 RCA demonstration unit at approximately 625 Hz initially and 502.5 Hz sustained. The other settings proportionally scale the same pitch curve higher or lower. This option does not apply to Studio III.
 
 **CDP1863 pitch** applies only to Studio III NTSC. Original uses the native CDP1863 pitch; PAL applies the CDP1864 divide-by-four stage for PAL-equivalent pitch.
+
+**Visicom Palette** uses the Emma 02 palette by default. A custom 16-byte `.vcp` file can be loaded with **Load Palette**; the first four RGB888 entries define the four Visicom colours. To generate new palettes, see [`tools/vispalette`](tools/vispalette).
 
 **Vertical Crop: 216p (5x)** crops 1080p HDMI output to 216 lines for exact 5x integer scaling. **Crop Offset** moves the crop window up or down. The scandoubler must be off and output resolution set to 1080p.
 

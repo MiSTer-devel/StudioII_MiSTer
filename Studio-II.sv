@@ -206,17 +206,16 @@ assign BUTTONS = 0;
 `include "build_id.v"
 localparam CONF_STR = {
 	"Studio-II;v11;",
-	"F1,ST2BINROM,Load Cartridge;",
-	"F2,BINROM,Load Firmware;",
-	"D7F5,VCP,Load Visicom Palette;",
-	"F4,BIN,Load CHIP-8 Interpreter;",
+	"F1,ST2BIN,Load Cartridge;",
 	// Main sends chip8.bin from same dir as selected .ch8 before F3
 	"f,!chip8.bin;",
-	// Loading only allowed on Studio II and Studio III, not Visicom
+	// Studio II/III only
 	"D3F3,CH8,Load CHIP-8;",
 	"-;",
 	// Machine held until Apply and reset
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
+	"F2,BINROM,Load Firmware;",
+	"F4,BIN,Load CHIP-8 Interpreter;",
 	"R[15],Apply and reset;",
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
@@ -229,6 +228,7 @@ localparam CONF_STR = {
 	"D4O[19:17],NE555 pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"D5O[20],CDP1863 pitch,Original,PAL;",
 	"-;",
+	"D7F5,VCP,Load Visicom Palette;",
 	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"d6O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
@@ -331,8 +331,15 @@ wire joy_clear = joystick_0[7] | joystick_1[7];
 wire clear_request = status[1] | clear_key | joy_clear;
 
 // Preserve raster timing on soft resets. F5 is a presentation-only Visicom
-// palette load and must not reset or otherwise disturb the emulated machine.
-wire      vis_palette_download = ioctl_download && (ioctl_index[5:0] == 6'd5);
+// palette load and must not reach the machine loader or otherwise disturb the
+// emulated machine.
+// Keep the classification for the whole transaction: Main may update the live
+// file index while replacing one selection, before download has gone inactive.
+reg       vis_palette_latched = 1'b0;
+wire      vis_palette_index = ioctl_index[5:0] == 6'd5;
+wire      vis_palette_download = ioctl_download &&
+	                              (vis_palette_index || vis_palette_latched);
+wire      machine_download = ioctl_download && !vis_palette_download;
 wire      user_download_now = (ioctl_index[5:0] == 6'd1) ||
 	                          (ioctl_index[5:0] == 6'd2) ||
 	                          (ioctl_index[5:0] == 6'd3) ||
@@ -343,6 +350,11 @@ wire      download_reset = (ioctl_download && !vis_palette_download) |
 	                       (download_reset_cnt != 0);
 wire      download_soft = (ioctl_download && !vis_palette_download) ?
 	                      user_download_now : download_soft_latched;
+
+always @(posedge clk_sys) begin
+	if (!ioctl_download)        vis_palette_latched <= 1'b0;
+	else if (vis_palette_index) vis_palette_latched <= 1'b1;
+end
 
 // RESET / Reset-and-close-OSD
 reg [7:0] hard_reset_cnt = 8'd0;
@@ -436,7 +448,7 @@ rcastudioii rcastudio
 	.reset(reset),
 	.video_reset(video_reset),
 	
-	.ioctl_download(ioctl_download),
+	.ioctl_download(machine_download),
 	.ioctl_index(ioctl_index),
 	.ioctl_wr(ioctl_wr),
 	.ioctl_addr(ioctl_addr),
@@ -552,11 +564,11 @@ wire [7:0] vid_lvl = video_bg ? 8'h80 : 8'hFF;
 
 // Visicom's two colour planes produce a 2-bit hardware colour index. The
 // presentation-layer RGB mapping is replaceable without changing that hardware
-// emulation. These defaults are the core's current MAME-derived reference table.
+// emulation. These defaults use the Emma 02 reference palette.
 reg [23:0] vis_color0 = 24'h004000;
-reg [23:0] vis_color1 = 24'hAFDFE4;
-reg [23:0] vis_color2 = 24'hB9C42F;
-reg [23:0] vis_color3 = 24'hEF454A;
+reg [23:0] vis_color1 = 24'h70D0FF;
+reg [23:0] vis_color2 = 24'hD0FF70;
+reg [23:0] vis_color3 = 24'hFF7070;
 
 always @(posedge clk_sys) begin
 	if (vis_palette_download && ioctl_wr) begin
