@@ -229,7 +229,6 @@ cdp1864 cdp1864
 // and Weisbecker's Studio III notes ("64 instruction sets sound frequency
 // (inverse)", "Q gates sound output").
 wire aud_tone;
-wire signed [15:0] studio2_audio;
 cdp1863 cdp1863
 (
     .clk     (clk_sys),
@@ -426,318 +425,23 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// ---- CRC → profile + Start key ------------------------------------------------
-// Add a cartridge by running tools/cart-crc.sh and dropping one line into the
-// matching group below.  Groups are ordered by (map_profile, start_key) so
-// related dumps stay together.  Comments list the human names.
-//
-// start_key is the keypad-A digit that the gamepad Start button presses.
-// Default / no-cart = 1 (most common).
-
+// ---- CRC → profile + Start key ----------------------------------------------
+// Keep the CRC database in a separate source file without inserting a
+// combinational lookup between cart_crc and these registered results.
 reg [3:0] start_key = 4'd1;
 
 always @(posedge clk_sys) begin
 	if (dl_done) begin
 		case (cart_crc)
+`include "studio2_cart_profiles.sv"
 
-			// ----------------------------------------------------------------
-			// Retail / known controller mappings
-			// ----------------------------------------------------------------
-
-			// TV Arcade I - Space War
-			16'h45B5, 16'h977C: begin
-				map_profile <= MAP_SPACEWAR;
-				start_key   <= 4'd1;
-			end
-
-			// Pinball
-			// Speedway + Tag
-			// Star Wars
-			// These cartridges use the MPT-02 joystick cross layout.
-			16'h03E6, 16'h8404, 16'h92BA, 16'h9505, 16'hD0DA, 16'hD13E,
-			16'hD3E2, 16'hE153: begin
-				map_profile <= MAP_CROSS;
-				start_key   <= 4'd1;
-			end
-
-			// Fifteen Puzzle
-			// Invasion, The v1.00
-			// Rocket v1.01
-			16'h127F, 16'h13A3, 16'h2DDB, 16'h3244, 16'h9562,
-			16'hD2F0, 16'hD481, 16'hF7A3: begin
-				map_profile <= MAP_CROSS;
-				start_key   <= 4'd1;
-			end
-
-			// Sports Fan (Baseball & Sumo Wrestling) (CAS-130)
-			16'h0192, 16'h8D88, 16'hD4A0: begin
-				map_profile <= MAP_CROSS;
-				start_key   <= 4'd0;
-			end
-
-			// TV Arcade IV - Baseball
-			16'h2526, 16'hF837: begin
-				map_profile <= MAP_BASEBALL;
-				start_key   <= 4'd0;
-			end
-
-			// TV Arcade Series - Gunfighter + Moonship Battle
-			16'h043E, 16'h3CDC: begin
-				map_profile <= MAP_TENNIS;
-				start_key   <= 4'd1;
-			end
-
-			// TV Arcade III - Tennis + Squash
-			16'h88FB, 16'hFB76: begin
-				map_profile <= MAP_TENNIS;
-				start_key   <= 4'd1;
-			end
-
-			// Game Pack / Grand Pack. Auto selects their first program, Doodle;
-			// the numeric and differently controlled programs remain accessible
-			// through direct keypad input or a manual profile.
-			16'h1594, 16'h3505, 16'h74AB, 16'h815E,
-			16'hEF21, 16'hFC34, 16'hFC72: begin
-				map_profile <= MAP_DOODLE;
-				start_key   <= 4'd1;
-			end
-
-
-			// ----------------------------------------------------------------
-			// Homebrew: single-player (Paul Robson scheme)
-			// ----------------------------------------------------------------
-
-			// Asteroids / Asteroids Visicom
-			16'h1943, 16'hFBEF, 16'h1973, 16'h2B4D,
-			16'h6EE1, 16'hA008, 16'hAAFB, 16'hE977: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd5;
-			end
-
-			// Berzerk / Berzerk Visicom v1/v2/v3
-			16'h4F61, 16'hAEC7, 16'h787D, 16'hE080,
-			16'h2E9E, 16'h2143, 16'h21A3, 16'h4771, 16'h7C7D, 16'h73A0: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd5;
-			end
-
-			// Invaders v1/v2/v3 / Invaders Color (MPT-02)
-			16'h6F69, 16'h7A5E, 16'hADAB, 16'h0D1D, 16'h69AA, 16'h2D86, 16'h5AC5,
-			16'h937A, 16'hA9DA, 16'hFB00: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd0;
-			end
-
-			// Kaboom / Kaboom Color (MPT-02)
-			16'h6793, 16'hDFCF, 16'h8551, 16'h18DB, 16'h08D3, 16'hF42A: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd0;
-			end
-
-			// Pacman / Pacman Visicom
-			16'hC556, 16'h5359, 16'hF4A1, 16'hE00A, 16'h9AF1, 16'h62B4, 16'hB99C: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd0;
-			end
-
-			// Scramble / Scramble Color (MPT-02)
-			16'hBA0B, 16'hE45F, 16'hFAA9, 16'h1280, 16'hD9F3, 16'hD341, 16'hFE3F: begin
-				map_profile <= MAP_HOMEBREW;
-				start_key   <= 4'd6;
-			end
-
-
-			// ----------------------------------------------------------------
-			// Homebrew: two-player (Paul Robson scheme)
-			// ----------------------------------------------------------------
-
-			// Combat v1/v2/v3 / Combat Visicom
-			16'h4ADA, 16'h188E, 16'hD87F,
-			16'h54C7, 16'h4AA2, 16'hABBA, 16'h4009,
-			16'hB70E, 16'h650C, 16'hE142, 16'hFD35: begin
-				map_profile <= MAP_HB2P;
-				start_key   <= 4'd1;
-			end
-
-			// Hockey v1/v2/v3 / Hockey Visicom v1/v2
-			16'h114A, 16'h4F55, 16'hD5DE,
-			16'h554B, 16'h1154, 16'hDE71, 16'hD753,
-			16'h0D17, 16'hE320, 16'h63E5, 16'h8DD2, 16'hB075: begin
-				map_profile <= MAP_HB2P;
-				start_key   <= 4'd1;
-			end
-
-
-			// ----------------------------------------------------------------
-			// Homebrew: dedicated single-player layouts
-			// ----------------------------------------------------------------
-
-			// Climber v1.00
-			16'h1139, 16'hAD6A: begin
-				map_profile <= MAP_CLIMB;
-				start_key   <= 4'd3;
-			end
-
-			// Outbreak v1.00
-			16'hA83F, 16'hBE58: begin
-				map_profile <= MAP_CLIMB;
-				start_key   <= 4'd0;
-			end
-
-			// Space Explorer
-			16'h0C03, 16'h92C7: begin
-				map_profile <= MAP_EXPLORER;
-				start_key   <= 4'd1; // ignored: this program starts directly
-			end
-
-
-			// ----------------------------------------------------------------
-			// Keypad-only software. MAP_NONE preserves the verified Start key
-			// without inventing directional or action-button controls.
-			// ----------------------------------------------------------------
-
-			// A Cheap Graphics Computer
-			// Concentration + Match
-			// TV Arcade II - Fun with Numbers
-			// TV Casino Series - Blackjack
-			// TV Casino Series - TV Bingo
-			// TV School House I / II - Math Fun
-			16'h0ECC, 16'h29B8, 16'h31AE, 16'h3731, 16'h7A43,
-			16'h7D85, 16'h9D0D, 16'hAF65, 16'hB2FF, 16'hBBC8,
-			16'hBD53, 16'hC8B4, 16'hCEC2, 16'hEE76: begin
-				map_profile <= MAP_NONE;
-				start_key   <= 4'd1;
-			end
-
-			// TV Mystic Series - Biorhythm
-			// Visicom Inspiration (Fortunetelling & Biorhythm)
-			// Visicom Gambler I / II, Sansu Drill, and Space Command
-			// Q-Sound Test
-			16'h12E8, 16'h2BC5, 16'h2F1A, 16'h5433, 16'h8CDE,
-			16'h9BCF, 16'h9F6E, 16'hA7DF, 16'hB7A7, 16'hBF97,
-			16'hC106,
-			16'hC7C6, 16'hDA69, 16'hDCFA, 16'hE4C4, 16'hEBF4,
-			16'hF178: begin
-				map_profile <= MAP_NONE;
-				start_key   <= 4'd0;
-			end
-
-
-			// ----------------------------------------------------------------
-			// Additional known cartridge mappings
-			// ----------------------------------------------------------------
-
-			// RCA Studio II Resident Games
-			16'hB5BF: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Flappy Pixel
-			16'h6D1D, 16'hD124: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Race / Race Colour v1/v2
-			16'h47EA, 16'h5374, 16'h5638, 16'h797C,
-			16'hD6C0, 16'hFCC8: begin
-				map_profile <= MAP_RACE;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Point of Sale Demonstration Cartridge
-			16'hB334, 16'h3EAF: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Move 1
-			16'hD8C2: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Move 2
-			16'hFF76: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Move 3
-			16'h0856: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Random 1
-			16'h51A6: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Random 2
-			16'h4447: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Show Key
-			16'hC78E: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Programming Examples - Tone
-			16'hC903: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// Studio II Test Cartridge
-			16'h7BB6, 16'h79C5: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// TV Arcade 2012
-			16'hE3CF, 16'h4B55: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= 4'd1;
-			end
-
-			// ----------------------------------------------------------------
-			// Existing recognized no-controller entries
-			//
-			// These hashes were present in the previous mapping table but
-			// are not identified by name in the supplied CRC inventory.
-			// Preserve their existing behavior rather than guessing.
-			// ----------------------------------------------------------------
-
-			16'h1634, 16'hB76F: begin
-				map_profile <= MAP_NONE;
-				start_key   <= 4'd15; // no verified Start key
-			end
-
-
-			// ----------------------------------------------------------------
-			// Fallback
-			// ----------------------------------------------------------------
-
-			// Every Visicom cartridge dumped so far starts on 0, not 1 -- Emma
-			// 02's FaqVisicomCartridges says "to start press 0" (or space, which
-			// is its keypad-A 0) for all of them, and the built-in games use
-			// 1/2/3/4/7 instead. The machine fallback covers forms without an
-			// explicit CRC entry.
-			default: begin
-				map_profile <= MAP_8WAY;
-				start_key   <= machine_visicom ? 4'd0 : 4'd1;
-			end
-
+		default: begin
+			map_profile <= MAP_8WAY;
+			start_key   <= machine_visicom ? 4'd0 : 4'd1;
+		end
 		endcase
 	end
 end
-
 // ---- built-in games -------------------------------------------------------
 // With no cartridge there is nothing to CRC, so resident games are told apart
 // by the firmware menu key that starts them. Only the first recognized press
@@ -1225,16 +929,310 @@ assign ram_q = pl1_sel_q ? pl1_q
              : rom_sel_q ? rom_q : 8'hFF;
 
 
-studio2_beeper studio2_beeper (
-	.clk    (clk_sys),
-	.ce     (ce_pix),
-	.reset  (reset),
-	.q      (Q),
-	.tuning (beeper_tune),
-	.audio  (studio2_audio)
-);
+////////////////// SOUND ////////////////////////////////////////////////////
+//
+// Behavioral model of the Q-gated NE555, fitted to the reference recordings in
+// docs/beeper-status.md. The internal contour holds near 628.4Hz for 20ms, then
+// descends to 505.2Hz; the output period is scaled as one curve for the selected
+// console tuning. Q low reverses pitch through the audible release while a faster
+// hidden control trajectory preserves the gap-dependent starts measured with
+// FLiP's Q-Sound Test. A fresh Q-high drive contour prevents retriggers from
+// accumulating pitch drop.
+localparam [15:0] SND_HALF_TOP    = 16'd1400;
+localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
+localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms
+localparam [12:0] SND_RELEASE_STEP = 13'd600; // audible Q-low pitch recovery
+localparam [15:0] SND_RETRIGGER_SETTLE = 16'd10561; // ~6ms live-to-control glide
+localparam  [6:0] SND_RETRIGGER_TRACK_STEP = 7'd64;
+localparam [12:0] SND_ATTACK_STEP  = 13'd14;  // ~2ms zero-to-full
+localparam  [4:0] SND_DUTY_HIGH_PARTS = 5'd11;
+localparam  [4:0] SND_DUTY_PARTS      = 5'd17;
+localparam  [4:0] SND_DUTY_ROUND      = 5'd8;
+// Q14 full-period multipliers. Original is the December 1976 RCA demonstration
+// unit (0.9945 of the internal reference frequency). The three choices on
+// either side are one, three, and six cumulative reciprocal 31:32 steps.
+localparam [14:0] SND_TUNE_HIGHEST_Q14 = 15'd13617;
+localparam [14:0] SND_TUNE_HIGHER_Q14  = 15'd14978;
+localparam [14:0] SND_TUNE_HIGH_Q14    = 15'd15960;
+localparam [14:0] SND_TUNE_MEDIUM_Q14  = 15'd16475;
+localparam [14:0] SND_TUNE_LOW_Q14     = 15'd17006;
+localparam [14:0] SND_TUNE_LOWER_Q14   = 15'd18121;
+localparam [14:0] SND_TUNE_LOWEST_Q14  = 15'd19932;
 
-assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : studio2_audio;
+reg [15:0] snd_half;          // audible oscillator period
+reg [15:0] snd_drive_half;    // fresh Q-high contour
+reg [15:0] snd_control_half;  // recovered control state for a retrigger
+reg [15:0] snd_cnt;
+reg [15:0] snd_cycle_base;    // selected tick length shared by one high/low pair
+reg [14:0] snd_cycle_scale;   // tuning held for the same complete oscillator cycle
+reg [12:0] snd_curve_cnt;
+reg [15:0] snd_control_cnt;
+reg [15:0] snd_on_ticks;
+reg [12:0] snd_amp_cnt;
+reg  [6:0] snd_track_cnt;
+reg  [9:0] snd_eb_frac;
+reg  [7:0] snd_amp;
+reg        snd_q_prev;
+reg        snd_out;
+
+function automatic [14:0] snd_tune_period_scale(input [2:0] tuning);
+begin
+	case (tuning)
+		3'd1: snd_tune_period_scale = SND_TUNE_HIGH_Q14;
+		3'd2: snd_tune_period_scale = SND_TUNE_HIGHER_Q14;
+		3'd3: snd_tune_period_scale = SND_TUNE_HIGHEST_Q14;
+		3'd4: snd_tune_period_scale = SND_TUNE_LOWEST_Q14;
+		3'd5: snd_tune_period_scale = SND_TUNE_LOWER_Q14;
+		3'd6: snd_tune_period_scale = SND_TUNE_LOW_Q14;
+		default: snd_tune_period_scale = SND_TUNE_MEDIUM_Q14;
+	endcase
+end
+endfunction
+
+// Divider-only approximation of the rounded ~190ms driven descent.
+function automatic [12:0] snd_decay_interval(input [15:0] half_period);
+begin
+	if      (half_period < 16'd1443) snd_decay_interval = 13'd240;
+	else if (half_period < 16'd1486) snd_decay_interval = 13'd280;
+	else if (half_period < 16'd1529) snd_decay_interval = 13'd330;
+	else if (half_period < 16'd1572) snd_decay_interval = 13'd410;
+	else if (half_period < 16'd1615) snd_decay_interval = 13'd520;
+	else if (half_period < 16'd1657) snd_decay_interval = 13'd740;
+	else if (half_period < 16'd1699) snd_decay_interval = 13'd1600;
+	else if (half_period < 16'd1715) snd_decay_interval = 13'd2400;
+	else if (half_period < 16'd1727) snd_decay_interval = 13'd3400;
+	else if (half_period < 16'd1735) snd_decay_interval = 13'd4800;
+	else if (half_period < 16'd1740) snd_decay_interval = 13'd6800;
+	else                              snd_decay_interval = 13'd8191;
+end
+endfunction
+
+// Gap-dependent hidden recovery fitted to the controlled Q-Sound Test series.
+function automatic [15:0] snd_control_interval(input [15:0] half_period);
+begin
+	if      (half_period >= 16'd1474) snd_control_interval = 16'd435;
+	else if (half_period >= 16'd1445) snd_control_interval = 16'd2750;
+	else if (half_period >= 16'd1418) snd_control_interval = 16'd3600;
+	else if (half_period >= 16'd1410) snd_control_interval = 16'd9900;
+	else if (half_period >= 16'd1406) snd_control_interval = 16'd15000;
+	else if (half_period >= 16'd1404) snd_control_interval = 16'd25000;
+	else if (half_period >= 16'd1402) snd_control_interval = 16'd45000;
+	else                               snd_control_interval = 16'd65000;
+end
+endfunction
+
+// Divider-only RC envelope: ~21ms prominent decay and ~96ms total tail.
+function automatic [12:0] snd_release_interval(input [7:0] amplitude);
+begin
+	if      (amplitude >= 8'd192) snd_release_interval = 13'd170;
+	else if (amplitude >= 8'd128) snd_release_interval = 13'd240;
+	else if (amplitude >= 8'd64)  snd_release_interval = 13'd400;
+	else if (amplitude >= 8'd32)  snd_release_interval = 13'd800;
+	else if (amplitude >= 8'd16)  snd_release_interval = 13'd1600;
+	else if (amplitude >= 8'd8)   snd_release_interval = 13'd3200;
+	else                           snd_release_interval = 13'd5700;
+end
+endfunction
+
+// Fractional terminal count for the 628.4Hz plateau; curves use integer periods.
+wire [10:0] snd_eb_sum = {1'b0, snd_eb_frac} + 11'd574;
+wire        snd_eb_long = (snd_eb_sum >= 11'd1024);
+wire [15:0] snd_next_base = ((snd_half == SND_HALF_TOP) && !snd_eb_long)
+	                         ? 16'd1400 : snd_half + 16'd1;
+
+// Scale the complete period before splitting it into the measured 11:6 ratio.
+// Explicitly widened operands retain all Q14 product bits. Rounding once per
+// full period keeps the high and residual low phases on one common tuning.
+wire [16:0] snd_base_full_ticks = {snd_cycle_base, 1'b0};
+wire [31:0] snd_tune_product = ({15'd0, snd_base_full_ticks}
+	                            * {17'd0, snd_cycle_scale});
+wire [31:0] snd_tune_rounded = snd_tune_product + 32'd8192;
+wire [16:0] snd_full_ticks = snd_tune_rounded[30:14];
+wire [20:0] snd_high_scaled = ({4'd0, snd_full_ticks}
+	                           * {16'd0, SND_DUTY_HIGH_PARTS})
+	                           + {16'd0, SND_DUTY_ROUND};
+wire [20:0] snd_high_quotient = snd_high_scaled / {16'd0, SND_DUTY_PARTS};
+wire [16:0] snd_high_ticks = snd_high_quotient[16:0];
+wire [16:0] snd_phase_ticks = snd_out ? snd_high_ticks
+	                                  : snd_full_ticks - snd_high_ticks;
+wire [15:0] snd_toggle_at = snd_phase_ticks[15:0] - 16'd1;
+
+always @(posedge clk_sys) begin
+	if (reset) begin
+		snd_half       <= SND_HALF_TOP;
+		snd_drive_half <= SND_HALF_TOP;
+		snd_control_half <= SND_HALF_TOP;
+		snd_cnt        <= 16'd0;
+		snd_cycle_base <= 16'd1400;
+		snd_cycle_scale <= SND_TUNE_MEDIUM_Q14;
+		snd_curve_cnt  <= 13'd0;
+		snd_control_cnt <= 16'd0;
+		snd_on_ticks   <= 16'd0;
+		snd_amp_cnt    <= 13'd0;
+		snd_track_cnt  <= 7'd0;
+		snd_eb_frac    <= 10'd0;
+		snd_amp        <= 8'd0;
+		snd_q_prev     <= 1'b0;
+		snd_out        <= 1'b0;
+	end
+	else if (ce_pix) begin
+		snd_q_prev <= Q;
+
+		// Q edges establish the three continuous trajectories. The audible period
+		// never jumps at an edge; the control and fresh-drive contours determine
+		// where it moves afterward.
+		if (Q != snd_q_prev) begin
+			snd_amp_cnt <= 13'd0;
+			if (Q) begin
+				snd_on_ticks   <= 16'd0;
+				snd_curve_cnt  <= 13'd0;
+				snd_track_cnt  <= 7'd0;
+				snd_drive_half <= SND_HALF_TOP;
+			end
+			else begin
+				snd_on_ticks    <= 16'd0;
+				snd_track_cnt   <= 7'd0;
+				snd_control_half <= snd_half;
+				snd_control_cnt <= 16'd0;
+			end
+		end
+
+		if (!Q) begin
+			// The audible release follows the slower Outbreak/Pac-Man upward tail.
+			if (snd_half > SND_HALF_TOP) begin
+				if (snd_curve_cnt >= SND_RELEASE_STEP-1'b1) begin
+					snd_curve_cnt <= 13'd0;
+					snd_half <= snd_half - 1'b1;
+				end
+				else snd_curve_cnt <= snd_curve_cnt + 1'b1;
+			end
+			else snd_curve_cnt <= 13'd0;
+
+			// The hidden control recovers more quickly along the Gunfighter curve.
+			if (!snd_q_prev) begin
+				if (snd_control_half > SND_HALF_TOP) begin
+					if (snd_control_cnt >= snd_control_interval(snd_control_half)-1'b1) begin
+						snd_control_cnt <= 16'd0;
+						snd_control_half <= snd_control_half - 1'b1;
+					end
+					else snd_control_cnt <= snd_control_cnt + 1'b1;
+				end
+				else snd_control_cnt <= 16'd0;
+			end
+
+			// Q gates the envelope, not the oscillator, so the pitch remains continuous.
+			if (snd_amp != 8'd0) begin
+				if (!snd_q_prev && (snd_amp_cnt >= snd_release_interval(snd_amp)-1'b1)) begin
+					snd_amp_cnt <= 13'd0;
+					snd_amp <= snd_amp - 1'b1;
+				end
+				else if (!snd_q_prev) snd_amp_cnt <= snd_amp_cnt + 1'b1;
+			end
+			else begin
+				snd_amp_cnt <= 13'd0;
+				snd_out <= 1'b0;
+				// Once inaudible, keep the stopped oscillator with the recovered control.
+				snd_half <= snd_control_half;
+			end
+		end
+		else begin
+			if (snd_q_prev) begin
+				// For the first 6ms, glide to the gap-dependent recovered control state.
+				if (snd_on_ticks < SND_RETRIGGER_SETTLE) begin
+					if (snd_control_half > SND_HALF_TOP) begin
+						if (snd_control_cnt >= snd_control_interval(snd_control_half)-1'b1) begin
+							snd_control_cnt <= 16'd0;
+							snd_control_half <= snd_control_half - 1'b1;
+						end
+						else snd_control_cnt <= snd_control_cnt + 1'b1;
+					end
+					else snd_control_cnt <= 16'd0;
+
+					if (snd_half > snd_control_half) begin
+						if (snd_track_cnt >= SND_RETRIGGER_TRACK_STEP-1'b1) begin
+							snd_track_cnt <= 7'd0;
+							snd_half <= snd_half - 1'b1;
+						end
+						else snd_track_cnt <= snd_track_cnt + 1'b1;
+					end
+					else snd_track_cnt <= 7'd0;
+
+					if (snd_on_ticks >= SND_RETRIGGER_SETTLE-1'b1) begin
+						snd_track_cnt <= 7'd0;
+						snd_half <= snd_control_half;
+					end
+				end
+				else begin
+					snd_control_cnt <= 16'd0;
+					snd_track_cnt <= 7'd0;
+				end
+
+				// The same note-age counter defines the 20ms upper-pitch crest.
+				if (snd_on_ticks < SND_HOLD_TICKS) begin
+					snd_on_ticks <= snd_on_ticks + 1'b1;
+					snd_curve_cnt <= 13'd0;
+				end
+				else begin
+					if (snd_drive_half < SND_HALF_BOTTOM) begin
+						if (snd_curve_cnt >= snd_decay_interval(snd_drive_half)-1'b1) begin
+							snd_curve_cnt <= 13'd0;
+							snd_drive_half <= snd_drive_half + 1'b1;
+							if (snd_drive_half >= snd_half) begin
+								snd_half <= snd_drive_half + 1'b1;
+								snd_control_half <= snd_drive_half + 1'b1;
+								snd_control_cnt <= 16'd0;
+							end
+						end
+						else snd_curve_cnt <= snd_curve_cnt + 1'b1;
+					end
+					else begin
+						snd_drive_half <= SND_HALF_BOTTOM;
+						if (snd_half < SND_HALF_BOTTOM) begin
+							snd_half <= SND_HALF_BOTTOM;
+							snd_control_half <= SND_HALF_BOTTOM;
+						end
+						snd_curve_cnt <= 13'd0;
+					end
+				end
+			end
+
+			if (snd_q_prev && snd_amp < 8'hFF) begin
+				if (snd_amp_cnt >= SND_ATTACK_STEP-1'b1) begin
+					snd_amp_cnt <= 13'd0;
+					snd_amp <= snd_amp + 1'b1;
+				end
+				else snd_amp_cnt <= snd_amp_cnt + 1'b1;
+			end
+			else snd_amp_cnt <= 13'd0;
+		end
+
+		// Run one oscillator path for the driven sound and its fading release.
+		if (Q || (snd_amp != 8'd0)) begin
+			if (snd_cnt >= snd_toggle_at) begin
+				snd_cnt <= 16'd0;
+				snd_out <= ~snd_out;
+				// A low-to-high edge starts the next complete oscillator cycle.
+				// Select its base once so both phases use the same fractional period.
+				if (!snd_out) begin
+					snd_cycle_base <= snd_next_base;
+					snd_cycle_scale <= snd_tune_period_scale(beeper_tune);
+					if (snd_half == SND_HALF_TOP)
+						snd_eb_frac <= snd_eb_sum[9:0]; // modulo 1024
+					else
+						snd_eb_frac <= 10'd0;
+				end
+			end
+			else snd_cnt <= snd_cnt + 1'b1;
+		end
+	end
+end
+
+// Scale the 8-bit envelope by 24 (maximum 6120, close to the old +/-6000).
+// Production Studio III machines use the CDP1864's fixed-level tone instead.
+wire [13:0] snd_magnitude = ({6'd0, snd_amp} << 4) + ({6'd0, snd_amp} << 3);
+wire signed [15:0] snd_sample = snd_out ? $signed({2'b00, snd_magnitude})
+	                                   : -$signed({2'b00, snd_magnitude});
+assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //
