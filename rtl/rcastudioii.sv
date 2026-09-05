@@ -817,14 +817,39 @@ wire [3:0] profile      = joy_manual ? joy_override : auto_profile;
 // the asymmetric single-player profiles (Space War, Freeway, Bowling) act as
 // one-player, the symmetric ones (Cross, Baseball) as two.
 
+function automatic [9:0] map_cross(input [31:0] j);
+	reg [9:0] k;
+	begin
+		k = 10'd0;
+		if (j[3]) k[2] = 1'b1;
+		if (j[2]) k[8] = 1'b1;
+		if (j[1]) k[4] = 1'b1;
+		if (j[0]) k[6] = 1'b1;
+		map_cross = k;
+	end
+endfunction
+
+function automatic [9:0] map_8way(input [31:0] j);
+	reg [9:0] k;
+	begin
+		case (j[3:0])
+		4'b1010: begin k = 10'd0; k[1] = 1'b1; end // up+left
+		4'b1001: begin k = 10'd0; k[3] = 1'b1; end // up+right
+		4'b0110: begin k = 10'd0; k[7] = 1'b1; end // down+left
+		4'b0101: begin k = 10'd0; k[9] = 1'b1; end // down+right
+		default:  k = map_cross(j);
+		endcase
+		map_8way = k;
+	end
+endfunction
+
 function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 	reg [9:0] k;
 	begin
 		k = 10'd0;
 		case (prof)
 		MAP_CROSS: begin                     // the MPT-02 joystick layout
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;           // Extra
 		end
@@ -847,66 +872,28 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 			// 8-way: a held diagonal is its corner key (Berzerk moves on
 			// 1/3/7/9), a cardinal is the cross. The corner keys are unused
 			// in the 4-way homebrews, so a passing diagonal is harmless.
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;            // up+left
-			4'b1001: k[3] = 1'b1;            // up+right
-			4'b0110: k[7] = 1'b1;            // down+left
-			4'b0101: k[9] = 1'b1;            // down+right
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 		end
 		MAP_HB2P: begin                      // own pad: cross + fire on 0
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[0] = 1'b1;
 		end
 		MAP_RACE: begin
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;
-			4'b1001: k[3] = 1'b1;
-			4'b0110: k[7] = 1'b1;
-			4'b0101: k[9] = 1'b1;
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[2] = 1'b1;           // accelerate independently
 		end
 		MAP_8WAY: begin                      // CROSS + 8-way diagonals: 1/3/7/9 on corners
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;            // up+left
-			4'b1001: k[3] = 1'b1;            // up+right
-			4'b0110: k[7] = 1'b1;            // down+left
-			4'b0101: k[9] = 1'b1;            // down+right
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_DOODLE: begin                   // Doodle/Patterns: B-side 8-way, single-player
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;            // up+left
-			4'b1001: k[3] = 1'b1;            // up+right
-			4'b0110: k[7] = 1'b1;            // down+left
-			4'b0101: k[9] = 1'b1;            // down+right
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_TENNIS: begin
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[5] = 1'b1;   if (j[5]) k[0] = 1'b1;
 		end
 		MAP_CHIP8: begin                     // common WASD-shaped CHIP-8 cluster
@@ -932,8 +919,7 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 		k = 10'd0;
 		case (prof)
 		MAP_CROSS: begin                     // the MPT-02 joystick layout
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;           // Extra
 		end
@@ -960,63 +946,33 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 		end
 		MAP_HOMEBREW: begin
 			// Fire is 0 on the right pad -- never A0, which restarts Invaders.
-			// The cross is repeated here because Pacman reads "down" on B8;
-			// pad B directions are unused in the other one-player homebrews.
+			// Pacman reads "down" on B8; pad B directions are unused in the
+			// other one-player homebrews.
+			k = map_cross(j);
 			if (j[4]) k[0] = 1'b1;
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
 		end
 		MAP_HB2P: begin                      // own pad: cross + fire on 0
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[0] = 1'b1;
 		end
 		MAP_RACE: ;                         // all controls are on keypad A
 		MAP_VIS_ART: begin                   // movement draws; 5/0 select colour/state
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;
-			4'b1001: k[3] = 1'b1;
-			4'b0110: k[7] = 1'b1;
-			4'b0101: k[9] = 1'b1;
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;           // next colour
 			if (j[5]) k[0] = 1'b1;           // previous colour / flashing
 		end
 		MAP_8WAY: begin                      // CROSS + 8-way diagonals: 1/3/7/9 on corners
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;            // up+left
-			4'b1001: k[3] = 1'b1;            // up+right
-			4'b0110: k[7] = 1'b1;            // down+left
-			4'b0101: k[9] = 1'b1;            // down+right
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_DOODLE: begin                   // Doodle/Patterns: B-side 8-way, single-player
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;            // up+left
-			4'b1001: k[3] = 1'b1;            // up+right
-			4'b0110: k[7] = 1'b1;            // down+left
-			4'b0101: k[9] = 1'b1;            // down+right
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_TENNIS: begin                    // movement, racket-size setup, and pause
-			if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_cross(j);
 			if (j[4]) k[5] = 1'b1;   if (j[5]) k[0] = 1'b1;
 		end
 		MAP_CHIP8:                           // Fire = virtual F = physical B6
@@ -1027,16 +983,7 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 			if (j[5] && j[0]) k[6] = 1'b1;
 		end
 		MAP_EXPLORER: begin
-			case (j[3:0])
-			4'b1010: k[1] = 1'b1;
-			4'b1001: k[3] = 1'b1;
-			4'b0110: k[7] = 1'b1;
-			4'b0101: k[9] = 1'b1;
-			default: begin
-				if (j[3]) k[2] = 1'b1;   if (j[2]) k[8] = 1'b1;
-				if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
-			end
-			endcase
+			k = map_8way(j);
 			if (j[5]) k[5] = 1'b1;           // lock target
 		end
 		default: ;
@@ -1053,6 +1000,7 @@ wire profile_1p = (profile == MAP_SPACEWAR) || (profile == MAP_FREEWAY) ||
                   (profile == MAP_CHIP8)    || (profile == MAP_CLIMB) ||
                   (profile == MAP_EXPLORER);
 wire one_player = (players == 2'd1) || ((players == 2'd0) && profile_1p);
+wire [31:0] joyB_input = one_player ? joystick_0 : joystick_1;
 
 // Direct A0..A9/B0..B9 bindings and Start work from either stick: MiSTer maps
 // each input device independently, so a binding only exists where the user
@@ -1085,8 +1033,7 @@ wire [9:0] joyA = ((profile == MAP_NONE) ? 10'd0
 
 wire [9:0] joyB = ((profile == MAP_NONE) ? 10'd0
 	            : ((profile == MAP_DOODLE) ? map_padB(MAP_DOODLE, joystick_0)
-	                                      : (one_player ? map_padB(profile, joystick_0)
-	                                                    : map_padB(profile, joystick_1))));
+	                                      : map_padB(profile, joyB_input)));
 wire [9:0] joyA_active = joyA | directA | start_keys;
 wire [9:0] joyB_active = joyB | directB;
 
