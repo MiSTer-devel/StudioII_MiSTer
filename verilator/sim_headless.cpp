@@ -34,6 +34,7 @@
 #define RS(sig)   (top->rootp->top__DOT__rcastudio__DOT__##sig)
 #define CPU(sig)  (top->rootp->top__DOT__rcastudio__DOT__cdp1802__DOT__##sig)
 #define PIX(sig)  (top->rootp->top__DOT__rcastudio__DOT__pixie_video__DOT__cdp1861__DOT__##sig)
+#define BEEP(sig) (top->rootp->top__DOT__rcastudio__DOT__studio2_beeper__DOT__##sig)
 #define ROM0      (top->rootp->top__DOT__rcastudio__DOT__rom0__DOT__mem)
 #define ROM1      (top->rootp->top__DOT__rcastudio__DOT__rom1__DOT__mem)
 #define ROM2      (top->rootp->top__DOT__rcastudio__DOT__rom2__DOT__mem)
@@ -1001,9 +1002,9 @@ int main(int argc, char** argv) {
                            "live=%u control=%u drive=%u amp=%u on_ticks=%u\n",
                            q_now ? 1 : 0, (long)fg.frame, a_edges,
                            (unsigned long long)main_time,
-                           (unsigned)RS(snd_half), (unsigned)RS(snd_control_half),
-                           (unsigned)RS(snd_drive_half), (unsigned)RS(snd_amp),
-                           (unsigned)RS(snd_on_ticks));
+                           (unsigned)BEEP(snd_half), (unsigned)BEEP(snd_control_half),
+                           (unsigned)BEEP(snd_drive_half), (unsigned)BEEP(snd_amp),
+                           (unsigned)BEEP(snd_on_ticks));
             }
         }
 

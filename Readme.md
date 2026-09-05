@@ -14,13 +14,13 @@ Supported hardware includes:
 * Toshiba Visicom COM-100
 * Trevi M-1200
 
-## Install and play
+## Install
 
 Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
 
 Put the four native firmware files below in `/media/fat/games/Studio-II/`. For CHIP-8 support, put `chip8.bin` in the same directory as your CHIP-8 games, or load it manually. Firmware images are available in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
 
-Use **Load Cartridge** for `.st2` or `.bin` games and **Load CHIP-8** for `.ch8` programs. **Load Firmware** temporarily replaces the active machine's native firmware; **Load CHIP-8 Interpreter** loads `chip8.bin` separately, where it is only used when a `.ch8` program is loaded.
+**Load Firmware** temporarily replaces the active machine's native firmware; **Load CHIP-8 Interpreter** loads `chip8.bin` separately, where it is only used when a `.ch8` program is loaded.
 
 `Machine` selects `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, or `Visicom`. Changes take effect after **Apply and reset**.
 
@@ -34,9 +34,7 @@ Use **Load Cartridge** for `.st2` or `.bin` games and **Load CHIP-8** for `.ch8`
 
 Other firmware images may work; those listed above were used during development and testing.
 
-[Marcel van Tongeren's Studio-family interpreter](https://www.emma02.hobby-site.com/studio_chip8.html) is required for CHIP-8 support and is available from the [Emma 02 GitHub repository](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin).
-
-The native firmware includes resident games. With automatic mapping, selecting a recognized resident game also selects its controller profile. Selection keys and play instructions are listed in [docs/how-to-play.md](docs/how-to-play.md).
+The native firmware includes resident games. Using a resident game's start key causes the core to attempt to load an appropriate controller profile. Games often start on a black screen.Selection keys and play instructions are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Keypad and CLEAR
 
@@ -56,6 +54,8 @@ The keyboard is mapped like this:
 | Keypad B | `7` | `8` | `9` | `U` | `I` | `O` | `J` | `K` | `L` | `,` |
 
 ## CHIP-8
+
+Marcel van Tongeren's [Studio II CHIP-8 interpreter](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin) is required for CHIP-8 support.
 
 CHIP-8 uses the COSMAC VIP's 16-key hexadecimal keypad:
 
@@ -78,11 +78,11 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 **Sound: Off** mutes the core without stopping the machine's tone generator.
 
-**NE555 pitch** adjusts the Studio II and Visicom beeper. Original follows the measured December 1976 RCA demonstration unit at approximately 625 Hz initially and 502.5 Hz sustained. The other settings proportionally scale the same pitch curve higher or lower. This option does not apply to Studio III.
+**NE555 pitch** adjusts the Studio II and Visicom beeper. Original follows the measured December 1976 RCA demonstration unit at approximately 625 Hz initially and 502.5 Hz sustained. The other settings proportionally scale the same pitch curve higher or lower.
 
-**CDP1863 pitch** applies only to Studio III NTSC. Original uses the native CDP1863 pitch; PAL applies the CDP1864 divide-by-four stage for PAL-equivalent pitch.
+**CDP1863 pitch** only applies to Studio III NTSC. Original uses the native CDP1863 pitch; PAL applies the CDP1864 divide-by-four stage for PAL-equivalent pitch.
 
-**Visicom Palette** uses the Emma 02 palette by default. A custom 16-byte `.vcp` file can be loaded with **Load Palette**; the first four RGB888 entries define the four Visicom colours. To generate new palettes, see [`tools/vispalette`](tools/vispalette).
+**Visicom Palette** allows custom palettes. Reference and example palettes are bundled in [`palettes`](palettes/). To generate new palettes, use [`tools/vispalette`](tools/vispalette). Format matches .gbp (Game Boy Palette) files. You can rename .gbp files and use them directly.
 
 **Vertical Crop: 216p (5x)** crops 1080p HDMI output to 216 lines for exact 5x integer scaling. **Crop Offset** moves the crop window up or down. The scandoubler must be off and output resolution set to 1080p.
 
