@@ -115,195 +115,6 @@ wire out1 = io_out && (io_n == 3'd1);
 wire out2 = io_out && (io_n == 3'd2);
 wire out4 = io_out && (io_n == 3'd4);
 
-////////////////// VIDEO //////////////////////////////////////////////////////////////////
-
-// SC is driven by the CPU's output port, so it must be a net -- declaring it a reg with an
-// initial value of 2'b10 meant the 1861 saw a constant "DMA" state code.
-wire [1:0]  SC;
-
-wire        INT;
-wire        DMAO;
-wire        EFx;
-
-
-pixie_video pixie_video (
-    // front end, CDP1802 bus clock domain
-    .clk        (clk_sys),    // I
-    .reset      (video_reset),             // I: soft resets keep raster timing alive
-
-    .clk_enable (ce_pix),     // I
-    .cpu_ce     (cpu_ce),     // I  CPU machine-cycle enable, for sampling DMA bytes
-
-    .SC         (SC),         // I [1:0]
-    // INP 1 turns the display on, OUT 1 turns it off (the BIOS enables it via CALL $0066). These
-    // interrupts from reset instead of from the moment the BIOS enabled it.
-    // The Visicom enables the display with OUT 1 rather than INP 1, and has no
-    // disable port at all -- Emma 02's config carries a single <out type="on">1
-    // where the Studio II carries <out>1 and <in>1, which its parser turns into
-    // PIXIE_OUT_OUT with only the enable populated.
-    .disp_on    (machine_visicom ? out1 : inp1),  // I
-    .disp_off   ((!machine_visicom && out1) || preserve_sync_reset),  // I: blank while preserving raster timing
-
-
-    .data_in    (ram_q),      // I [7:0]  byte the CPU delivers during a DMA-OUT cycle
-    .vis_mode   (machine_visicom),  // I
-    .data_in2   (pl1_q),      // I [7:0]  Visicom plane 1: the byte $200 higher
-    .colour_in  (colour_dot), // I  CDP1862 colour for that byte (NTSC Studio III)
-    .con        (colour_on),  // I
-    .bg_step    (out1 && !machine_visicom),  // I  OUT 1 steps the background
-
-    .DMAO       (DMAO_61),    // O
-    .INT        (INT_61),     // O
-    .EFx        (EFx_61),     // O
-
-    // back end, video clock domain
-    .video_clk  (clk_sys),    // I
-    .csync      (),           // O
-    .video      (video_dot),  // O  one bit: the 1861 is a monochrome part
-    .colour_out    (col61_dot),
-    .vis_index     (vis_index),
-    .bg_active     (col61_bg),
-    .bg_colour_out (col61_bgc),
-
-    .VSync      (VSync_61),   // O
-    .HSync      (HSync_61),   // O
-    .VBlank     (VBlank_61),  // O
-    .HBlank     (HBlank_61),  // O
-    .video_de   (de_61),      // O
-    .bitmap_de  (bde_61),     // O
-    .bitmap_hblank(bhb_61),
-    .bitmap_vblank(bvb_61)
-);
-
-// ---- CDP1864, the colour machines' video ---------------------------------
-// Both parts are instantiated and the active one selected, rather than making
-// one module's geometry runtime-switchable: the 1861's timing is delicately
-// tuned and documented as such, and both parts are tiny. See the header of
-// rtl/pixie/cdp1864.v.
-//
-// Note the different I/O decode. On the 1864 the display is turned off by INP 4,
-// not OUT 1 -- OUT 1 is taken over by the background colour step. The datasheet
-// gives the opcodes: 61 or 69 enable interrupt and DMA, 6C disables them.
-wire       DMAO_64, INT_64, EFx_64;
-wire       VSync_64, HSync_64, VBlank_64, HBlank_64, de_64, bde_64, bg_64;
-wire       bhb_64, bvb_64;
-wire [2:0] video_64;
-
-cdp1864 cdp1864
-(
-    .clk        (clk_sys),
-    .ce_pix     (ce_pix),
-    .cpu_ce     (cpu_ce),
-    .reset      (video_reset),
-
-    .SC         (SC),
-    .data_in    (ram_q),
-    .colour_in  (colour_dot),
-    .con        (colour_on),
-    .disp_on    (inp1),
-    .disp_off   (inp4 || preserve_sync_reset),
-    .bg_step    (out1),
-
-    .DMAO       (DMAO_64),
-    .INT        (INT_64),
-    .EFx        (EFx_64),
-
-    .csync      (),
-    .video      (video_64),
-    .bckgnd     (bg_64),
-    .VSync      (VSync_64),
-    .HSync      (HSync_64),
-    .VBlank     (VBlank_64),
-    .HBlank     (HBlank_64),
-    .video_de   (de_64),
-    .bitmap_de  (bde_64),
-    .bitmap_hblank(bhb_64),
-    .bitmap_vblank(bvb_64)
-);
-
-// ---- tone generator -------------------------------------------------------
-// The CDP1864 integrates this; the NTSC Studio III has it as a separate CDP1863
-// beside its 1861 and 1862. Same latch on OUT 4 and the same gate on Q either
-// way, differing only by one division stage -- so one instance serves both, with
-// div4 picking the chain. Straight from the datasheet's control-line truth table
-// and Weisbecker's Studio III notes ("64 instruction sets sound frequency
-// (inverse)", "Q gates sound output").
-wire aud_tone;
-cdp1863 cdp1863
-(
-    .clk     (clk_sys),
-    .cpu_ce  (cpu_ce),
-    .reset   (video_reset | (preserve_sync_reset & ~clear_key)),
-    // The 1864's integrated generator has an extra divide-by-4 that the
-    // standalone 1863 does not, so the same latch sounds four times higher on
-    // the NTSC machine. MAME: cdp1864 f = clk/8/4/(latch+1)/2 against cdp1863
-    // f = clk/8/(latch+1)/2 from its clock2 input, which is where TPB goes.
-    .div4    ((machine == MACHINE_S3_PAL) ||
-              ((machine == MACHINE_S3_NTSC) && ntsc_pal_pitch)),
-    .tone_we (out4),
-    .tone_d  (cpu_dout),
-    .aoe     (Q),
-    .aud     (aud_tone)
-);
-
-// ---- select ---------------------------------------------------------------
-// The Studio II's 1861 has no colour, so every channel follows its single dot
-// bit -- white on black, unchanged from before the video path widened.
-wire       video_dot;
-wire       DMAO_61, INT_61, EFx_61;
-wire       VSync_61, HSync_61, VBlank_61, HBlank_61, de_61, bde_61;
-wire       bhb_61, bvb_61;
-wire [2:0] col61_dot, col61_bgc;
-wire       col61_bg;
-wire [2:0] video_61;
-wire       bg_61;
-
-// The CDP1862 beside the 1861, fitted only on the NTSC Studio III. On a Studio II
-// `enable` is low and it passes the luminance bit straight through as white.
-cdp1862 cdp1862
-(
-    .enable     (machine == MACHINE_S3_NTSC),
-    .luminance  (video_dot),
-    .in_raster  (de_61),
-    .dot_colour (col61_dot),
-    .bg_active  (col61_bg),
-    .bg_colour  (col61_bgc),
-    .video      (video_61),
-    .bckgnd     (bg_61)
-);
-
-// The Visicom's four colours do not fit a 1-bit-per-channel bus, so the exact
-// palette is applied at the top level (Studio-II.sv) from vis_index. What
-// goes out here is the nearest 3-bit approximation, which is what the Verilator
-// harness captures -- the four colours stay distinguishable in a PNG or an
-// ASCII dump, which is all that side needs.
-reg  [2:0] vis_approx;
-always @(*) begin
-	case (vis_index)
-		2'd0:    vis_approx = 3'b010;   // background: dark green
-		2'd1:    vis_approx = 3'b011;   // cyan
-		2'd2:    vis_approx = 3'b110;   // yellow
-		default: vis_approx = 3'b100;   // red
-	endcase
-end
-
-assign video    = machine_visicom ? vis_approx : (machine_mpt02 ? video_64 : video_61);
-assign DMAO     = machine_mpt02 ? DMAO_64  : DMAO_61;
-assign INT      = machine_mpt02 ? INT_64   : INT_61;
-assign EFx      = machine_mpt02 ? EFx_64   : EFx_61;
-
-always @(*) begin
-	VSync    = machine_mpt02 ? VSync_64  : VSync_61;
-	HSync    = machine_mpt02 ? HSync_64  : HSync_61;
-	VBlank   = machine_mpt02 ? VBlank_64 : VBlank_61;
-	HBlank   = machine_mpt02 ? HBlank_64 : HBlank_61;
-	video_de = machine_mpt02 ? de_64     : de_61;
-	bitmap_de = machine_mpt02 ? bde_64   : bde_61;
-	bitmap_hblank = machine_mpt02 ? bhb_64 : bhb_61;
-	bitmap_vblank = machine_mpt02 ? bvb_64 : bvb_61;
-	video_bg  = machine_mpt02 ? bg_64    : bg_61;
-end
-
 ////////////////// KEYPAD //////////////////////////////////////////////////////////////////
 
 //The CPU selects the key to scan with OUT 2, latched into a CD4515.
@@ -858,6 +669,195 @@ dpram #(8, 8) sram2
 	.data_b(),
 	.q_b()
 );
+
+////////////////// VIDEO //////////////////////////////////////////////////////////////////
+
+// SC is driven by the CPU's output port, so it must be a net -- declaring it a reg with an
+// initial value of 2'b10 meant the 1861 saw a constant "DMA" state code.
+wire [1:0]  SC;
+
+wire        INT;
+wire        DMAO;
+wire        EFx;
+
+
+pixie_video pixie_video (
+    // front end, CDP1802 bus clock domain
+    .clk        (clk_sys),    // I
+    .reset      (video_reset),             // I: soft resets keep raster timing alive
+
+    .clk_enable (ce_pix),     // I
+    .cpu_ce     (cpu_ce),     // I  CPU machine-cycle enable, for sampling DMA bytes
+
+    .SC         (SC),         // I [1:0]
+    // INP 1 turns the display on, OUT 1 turns it off (the BIOS enables it via CALL $0066). These
+    // interrupts from reset instead of from the moment the BIOS enabled it.
+    // The Visicom enables the display with OUT 1 rather than INP 1, and has no
+    // disable port at all -- Emma 02's config carries a single <out type="on">1
+    // where the Studio II carries <out>1 and <in>1, which its parser turns into
+    // PIXIE_OUT_OUT with only the enable populated.
+    .disp_on    (machine_visicom ? out1 : inp1),  // I
+    .disp_off   ((!machine_visicom && out1) || preserve_sync_reset),  // I: blank while preserving raster timing
+
+
+    .data_in    (ram_q),      // I [7:0]  byte the CPU delivers during a DMA-OUT cycle
+    .vis_mode   (machine_visicom),  // I
+    .data_in2   (pl1_q),      // I [7:0]  Visicom plane 1: the byte $200 higher
+    .colour_in  (colour_dot), // I  CDP1862 colour for that byte (NTSC Studio III)
+    .con        (colour_on),  // I
+    .bg_step    (out1 && !machine_visicom),  // I  OUT 1 steps the background
+
+    .DMAO       (DMAO_61),    // O
+    .INT        (INT_61),     // O
+    .EFx        (EFx_61),     // O
+
+    // back end, video clock domain
+    .video_clk  (clk_sys),    // I
+    .csync      (),           // O
+    .video      (video_dot),  // O  one bit: the 1861 is a monochrome part
+    .colour_out    (col61_dot),
+    .vis_index     (vis_index),
+    .bg_active     (col61_bg),
+    .bg_colour_out (col61_bgc),
+
+    .VSync      (VSync_61),   // O
+    .HSync      (HSync_61),   // O
+    .VBlank     (VBlank_61),  // O
+    .HBlank     (HBlank_61),  // O
+    .video_de   (de_61),      // O
+    .bitmap_de  (bde_61),     // O
+    .bitmap_hblank(bhb_61),
+    .bitmap_vblank(bvb_61)
+);
+
+// ---- CDP1864, the colour machines' video ---------------------------------
+// Both parts are instantiated and the active one selected, rather than making
+// one module's geometry runtime-switchable: the 1861's timing is delicately
+// tuned and documented as such, and both parts are tiny. See the header of
+// rtl/pixie/cdp1864.v.
+//
+// Note the different I/O decode. On the 1864 the display is turned off by INP 4,
+// not OUT 1 -- OUT 1 is taken over by the background colour step. The datasheet
+// gives the opcodes: 61 or 69 enable interrupt and DMA, 6C disables them.
+wire       DMAO_64, INT_64, EFx_64;
+wire       VSync_64, HSync_64, VBlank_64, HBlank_64, de_64, bde_64, bg_64;
+wire       bhb_64, bvb_64;
+wire [2:0] video_64;
+
+cdp1864 cdp1864
+(
+    .clk        (clk_sys),
+    .ce_pix     (ce_pix),
+    .cpu_ce     (cpu_ce),
+    .reset      (video_reset),
+
+    .SC         (SC),
+    .data_in    (ram_q),
+    .colour_in  (colour_dot),
+    .con        (colour_on),
+    .disp_on    (inp1),
+    .disp_off   (inp4 || preserve_sync_reset),
+    .bg_step    (out1),
+
+    .DMAO       (DMAO_64),
+    .INT        (INT_64),
+    .EFx        (EFx_64),
+
+    .csync      (),
+    .video      (video_64),
+    .bckgnd     (bg_64),
+    .VSync      (VSync_64),
+    .HSync      (HSync_64),
+    .VBlank     (VBlank_64),
+    .HBlank     (HBlank_64),
+    .video_de   (de_64),
+    .bitmap_de  (bde_64),
+    .bitmap_hblank(bhb_64),
+    .bitmap_vblank(bvb_64)
+);
+
+// ---- tone generator -------------------------------------------------------
+// The CDP1864 integrates this; the NTSC Studio III has it as a separate CDP1863
+// beside its 1861 and 1862. Same latch on OUT 4 and the same gate on Q either
+// way, differing only by one division stage -- so one instance serves both, with
+// div4 picking the chain. Straight from the datasheet's control-line truth table
+// and Weisbecker's Studio III notes ("64 instruction sets sound frequency
+// (inverse)", "Q gates sound output").
+wire aud_tone;
+cdp1863 cdp1863
+(
+    .clk     (clk_sys),
+    .cpu_ce  (cpu_ce),
+    .reset   (video_reset | (preserve_sync_reset & ~clear_key)),
+    // The 1864's integrated generator has an extra divide-by-4 that the
+    // standalone 1863 does not, so the same latch sounds four times higher on
+    // the NTSC machine. MAME: cdp1864 f = clk/8/4/(latch+1)/2 against cdp1863
+    // f = clk/8/(latch+1)/2 from its clock2 input, which is where TPB goes.
+    .div4    ((machine == MACHINE_S3_PAL) ||
+              ((machine == MACHINE_S3_NTSC) && ntsc_pal_pitch)),
+    .tone_we (out4),
+    .tone_d  (cpu_dout),
+    .aoe     (Q),
+    .aud     (aud_tone)
+);
+
+// ---- select ---------------------------------------------------------------
+// The Studio II's 1861 has no colour, so every channel follows its single dot
+// bit -- white on black, unchanged from before the video path widened.
+wire       video_dot;
+wire       DMAO_61, INT_61, EFx_61;
+wire       VSync_61, HSync_61, VBlank_61, HBlank_61, de_61, bde_61;
+wire       bhb_61, bvb_61;
+wire [2:0] col61_dot, col61_bgc;
+wire       col61_bg;
+wire [2:0] video_61;
+wire       bg_61;
+
+// The CDP1862 beside the 1861, fitted only on the NTSC Studio III. On a Studio II
+// `enable` is low and it passes the luminance bit straight through as white.
+cdp1862 cdp1862
+(
+    .enable     (machine == MACHINE_S3_NTSC),
+    .luminance  (video_dot),
+    .in_raster  (de_61),
+    .dot_colour (col61_dot),
+    .bg_active  (col61_bg),
+    .bg_colour  (col61_bgc),
+    .video      (video_61),
+    .bckgnd     (bg_61)
+);
+
+// The Visicom's four colours do not fit a 1-bit-per-channel bus, so the exact
+// palette is applied at the top level (Studio-II.sv) from vis_index. What
+// goes out here is the nearest 3-bit approximation, which is what the Verilator
+// harness captures -- the four colours stay distinguishable in a PNG or an
+// ASCII dump, which is all that side needs.
+reg  [2:0] vis_approx;
+always @(*) begin
+	case (vis_index)
+		2'd0:    vis_approx = 3'b010;   // background: dark green
+		2'd1:    vis_approx = 3'b011;   // cyan
+		2'd2:    vis_approx = 3'b110;   // yellow
+		default: vis_approx = 3'b100;   // red
+	endcase
+end
+
+assign video    = machine_visicom ? vis_approx : (machine_mpt02 ? video_64 : video_61);
+assign DMAO     = machine_mpt02 ? DMAO_64  : DMAO_61;
+assign INT      = machine_mpt02 ? INT_64   : INT_61;
+assign EFx      = machine_mpt02 ? EFx_64   : EFx_61;
+
+always @(*) begin
+	VSync    = machine_mpt02 ? VSync_64  : VSync_61;
+	HSync    = machine_mpt02 ? HSync_64  : HSync_61;
+	VBlank   = machine_mpt02 ? VBlank_64 : VBlank_61;
+	HBlank   = machine_mpt02 ? HBlank_64 : HBlank_61;
+	video_de = machine_mpt02 ? de_64     : de_61;
+	bitmap_de = machine_mpt02 ? bde_64   : bde_61;
+	bitmap_hblank = machine_mpt02 ? bhb_64 : bhb_61;
+	bitmap_vblank = machine_mpt02 ? bvb_64 : bvb_61;
+	video_bg  = machine_mpt02 ? bg_64    : bg_61;
+end
 
 ////////////////// SOUND ////////////////////////////////////////////////////
 `include "studio2_beeper_inline.svh"
