@@ -212,10 +212,11 @@ localparam CONF_STR = {
 	// Studio II/III only
 	"D3F3,CH8,Load CHIP-8;",
 	"-;",
-	// Machine held until Apply and reset
-	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"F2,BINROM,Load Firmware;",
 	"F4,BIN,Load CHIP-8 Interpreter;",
+	"-;",	
+	// Machine held until Apply and reset
+	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"R[15],Apply and reset;",
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
@@ -263,7 +264,7 @@ assign AUDIO_R = audio_out;
 // Pixie's timing generator is kept running which is
 // friendlier to display sync. TODO: This is very useful but 
 // still a hack and may need further scrutiny or refinement
-// in the future.
+// in the future. ~elle
 reg clear_key = 1'b0;
 always @(posedge clk_sys) begin
 	reg old_stb;
@@ -375,7 +376,7 @@ always @(posedge CLK_50M) begin
 	   (ioctl_index[5:0] == 2)) && ioctl_addr == 24'd100) rom_loaded <= 1'b1;
 end
 
-////////////////// Machine select: staged, applied on request ////////////////
+////////////////// Machine select and staging ////////////////
 //
 // status[14:13] Machine controlled only by "Apply and reset". Apply is R[15], status
 // bit 15. The reset itself gets the same duration a download's reset gets.
