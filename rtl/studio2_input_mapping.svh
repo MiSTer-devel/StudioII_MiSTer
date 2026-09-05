@@ -82,7 +82,7 @@ reg [3:0] start_key = 4'd1;
 always @(posedge clk_sys) begin
 	if (dl_done) begin
 		case (cart_crc)
-`include "studio2_cart_profiles.sv"
+`include "studio2_cart_profiles.svh"
 
 		default: begin
 			map_profile <= MAP_8WAY;
