@@ -27,6 +27,7 @@ module rcastudioii
 	input              clk_sys,
 	input              reset,
 	input              video_reset,
+	input              cart_unload,
 	
 	input wire         ioctl_download,
 	input wire  [15:0] ioctl_index,
@@ -457,12 +458,22 @@ always @(posedge clk_sys) begin
 			MACHINE_VISICOM: cart_page_vis     <= 8'h00;
 		endcase
 	end
+
 	if (cart_page_we) begin
 		case (machine)
 			MACHINE_STUDIO2: cart_page_s2[cart_a[10:8]]      <= 1'b1;
 			MACHINE_S3_PAL:  cart_page_s3_pal[cart_a[10:8]]  <= 1'b1;
 			MACHINE_S3_NTSC: cart_page_s3_ntsc[cart_a[10:8]] <= 1'b1;
 			MACHINE_VISICOM: cart_page_vis[cart_a[10:8]]     <= 1'b1;
+		endcase
+	end
+
+	if (cart_unload) begin
+		case (machine)
+			MACHINE_STUDIO2: cart_page_s2      <= 8'h00;
+			MACHINE_S3_PAL:  cart_page_s3_pal  <= 8'h00;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 8'h00;
+			MACHINE_VISICOM: cart_page_vis     <= 8'h00;
 		endcase
 	end
 end

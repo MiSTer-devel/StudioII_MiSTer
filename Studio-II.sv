@@ -217,7 +217,7 @@ localparam CONF_STR = {
 	"-;",	
 	// Machine held until Apply and reset
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
-	"R[15],Apply and reset;",
+	"R[15],Apply and Reset;",
 	"-;",
 	"O[6],Mapping,Auto,Manual;",
 	// Order must match localparams in rtl/rcastudioii.sv
@@ -230,7 +230,7 @@ localparam CONF_STR = {
 	"D5O[20],CDP1863 pitch,Original,PAL;",
 	"-;",
 	"D7F5,VCP,Load Visicom Palette;",
-	"O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
+	"O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"d6O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
@@ -238,6 +238,7 @@ localparam CONF_STR = {
 	"-;",
 	"T[1],Clear;",
 	"T[0],Reset;",
+	"R[27],Reset and Unload Cartridge;",
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
 	// jn is default virtual mapping
 	"jn,A,B,Start,Select;",
@@ -369,7 +370,8 @@ always @(posedge CLK_50M) begin
 	end
 	else if (download_reset_cnt != 0) download_reset_cnt <= download_reset_cnt - 8'd1;
 
-	if (RESET || status[0] || buttons[1]) hard_reset_cnt <= 8'd255;
+	if (RESET || status[0] || status[27] || buttons[1])
+	hard_reset_cnt <= 8'd255;
 	else if (hard_reset_cnt != 0) hard_reset_cnt <= hard_reset_cnt - 8'd1;
 
 	if(ioctl_download && (((ioctl_index[5:0] == 0) && (ioctl_index[15:6] < 10'd4)) ||
@@ -425,7 +427,7 @@ wire apply_hard_reset = (status[15] && apply_crossing_now) || (apply_reset && ap
 wire apply_soft_reset = apply_reset && !apply_hard_reset;
 
 // Hard reset win if sources overlap
-wire hard_reset = RESET | status[0] | buttons[1] | hard_reset_hold | ~rom_loaded | mach_reset |
+wire hard_reset = RESET | status[0] | status[27] | buttons[1] | hard_reset_hold | ~rom_loaded | mach_reset |
                   (download_reset && !download_soft) | apply_hard_reset;
 wire soft_reset = clear_request | (download_reset && download_soft) | apply_soft_reset;
 wire reset       = hard_reset | soft_reset;
@@ -448,6 +450,7 @@ rcastudioii rcastudio
 	.clk_sys(clk_sys),
 	.reset(reset),
 	.video_reset(video_reset),
+	.cart_unload(status[27]),
 	
 	.ioctl_download(machine_download),
 	.ioctl_index(ioctl_index),
