@@ -23,7 +23,7 @@ The CPU, DMA video, raw and paged cartridges, four native firmware slots plus th
 
 ## Module and clock map
 
-`Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, memory maps, cartridge loader, keypad/controller mapping, Studio II beeper, and machine selection.
+`Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, memory maps, cartridge loader, keypad/controller mapping, and machine selection. `rtl/audio/studio2_beeper.sv` contains the Studio II/Visicom NE555 beeper.
 
 The Studio II/Visicom NE555 pitch selector occupies `status[19:17]`. Codes 0--6
 are Original, High, Higher, Highest, Lowest, Lower, and Low; unused code 7
