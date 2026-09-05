@@ -82,7 +82,13 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 **CDP1863 pitch** only applies to Studio III NTSC. Original uses the native CDP1863 pitch; PAL applies the CDP1864 divide-by-four stage for PAL-equivalent pitch.
 
-**Visicom Palette** allows custom palettes. Reference and example palettes are bundled in [`palettes`](palettes/). To generate new palettes, use [`tools/vispalette`](tools/vispalette). Format matches .gbp (Game Boy Palette) files. You can rename .gbp files and use them directly.
+**VCP: Load Visicom Palette** loads a custom four-colour palette without
+resetting the machine. Reference and example `.vcp` files are bundled in
+[`palettes`](palettes/). To generate one, build and run
+[`tools/vispalette`](tools/vispalette); it writes the 16-byte `.vcp` format.
+The format is compatible with MiSTer's 16-byte `.gbp` layout, so an existing
+`.gbp` file can be renamed to `.vcp` (the final four reserved bytes must be
+zero).
 
 **Vertical Crop: 216p (5x)** crops 1080p HDMI output to 216 lines for exact 5x integer scaling. **Crop Offset** moves the crop window up or down. The scandoubler must be off and output resolution set to 1080p.
 

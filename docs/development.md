@@ -19,7 +19,7 @@ Read the focused references when relevant:
 | Studio II | CDP1861, NTSC mono | discrete beeper | primary target |
 | Studio III PAL | CDP1864 | CDP1864 tone | 312-line PAL timing |
 | Studio III NTSC | CDP1861 + CDP1862 | CDP1863 | 1861 timing with separate colour |
-| Visicom COM-100 | CDP1861 + second DMA bitplane | NE555 compatibility beeper | separate memory map and fixed palette |
+| Visicom COM-100 | CDP1861 + second DMA bitplane | NE555 compatibility beeper | separate memory map and selectable indexed palette |
 
 The CPU, DMA video, raw and paged cartridges, four native firmware slots plus 
 the CHIP-8 interpreter slot, machine memory maps, controller profiles, 
@@ -75,7 +75,7 @@ phase-sensitive input, `--beeper-tune medium|high|higher|highest|lowest|lower|lo
 to select the Studio II tuning (`medium` selects Original), and 
 `--ntsc-tone-pitch original|pal` to select the Studio III NTSC pitch. The harness 
 instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS 
-boot ordering, Apply classification, OSD menu masking, or F1/F2 sync preservation.
+boot ordering, Apply classification, OSD menu masking, or F1-F4 sync preservation.
 
 ## Video behavior
 
