@@ -532,9 +532,6 @@ assign ram_q = pl1_sel_q ? pl1_q
              : ram_sel_q ? sram_q
              : rom_sel_q ? rom_q : 8'hFF;
 
-
-////////////////// SOUND ////////////////////////////////////////////////////
-`include "studio2_beeper_inline.svh"
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //
 // Raw .bin/.rom images are a flat copy to $0400 on Studio machines and $0800 on
@@ -862,5 +859,7 @@ dpram #(8, 8) sram2
 	.q_b()
 );
 
+////////////////// SOUND ////////////////////////////////////////////////////
+`include "studio2_beeper_inline.svh"
 
 endmodule
