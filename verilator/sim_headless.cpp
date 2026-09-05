@@ -34,7 +34,7 @@
 #define RS(sig)   (top->rootp->top__DOT__rcastudio__DOT__##sig)
 #define CPU(sig)  (top->rootp->top__DOT__rcastudio__DOT__cdp1802__DOT__##sig)
 #define PIX(sig)  (top->rootp->top__DOT__rcastudio__DOT__pixie_video__DOT__cdp1861__DOT__##sig)
-#define BEEP(sig) (top->rootp->top__DOT__rcastudio__DOT__studio2_beeper__DOT__##sig)
+#define BEEP(sig) (top->rootp->top__DOT__rcastudio__DOT__##sig)
 #define ROM0      (top->rootp->top__DOT__rcastudio__DOT__rom0__DOT__mem)
 #define ROM1      (top->rootp->top__DOT__rcastudio__DOT__rom1__DOT__mem)
 #define ROM2      (top->rootp->top__DOT__rcastudio__DOT__rom2__DOT__mem)
