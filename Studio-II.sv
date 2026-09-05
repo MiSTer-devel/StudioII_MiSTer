@@ -753,9 +753,6 @@ video_freak video_freak
     .SCALE({1'b0, status[12:11]})
 );
 
-//reg  [26:0] act_cnt;
-//always @(posedge clk_sys) act_cnt <= act_cnt + 1'd1; 
-//assign LED_USER = act_cnt[26] ? act_cnt[25:18] > act_cnt[7:0] : act_cnt[25:18] <= act_cnt[7:0];
 assign LED_USER = 1'b0;   // was undriven
 
 endmodule
