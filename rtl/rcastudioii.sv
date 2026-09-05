@@ -106,11 +106,17 @@ reg  chip8_write_seen = 1'b0;
 reg  chip8_fw_start_seen = 1'b0;
 wire chip8_active = chip8_loaded && !machine_visicom;
 wire preserve_sync_reset = reset && !video_reset;
+wire [2:0] io_n;
+wire       io_inp;
+wire       io_out;
+wire inp1 = io_inp && (io_n == 3'd1);
+wire inp4 = io_inp && (io_n == 3'd4);
+wire out1 = io_out && (io_n == 3'd1);
+wire out2 = io_out && (io_n == 3'd2);
+wire out4 = io_out && (io_n == 3'd4);
 
 ////////////////// VIDEO //////////////////////////////////////////////////////////////////
 
-wire        Disp_On;
-wire        Disp_Off;
 // SC is driven by the CPU's output port, so it must be a net -- declaring it a reg with an
 // initial value of 2'b10 meant the 1861 saw a constant "DMA" state code.
 wire [1:0]  SC;
@@ -130,16 +136,13 @@ pixie_video pixie_video (
 
     .SC         (SC),         // I [1:0]
     // INP 1 turns the display on, OUT 1 turns it off (the BIOS enables it via CALL $0066). These
-    // were tied on/off, so the display could never be disabled and the 1861 started generating
-    // interrupts from reset instead of from the moment the BIOS enabled it. The earlier commented
-    // version keyed off io_n[0] alone, which cannot tell INP 1 from OUT 1.
+    // interrupts from reset instead of from the moment the BIOS enabled it.
     // The Visicom enables the display with OUT 1 rather than INP 1, and has no
     // disable port at all -- Emma 02's config carries a single <out type="on">1
     // where the Studio II carries <out>1 and <in>1, which its parser turns into
     // PIXIE_OUT_OUT with only the enable populated.
-    .disp_on    (machine_visicom ? (io_out && (io_n == 3'd1))
-                                 : (io_inp && (io_n == 3'd1))),  // I
-    .disp_off   ((!machine_visicom && io_out && (io_n == 3'd1)) || preserve_sync_reset),  // I: blank while preserving raster timing
+    .disp_on    (machine_visicom ? out1 : inp1),  // I
+    .disp_off   ((!machine_visicom && out1) || preserve_sync_reset),  // I: blank while preserving raster timing
 
 
     .data_in    (ram_q),      // I [7:0]  byte the CPU delivers during a DMA-OUT cycle
@@ -147,7 +150,7 @@ pixie_video pixie_video (
     .data_in2   (pl1_q),      // I [7:0]  Visicom plane 1: the byte $200 higher
     .colour_in  (colour_dot), // I  CDP1862 colour for that byte (NTSC Studio III)
     .con        (colour_on),  // I
-    .bg_step    (io_out && (io_n == 3'd1) && !machine_visicom),  // I  OUT 1 steps the background
+    .bg_step    (out1 && !machine_visicom),  // I  OUT 1 steps the background
 
     .DMAO       (DMAO_61),    // O
     .INT        (INT_61),     // O
@@ -197,9 +200,9 @@ cdp1864 cdp1864
     .data_in    (ram_q),
     .colour_in  (colour_dot),
     .con        (colour_on),
-    .disp_on    (io_inp && (io_n == 3'd1)),
-    .disp_off   ((io_inp && (io_n == 3'd4)) || preserve_sync_reset),
-    .bg_step    (io_out && (io_n == 3'd1)),
+    .disp_on    (inp1),
+    .disp_off   (inp4 || preserve_sync_reset),
+    .bg_step    (out1),
 
     .DMAO       (DMAO_64),
     .INT        (INT_64),
@@ -237,7 +240,7 @@ cdp1863 cdp1863
     // f = clk/8/(latch+1)/2 from its clock2 input, which is where TPB goes.
     .div4    ((machine == MACHINE_S3_PAL) ||
               ((machine == MACHINE_S3_NTSC) && ntsc_pal_pitch)),
-    .tone_we (io_out && (io_n == 3'd4)),
+    .tone_we (out4),
     .tone_d  (cpu_dout),
     .aoe     (Q),
     .aud     (aud_tone)
@@ -305,7 +308,7 @@ end
 
 //The CPU selects the key to scan with OUT 2, latched into a CD4515.
 reg  [3:0] keylatch = 4'h0;
-always @(posedge clk_sys) if(io_out && (io_n == 3'd2)) keylatch <= cpu_dout[3:0];
+always @(posedge clk_sys) if(out2) keylatch <= cpu_dout[3:0];
 
 wire       pressed = ps2_key[9];
 wire [7:0] code    = ps2_key[7:0];
@@ -1106,14 +1109,6 @@ wire [7:0] cpu_din = 8'h00;
 reg  [7:0] cpu_dout;
 wire       Q;
 wire       unsupported;
-wire [2:0] io_n;
-wire       io_inp;
-wire       io_out;
-
-reg [15:0] cpu_ram_addr;
-reg  [7:0] cpu_ram_din;
-reg  [7:0] cpu_ram_dout;
-
 reg WAIT_N      = 1'b1;   // Clear=1, Wait=1 is Run.
 
 // ---- CPU machine-cycle enable -------------------------------------------------------------
@@ -1130,12 +1125,6 @@ always @(posedge clk_sys) begin
 	else if (ce_pix) cpu_div <= cpu_div + 3'd1;
 end
 reg dma_in_req  = 1'b0;
-//reg dma_out_req = 1'b0;
-
-//wire TPA;
-//wire TPB;
-wire MWR_N;
-wire MRD_N;
 cdp1802 cdp1802 (
   .CLOCK        (clk_sys),
   .clk_enable   (cpu_ce),
@@ -1160,33 +1149,11 @@ cdp1802 cdp1802 (
 
   .ram_rd       (ram_rd),       // O MRD_N
   .ram_wr       (ram_wr),       // O MWR_N
-  .ram_a        (ram_a),        // O cpu_ram_addr
+  .ram_a        (ram_a),        // O RAM address
   .ram_q        (ram_q),        // I DI
-  .ram_d        (ram_d)        // O cpu_ram_dout
+  .ram_d        (ram_d)        // O RAM write data
 
-  //.TPA          (TPA),          // O Timing Pulse  (RAM)
-  //.TPB          (TPB)           // O Timing Pulse  (IO)
 );
-/*
-cosmac cosmac (
-   .clk         (clk_sys),     // I
-   .clk_enable  (1'b1),        // I
-   .clear       (~reset),      // I
-   .dma_in_req  (dma_in_req),  // I
-   .dma_out_req (dma_out_req), // I
-   .int_req     (INT_N),       // I
-   .wait_req    (wait_req),    // I
-   .ef          (EF),          // I [4:1]
-   .data_in     (ram_q),       // I [7:0]
-   .data_out    (ram_d),       // O [7:0]
-   .address     (ram_a),       // O [15:0]
-   .mem_read    (ram_rd),      // O
-   .mem_write   (ram_wr),      // O
-   .io_port     (io_n),        // O [2:0]
-   .q_out       (Q),           // O
-   .sc          (SC)           // O [1:0]
-);
-*/
 
 ////////////////// MEMORY DECODE ////////////////////////////////////////////
 //
