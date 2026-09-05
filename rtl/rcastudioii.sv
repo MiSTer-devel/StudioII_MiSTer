@@ -402,7 +402,6 @@ localparam [3:0] MAP_EXPLORER   = 4'd15;  // Space Explorer: B-side 8-way, Fire 
 
 reg [3:0] map_profile = MAP_NONE;
 
-`include "studio2_cart_profiles.sv"
 
 // ---- CRC16-CCITT over the cartridge image, computed during ioctl_download ----
 // Seed on the first byte and hold the result after the download ends -- clearing
@@ -428,16 +427,20 @@ always @(posedge clk_sys) begin
 end
 
 // ---- CRC → profile + Start key ----------------------------------------------
-// The CRC database is kept in studio2_cart_profiles.sv; this controller only
-// consumes its abstract profile and Start-key result.
+// Keep the CRC database in a separate source file without inserting a
+// combinational lookup between cart_crc and these registered results.
 reg [3:0] start_key = 4'd1;
-wire [7:0] cart_profile_lookup =
-	studio2_cart_profile_lookup(cart_crc, machine_visicom ? 4'd0 : 4'd1);
 
 always @(posedge clk_sys) begin
 	if (dl_done) begin
-		map_profile <= cart_profile_lookup[7:4];
-		start_key   <= cart_profile_lookup[3:0];
+		case (cart_crc)
+`include "studio2_cart_profiles.sv"
+
+		default: begin
+			map_profile <= MAP_8WAY;
+			start_key   <= machine_visicom ? 4'd0 : 4'd1;
+		end
+		endcase
 	end
 end
 // ---- built-in games -------------------------------------------------------
