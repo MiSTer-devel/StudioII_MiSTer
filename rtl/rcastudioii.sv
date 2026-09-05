@@ -245,11 +245,18 @@ wire  [7:0]  ram_d;  // CPU write data
 wire [15:0]  ram_a;  // CPU address
 wire  [7:0]  ram_q;  // data returned to the CPU (and to the 1861 during DMA)
 
-// Which of pages $08-$0F the loaded cartridge actually supplies. On the Studio
-// machines only $0A-$0F can be claimed; on the Visicom all eight bits gate its
-// cartridge window. Cleared when a new cartridge starts downloading;
-// deliberately not cleared on reset, since CLEAR does not unplug the cart.
-reg  [7:0]  cart_page = 8'h00;    // indexed by address bits [10:8]: page $08..$0F
+// Which of pages $08-$0F each machine's loaded cartridge actually supplies.
+// Cartridge bytes already live in four independent machine BRAMs, so page
+// ownership must be independent too. A machine switch selects only that
+// machine's cartridge state; CLEAR/reset does not unplug any resident cart.
+reg  [7:0]  cart_page_s2     = 8'h00;
+reg  [7:0]  cart_page_s3_pal = 8'h00;
+reg  [7:0]  cart_page_s3_ntsc= 8'h00;
+reg  [7:0]  cart_page_vis    = 8'h00;
+wire [7:0]  cart_page = (machine == MACHINE_STUDIO2) ? cart_page_s2
+                      : (machine == MACHINE_S3_PAL)  ? cart_page_s3_pal
+                      : (machine == MACHINE_S3_NTSC) ? cart_page_s3_ntsc
+                      :                                cart_page_vis;
 
 wire        bank0    = (ram_a[15:12] == 4'h0);
 wire        rom_sel  = bank0 && (!ram_a[11] ||
@@ -442,8 +449,22 @@ wire        raw_known  = (ioctl_addr > 25'd3) ||
 wire        cart_page_we = cart_we && cart_claim && (st2_mode || raw_known);
 
 always @(posedge clk_sys) begin
-	if (cart_dl && ioctl_wr && (ioctl_addr == 0)) cart_page <= 8'h00;   // new cartridge
-	if (cart_page_we)                             cart_page[cart_a[10:8]] <= 1'b1;
+	if (cart_dl && ioctl_wr && (ioctl_addr == 0)) begin
+		case (machine)
+			MACHINE_STUDIO2: cart_page_s2      <= 8'h00;
+			MACHINE_S3_PAL:  cart_page_s3_pal  <= 8'h00;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 8'h00;
+			MACHINE_VISICOM: cart_page_vis     <= 8'h00;
+		endcase
+	end
+	if (cart_page_we) begin
+		case (machine)
+			MACHINE_STUDIO2: cart_page_s2[cart_a[10:8]]      <= 1'b1;
+			MACHINE_S3_PAL:  cart_page_s3_pal[cart_a[10:8]]  <= 1'b1;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc[cart_a[10:8]] <= 1'b1;
+			MACHINE_VISICOM: cart_page_vis[cart_a[10:8]]     <= 1'b1;
+		endcase
+	end
 end
 
 // ---- Four native BIOS BRAMs plus the CHIP-8 interpreter ---------------------
@@ -468,7 +489,7 @@ end
 //
 // Cartridge downloads (ioctl index 1) are written into the *currently
 // selected* machine's BRAM so the cart pages sit alongside that machine's
-// firmware. cart_page remains global.
+// firmware. Cartridge page ownership is kept with the same machine slot.
 
 wire [1:0]  bios_slot = fw_dl ? machine : ioctl_index[7:6];
 wire [11:0] dl_a = ch8_dl ? ch8_a
