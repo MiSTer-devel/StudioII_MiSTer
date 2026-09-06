@@ -585,11 +585,11 @@ wire [7:0] vid_lvl = video_bg ? 8'h80 : 8'hFF;
 
 // Visicom's two colour planes produce a 2-bit hardware colour index. The
 // presentation-layer RGB mapping is replaceable without changing that hardware
-// emulation. These defaults use the Emma 02 reference palette.
-reg [23:0] vis_color0 = 24'h004000;
-reg [23:0] vis_color1 = 24'h70D0FF;
-reg [23:0] vis_color2 = 24'hD0FF70;
-reg [23:0] vis_color3 = 24'hFF7070;
+// emulation. These defaults use the balanced reference palette.
+reg [23:0] vis_color0 = 24'h11320C;
+reg [23:0] vis_color1 = 24'h5A93D5;
+reg [23:0] vis_color2 = 24'hB9B43D;
+reg [23:0] vis_color3 = 24'hD14C38;
 
 always @(posedge clk_sys) begin
 	if (vis_palette_download && ioctl_wr) begin
