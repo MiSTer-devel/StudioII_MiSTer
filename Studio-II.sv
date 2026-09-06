@@ -230,6 +230,7 @@ localparam CONF_STR = {
 	"D5O[20],CDP1863 pitch,Original,PAL;",
 	"-;",
 	"D7F5,VCP,Load Visicom Palette;",
+	"D8F6,GBP,Load Studio II Palette;",
 	"O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"d6O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
@@ -333,30 +334,41 @@ wire ce_pix = (ce_cnt == 2'd0);
 wire joy_clear = joystick_0[7] | joystick_1[7];
 wire clear_request = status[1] | clear_key | joy_clear;
 
-// Preserve raster timing on soft resets. F5 is a presentation-only Visicom
-// palette load and must not reach the machine loader or otherwise disturb the
+// Preserve raster timing on soft resets. F5/F6 are presentation-only palette
+// loads and must not reach the machine loader or otherwise disturb the
 // emulated machine.
 // Keep the classification for the whole transaction: Main may update the live
 // file index while replacing one selection, before download has gone inactive.
 reg       vis_palette_latched = 1'b0;
+reg       studio_palette_latched = 1'b0;
 wire      vis_palette_index = ioctl_index[5:0] == 6'd5;
+wire      studio_palette_index = ioctl_index[5:0] == 6'd6;
 wire      vis_palette_download = ioctl_download &&
 	                              (vis_palette_index || vis_palette_latched);
-wire      machine_download = ioctl_download && !vis_palette_download;
+wire      studio_palette_download = ioctl_download &&
+	                                 (studio_palette_index || studio_palette_latched);
+wire      palette_download = vis_palette_download || studio_palette_download;
+wire      machine_download = ioctl_download && !palette_download;
 wire      user_download_now = (ioctl_index[5:0] == 6'd1) ||
 	                          (ioctl_index[5:0] == 6'd2) ||
 	                          (ioctl_index[5:0] == 6'd3) ||
 	                          (ioctl_index[5:0] == 6'd4);
 reg       download_soft_latched = 1'b0;
 reg [7:0] download_reset_cnt = 8'd0;
-wire      download_reset = (ioctl_download && !vis_palette_download) |
+wire      download_reset = (ioctl_download && !palette_download) |
 	                       (download_reset_cnt != 0);
-wire      download_soft = (ioctl_download && !vis_palette_download) ?
+wire      download_soft = (ioctl_download && !palette_download) ?
 	                      user_download_now : download_soft_latched;
 
 always @(posedge clk_sys) begin
-	if (!ioctl_download)        vis_palette_latched <= 1'b0;
-	else if (vis_palette_index) vis_palette_latched <= 1'b1;
+	if (!ioctl_download) begin
+		vis_palette_latched <= 1'b0;
+		studio_palette_latched <= 1'b0;
+	end
+	else if (!vis_palette_latched && !studio_palette_latched) begin
+		if (vis_palette_index)         vis_palette_latched <= 1'b1;
+		else if (studio_palette_index) studio_palette_latched <= 1'b1;
+	end
 end
 
 // Cartridge eject actions share the same core-side unload path. Bit 27 also
@@ -369,7 +381,7 @@ wire      hard_reset_hold = hard_reset_cnt != 0;
 reg       rom_loaded = 0;
 
 always @(posedge CLK_50M) begin
-	if (ioctl_download && !vis_palette_download) begin
+	if (ioctl_download && !palette_download) begin
 		download_reset_cnt <= 8'd255;
 		download_soft_latched <= user_download_now;
 	end
@@ -542,7 +554,8 @@ end
 // CHIP-8 picker on Visicom. D4 disables NE555 tuning on the Studio III machines.
 // D5 enables the NTSC tone-pitch selector only on the Studio III NTSC. d6
 // enables 216p crop controls only for un-doubled 1080p. D7 enables the Visicom
-// palette picker only while Visicom is the active machine.
+// palette picker only while Visicom is active. D8 enables the Studio II palette
+// picker only while Studio II is active.
 // Use machine_active so a staged selection does not take effect before Apply
 // and reset.
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
@@ -551,7 +564,8 @@ assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                       (machine_active == 2'd2)) ? 16'h0010 : 16'h0000) |
 	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
 	                     (en216p ? 16'h0040 : 16'h0000) |
-	                     ((machine_active != 2'd3) ? 16'h0080 : 16'h0000);
+	                     ((machine_active != 2'd3) ? 16'h0080 : 16'h0000) |
+	                     ((machine_active == 2'd0) ? 16'h0100 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 
@@ -603,6 +617,22 @@ always @(posedge clk_sys) begin
 	end
 end
 
+// Studio II uses the standard GBP endpoints: colour 0 (lightest) for a set
+// PIXIE pixel and colour 3 (darkest) for a clear pixel. The two middle colours
+// remain part of the GBP file but are not used by the 1-bit display. The built-
+// in palette is ordinary white-to-black grayscale, preserving stock output.
+reg [127:0] studio_palette = 128'hFFFFFFAAAAAA55555500000000000000;
+
+always @(posedge clk_sys) begin
+	if (studio_palette_download && ioctl_wr)
+		studio_palette <= {studio_palette[119:0], ioctl_data};
+end
+
+wire [23:0] studio_fg = studio_palette[127:104];
+wire [23:0] studio_bg = studio_palette[55:32];
+wire [23:0] studio_rgb = video[2] ? studio_fg : studio_bg;
+wire machine_studio2 = (machine_active == 2'd0);
+
 wire machine_visicom = (machine_active == 2'd3);
 reg [23:0] vis_rgb;
 always @(*) begin
@@ -614,9 +644,15 @@ always @(*) begin
 	endcase
 end
 
-wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] : (video[2] ? vid_lvl : 8'h00);
-wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8]  : (video[1] ? vid_lvl : 8'h00);
-wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0]   : (video[0] ? vid_lvl : 8'h00);
+wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] :
+                   machine_studio2 ? studio_rgb[23:16] :
+                   (video[2] ? vid_lvl : 8'h00);
+wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8] :
+                   machine_studio2 ? studio_rgb[15:8] :
+                   (video[1] ? vid_lvl : 8'h00);
+wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0] :
+                   machine_studio2 ? studio_rgb[7:0] :
+                   (video[0] ? vid_lvl : 8'h00);
 
 ////////////////// Numstick //////////////////
 
