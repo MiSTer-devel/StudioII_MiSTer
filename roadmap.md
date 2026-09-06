@@ -81,11 +81,6 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Selectable palettes
 
-- Standardize Visicom `.vcp` files on MiSTer's 16-byte `.gbp` layout and colour
-  ordering, with the background colour as the final palette entry.
-- Accept `.gbp` files directly. Reverse the four colours in existing bundled
-  `.vcp` files during the transition, and update `tools/vispalette` and the
-  palette documentation to match.
 - Add two-entry, 1-bit palette support for Studio II foreground and background,
   keeping the hardware-accurate colours as the default.
 - Consider an optional expanded eight-entry palette for Studio III after the

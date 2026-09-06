@@ -313,10 +313,29 @@ The implemented Visicom design has three layers:
    running Quartus. This is the immediate path for applying new measurements or
    personal preferences before a core release adopts them.
 
-The `.vcp` format and MiSTer loading route are implemented. The following
-invariants describe the route and its acceptance requirements:
+The `.vcp` format and MiSTer loading route are implemented. VCP and MiSTer
+Game Boy `.gbp` files use the same 16-byte format and lightest-to-darkest file
+ordering: four RGB888 entries followed by four reserved zero bytes. Ordinary
+`.gbp` files may therefore be loaded directly.
 
-- define exactly four entries in index order `0` through `3`;
+Visicom consumes those four file entries in reverse hardware-index order:
+
+```text
+file entry 0 -> index 3
+file entry 1 -> index 2
+file entry 2 -> index 1
+file entry 3 -> index 0
+```
+
+The final file entry therefore controls index `0`, the dark green
+border/background colour. This deliberately aligns the darkest GBP shade with
+the Visicom background. The other three entries become the three foreground
+colours; they are not claimed to form a strict luminance hierarchy.
+
+The following invariants describe the route and its acceptance requirements:
+
+- define exactly four RGB888 entries plus four reserved zero bytes;
+- accept `.vcp` and `.gbp` through the same byte ordering and lookup path;
 - accept arbitrary 24-bit RGB values;
 - apply changes at the final indexed-colour lookup without a machine reset;
 - fall back safely to the selected built-in preset when a file is missing,
@@ -337,8 +356,10 @@ attached.
 ## Acceptance checks for palette changes
 
 - Exhaustively verify all four index-to-RGB mappings for every built-in preset.
-- Verify valid and invalid custom-palette loads, fallback, reload, and index
-  order.
+- Verify valid and invalid custom-palette loads, fallback, reload, and the
+  `0->3`, `1->2`, `2->1`, `3->0` file-entry mapping.
+- Load at least one ordinary `.gbp` file directly and verify that its final
+  entry controls Visicom index `0`.
 - Prove palette changes do not reset or alter machine, raster, DMA, or plane
   state.
 - Capture the same reviewed test pattern over HDMI and direct video.

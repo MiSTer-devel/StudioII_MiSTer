@@ -236,7 +236,7 @@ localparam CONF_STR = {
 	"O[26],Borders,On,Off;",
 	"-;",
 	"F6,GBP,Load Studio II Palette;",
-	"F5,VCP,Load Visicom Palette;",
+	"F5,VCPGBP,Load Visicom Palette;",
 	"-;",
 	"T[1],Clear;",
 	"R[28],Unload Cartridge;",
@@ -594,21 +594,24 @@ reg [23:0] vis_color3 = 24'hFF7070;
 always @(posedge clk_sys) begin
 	if (vis_palette_download && ioctl_wr) begin
 		case (ioctl_addr)
-			25'd0:  vis_color0[23:16] <= ioctl_data;
-			25'd1:  vis_color0[15:8]  <= ioctl_data;
-			25'd2:  vis_color0[7:0]   <= ioctl_data;
+			// VCP and GBP both use lightest-to-darkest file order. Visicom
+			// hardware index 0 is the dark border/background colour, so the
+			// four RGB entries map to hardware indices 3, 2, 1, 0.
+			25'd0:  vis_color3[23:16] <= ioctl_data;
+			25'd1:  vis_color3[15:8]  <= ioctl_data;
+			25'd2:  vis_color3[7:0]   <= ioctl_data;
 
-			25'd3:  vis_color1[23:16] <= ioctl_data;
-			25'd4:  vis_color1[15:8]  <= ioctl_data;
-			25'd5:  vis_color1[7:0]   <= ioctl_data;
+			25'd3:  vis_color2[23:16] <= ioctl_data;
+			25'd4:  vis_color2[15:8]  <= ioctl_data;
+			25'd5:  vis_color2[7:0]   <= ioctl_data;
 
-			25'd6:  vis_color2[23:16] <= ioctl_data;
-			25'd7:  vis_color2[15:8]  <= ioctl_data;
-			25'd8:  vis_color2[7:0]   <= ioctl_data;
+			25'd6:  vis_color1[23:16] <= ioctl_data;
+			25'd7:  vis_color1[15:8]  <= ioctl_data;
+			25'd8:  vis_color1[7:0]   <= ioctl_data;
 
-			25'd9:  vis_color3[23:16] <= ioctl_data;
-			25'd10: vis_color3[15:8]  <= ioctl_data;
-			25'd11: vis_color3[7:0]   <= ioctl_data;
+			25'd9:  vis_color0[23:16] <= ioctl_data;
+			25'd10: vis_color0[15:8]  <= ioctl_data;
+			25'd11: vis_color0[7:0]   <= ioctl_data;
 
 			default: ;
 		endcase

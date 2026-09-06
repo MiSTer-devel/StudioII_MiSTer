@@ -45,12 +45,15 @@ int main(int argc, char **argv)
     output_name = argv[1];
 
     puts("Visicom Color Palette (.vcp) creator");
-    puts("Enter RGB888 values for hardware color indices 0-3.\n");
+    puts("Enter RGB888 values for hardware color indices 0-3.");
+    puts("The file is written in GBP order: indices 3, 2, 1, 0.\n");
 
     for (color = 0; color < 4; ++color) {
-        if (!read_component(color, "R", &palette[color * 3 + 0]) ||
-            !read_component(color, "G", &palette[color * 3 + 1]) ||
-            !read_component(color, "B", &palette[color * 3 + 2])) {
+        unsigned file_color = 3 - color;
+
+        if (!read_component(color, "R", &palette[file_color * 3 + 0]) ||
+            !read_component(color, "G", &palette[file_color * 3 + 1]) ||
+            !read_component(color, "B", &palette[file_color * 3 + 2])) {
             return EXIT_FAILURE;
         }
         putchar('\n');
