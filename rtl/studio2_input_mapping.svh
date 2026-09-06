@@ -576,6 +576,7 @@ end
 wire       start_press = joystick_0[6] | joystick_1[6];
 wire [3:0] active_start_key = (profile == MAP_TENNIS) ? (one_player ? 4'd1 : 4'd2)
 	                         : ((profile == MAP_VIS_ART) && no_cart && builtin_sel) ? builtin_start_key
+	                         : no_cart ? ((profile == MAP_DOODLE) ? 4'd1 : resident_start_key)
 	                         : (((profile == MAP_DOODLE) || (profile == MAP_CHIP8)) ? 4'd1
 	                                                                                 : start_key);
 wire       builtin_keypad_only = no_cart && builtin_sel && (builtin_profile == MAP_NONE);
