@@ -239,6 +239,7 @@ localparam CONF_STR = {
 	"T[1],Clear;",
 	"T[0],Reset;",
 	"R[27],Reset and Unload Cartridge;",
+	"R[28],Unload Cartridge;",
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
 	// jn is default virtual mapping
 	"jn,A,B,Start,Select;",
@@ -358,6 +359,10 @@ always @(posedge clk_sys) begin
 	else if (vis_palette_index) vis_palette_latched <= 1'b1;
 end
 
+// Cartridge eject actions share the same core-side unload path. Bit 27 also
+// hard-resets the machine; bit 28 deliberately leaves CPU and video running.
+wire cart_unload = status[27] | status[28];
+
 // RESET / Reset-and-close-OSD
 reg [7:0] hard_reset_cnt = 8'd0;
 wire      hard_reset_hold = hard_reset_cnt != 0;
@@ -450,7 +455,7 @@ rcastudioii rcastudio
 	.clk_sys(clk_sys),
 	.reset(reset),
 	.video_reset(video_reset),
-	.cart_unload(status[27]),
+	.cart_unload(cart_unload),
 	
 	.ioctl_download(machine_download),
 	.ioctl_index(ioctl_index),
