@@ -246,22 +246,22 @@ wire  [7:0]  ram_d;  // CPU write data
 wire [15:0]  ram_a;  // CPU address
 wire  [7:0]  ram_q;  // data returned to the CPU (and to the 1861 during DMA)
 
-// Which of pages $08-$0F each machine's loaded cartridge actually supplies.
-// Cartridge bytes already live in four independent machine BRAMs, so page
-// ownership must be independent too. A machine switch selects only that
-// machine's cartridge state; CLEAR/reset does not unplug any resident cart.
-reg  [7:0]  cart_page_s2     = 8'h00;
-reg  [7:0]  cart_page_s3_pal = 8'h00;
-reg  [7:0]  cart_page_s3_ntsc= 8'h00;
-reg  [7:0]  cart_page_vis    = 8'h00;
-wire [7:0]  cart_page = (machine == MACHINE_STUDIO2) ? cart_page_s2
+// Which of pages $00-$0F each machine's loaded cartridge actually supplies.
+// Cartridge data lives in four independent machine BRAMs, separate from
+// firmware. Page ownership therefore controls the overlay explicitly: a cart
+// may replace the normal $0400-$07FF firmware window, plus the cartridge
+// windows described below. CLEAR/reset does not unplug any resident cart.
+reg  [15:0] cart_page_s2      = 16'h0000;
+reg  [15:0] cart_page_s3_pal  = 16'h0000;
+reg  [15:0] cart_page_s3_ntsc = 16'h0000;
+reg  [15:0] cart_page_vis     = 16'h0000;
+wire [15:0] cart_page = (machine == MACHINE_STUDIO2) ? cart_page_s2
                       : (machine == MACHINE_S3_PAL)  ? cart_page_s3_pal
                       : (machine == MACHINE_S3_NTSC) ? cart_page_s3_ntsc
                       :                                cart_page_vis;
 
 wire        bank0    = (ram_a[15:12] == 4'h0);
-wire        rom_sel  = bank0 && (!ram_a[11] ||
-	                   (machine_visicom && cart_page[ram_a[10:8]]));
+wire        rom_sel  = bank0 && !ram_a[11];
 // Studio III puts a second ROM region at $0C00-$0FFF -- MAME's mpt02_map has
 // .rom() there as well as at $0000-$07FF, and the BIOS is a 4K image covering
 // both. Marcel's interpreter needs the same window on Studio II while CHIP-8 is
@@ -272,8 +272,11 @@ wire        rom_hi   = (is_studio3 || chip8_active) && bank0 &&
 // lines are decoded, which is why MAME names the storage ($0B00-$0B3F) and Emma 02
 // the window ($0B00-$0BFF) without disagreeing. See AGENTS.md for the unified-model rule.
 wire        col_sel  = is_studio3 && bank0 && (ram_a[11:8] == 4'hB);
-wire        cart_sel = bank0 && ram_a[11] && cart_page[ram_a[10:8]] &&
-	                   !rom_hi && !col_sel && !machine_visicom && !chip8_active;
+// Cartridge ownership is an overlay, not part of firmware storage. CHIP-8
+// deliberately wins over any native cartridge. Colour RAM also remains fixed
+// hardware on Studio III. Valid loaders never claim Studio RAM pages $08/$09.
+wire        cart_sel = bank0 && cart_page[ram_a[11:8]] &&
+	                   !col_sel && !chip8_active;
 
 // ---- Toshiba Visicom COM-100 ----------------------------------------------
 // A different map from either Studio, and the only one here that puts RAM above
@@ -336,20 +339,24 @@ wire [2:0]  colour_dot = {colour_cell[0], colour_cell[2], colour_cell[1]};
 // delayed with the data. The CPU holds an address for a whole machine cycle
 // (32 clk_sys), so a registered select is settled long before it is sampled.
 wire [7:0]  rom_q;
+wire [7:0]  cart_q;
 wire [7:0]  sram_q;
 wire [7:0]  pl1_q;
-reg         rom_sel_q, ram_sel_q, pl1_sel_q;
+reg         rom_sel_q, cart_sel_q, ram_sel_q, pl1_sel_q;
 always @(posedge clk_sys) begin
-	rom_sel_q <= rom_sel | cart_sel | rom_hi;
-	ram_sel_q <= ram_sel;
-	pl1_sel_q <= vis_pl1;
+	rom_sel_q  <= rom_sel | rom_hi;
+	cart_sel_q <= cart_sel;
+	ram_sel_q  <= ram_sel;
+	pl1_sel_q  <= vis_pl1;
 end
 // Open bus reads back as $FF, matching MAME's unmap_value_high and the likely
 // floating-bus behaviour of the real machine (nothing drives the lines, and
-// the last DMA-driven byte was usually high). 
-assign ram_q = pl1_sel_q ? pl1_q
-             : ram_sel_q ? sram_q
-             : rom_sel_q ? rom_q : 8'hFF;
+// the last DMA-driven byte was usually high). Cartridge data has priority over
+// firmware wherever the active machine's page mask says a cartridge is present.
+assign ram_q = pl1_sel_q  ? pl1_q
+             : ram_sel_q  ? sram_q
+             : cart_sel_q ? cart_q
+             : rom_sel_q  ? rom_q : 8'hFF;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //
@@ -440,11 +447,17 @@ wire [11:0] ch8_a = (ioctl_addr < 25'h500)
 wire        ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
 	                 !machine_visicom && (ioctl_addr < 25'h900);
 
-// On the Studio machines only pages $0A-$0F can be claimed; $08/$09 are RAM.
-// The Visicom uses the whole $08-$0F cartridge window. Do not count the first
-// three undecided magic bytes as raw data: at byte 3 the format is known, and a
-// real ST2 header must not make page $08 look supplied by its "RCA2" signature.
-wire        cart_claim = cart_a[11] && (machine_visicom || cart_a[10] || cart_a[9]);
+// Studio cartridges may claim $04-$07 and $0A-$0F; $08/$09 are RAM, and $0B
+// remains colour RAM on Studio III. Visicom cartridges use $08-$0F. Do not
+// count the first three undecided magic bytes as raw data: at byte 3 the format
+// is known, and a real ST2 header must not make a low page look supplied by its
+// "RCA2" signature.
+wire [3:0]  cart_pg = cart_a[11:8];
+wire        cart_claim = machine_visicom
+                       ? cart_pg[3]
+                       : ((cart_pg >= 4'h4) &&
+                          (cart_pg != 4'h8) && (cart_pg != 4'h9) &&
+                          !(is_studio3 && (cart_pg == 4'hB)));
 wire        raw_known  = (ioctl_addr > 25'd3) ||
 	                     ((ioctl_addr == 25'd3) && !((ioctl_dout == 8'h32) && st2_magic[2]));
 wire        cart_page_we = cart_we && cart_claim && (st2_mode || raw_known);
@@ -452,40 +465,42 @@ wire        cart_page_we = cart_we && cart_claim && (st2_mode || raw_known);
 always @(posedge clk_sys) begin
 	if (cart_dl && ioctl_wr && (ioctl_addr == 0)) begin
 		case (machine)
-			MACHINE_STUDIO2: cart_page_s2      <= 8'h00;
-			MACHINE_S3_PAL:  cart_page_s3_pal  <= 8'h00;
-			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 8'h00;
-			MACHINE_VISICOM: cart_page_vis     <= 8'h00;
+			MACHINE_STUDIO2: cart_page_s2      <= 16'h0000;
+			MACHINE_S3_PAL:  cart_page_s3_pal  <= 16'h0000;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 16'h0000;
+			MACHINE_VISICOM: cart_page_vis     <= 16'h0000;
 		endcase
 	end
 
 	if (cart_page_we) begin
 		case (machine)
-			MACHINE_STUDIO2: cart_page_s2[cart_a[10:8]]      <= 1'b1;
-			MACHINE_S3_PAL:  cart_page_s3_pal[cart_a[10:8]]  <= 1'b1;
-			MACHINE_S3_NTSC: cart_page_s3_ntsc[cart_a[10:8]] <= 1'b1;
-			MACHINE_VISICOM: cart_page_vis[cart_a[10:8]]     <= 1'b1;
+			MACHINE_STUDIO2: cart_page_s2[cart_pg]      <= 1'b1;
+			MACHINE_S3_PAL:  cart_page_s3_pal[cart_pg]  <= 1'b1;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc[cart_pg] <= 1'b1;
+			MACHINE_VISICOM: cart_page_vis[cart_pg]     <= 1'b1;
 		endcase
 	end
 
 	if (cart_unload) begin
 		case (machine)
-			MACHINE_STUDIO2: cart_page_s2      <= 8'h00;
-			MACHINE_S3_PAL:  cart_page_s3_pal  <= 8'h00;
-			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 8'h00;
-			MACHINE_VISICOM: cart_page_vis     <= 8'h00;
+			MACHINE_STUDIO2: cart_page_s2      <= 16'h0000;
+			MACHINE_S3_PAL:  cart_page_s3_pal  <= 16'h0000;
+			MACHINE_S3_NTSC: cart_page_s3_ntsc <= 16'h0000;
+			MACHINE_VISICOM: cart_page_vis     <= 16'h0000;
 		endcase
 	end
 end
 
-// ---- Four native BIOS BRAMs plus the CHIP-8 interpreter ---------------------
+// ---- Native firmware, cartridge BRAMs, and CHIP-8 interpreter ---------------
 //
 // MiSTer auto-loads boot0.rom through boot3.rom with ioctl_index[5:0]==0 and
-// the slot in ioctl_index[7:6]. Each native BRAM only accepts writes for its
-// own slot. MiSTer Main can send the user-supplied chip8.bin automatically from
-// beside an F3 selection at supplemental index $0103, or the user can cache it
-// manually through F4 at index $0004. That universal Studio-family interpreter
-// goes into the fifth BRAM.
+// the slot in ioctl_index[7:6]. Each native firmware BRAM only accepts writes
+// for its own slot. Each machine also owns an independent cartridge BRAM, so
+// F1 can never overwrite resident firmware. MiSTer Main can send the
+// user-supplied chip8.bin automatically from beside an F3 selection at
+// supplemental index $0103, or the user can cache it manually through F4 at
+// index $0004. That universal Studio-family interpreter goes into the fifth
+// firmware/program BRAM.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
 //   0 Studio II        → boot0.rom
@@ -498,34 +513,30 @@ end
 // ioctl_index[7:6] the way boot autoload does -- menu loads put the file's
 // extension index there, so a .rom would always land in slot 1.)
 //
-// Cartridge downloads (ioctl index 1) are written into the *currently
-// selected* machine's BRAM so the cart pages sit alongside that machine's
-// firmware. Cartridge page ownership is kept with the same machine slot.
+// Cartridge downloads (ioctl index 1) are written only into the *currently
+// selected* machine's cartridge BRAM. Cartridge page ownership is kept with
+// the same machine slot and determines where that BRAM overlays firmware/RAM.
 
 wire [1:0]  bios_slot = fw_dl ? machine : ioctl_index[7:6];
-wire [11:0] dl_a = ch8_dl ? ch8_a
-	              : ((bios_dl || chip8_fw_dl) ? ioctl_addr[11:0] : cart_a);
+wire [11:0] chip8_dl_a = ch8_dl ? ch8_a : ioctl_addr[11:0];
 
-// BIOS write: only the matching boot-slot BRAM
+// BIOS write: only the matching firmware BRAM
 wire        bios_we0 = bios_dl && ioctl_wr && (bios_slot == 2'd0);
 wire        bios_we1 = bios_dl && ioctl_wr && (bios_slot == 2'd1);
 wire        bios_we2 = bios_dl && ioctl_wr && (bios_slot == 2'd2);
 wire        bios_we3 = bios_dl && ioctl_wr && (bios_slot == 2'd3);
 wire        bios_we4 = chip8_fw_dl && ioctl_wr && (ioctl_addr < 25'h300);
 
-// Cart write: into the BRAM that belongs to the active machine
+// Cart write: only into the cartridge BRAM that belongs to the active machine
 wire        cart_we0 = cart_we && (machine == 2'd0);
 wire        cart_we1 = cart_we && (machine == 2'd1);
 wire        cart_we2 = cart_we && (machine == 2'd2);
 wire        cart_we3 = cart_we && (machine == 2'd3);
 
-wire        we0 = bios_we0 | cart_we0;
-wire        we1 = bios_we1 | cart_we1;
-wire        we2 = bios_we2 | cart_we2;
-wire        we3 = bios_we3 | cart_we3;
 wire        we4 = bios_we4 | ch8_we;
 
 wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q, rom4_q;
+wire [7:0]  cart0_q, cart1_q, cart2_q, cart3_q;
 
 // A truncated or absent cached interpreter must not accept a .ch8 file. A
 // valid interpreter is
@@ -550,8 +561,8 @@ dpram #(8, 12) rom0
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
-	.wren_a(we0),
+	.address_a(bios_dl ? ioctl_addr[11:0] : ram_a[11:0]),
+	.wren_a(bios_we0),
 	.data_a(ioctl_dout),
 	.q_a(rom0_q),
 	.ram_cs_b(1'b0),
@@ -565,8 +576,8 @@ dpram #(8, 12) rom1
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
-	.wren_a(we1),
+	.address_a(bios_dl ? ioctl_addr[11:0] : ram_a[11:0]),
+	.wren_a(bios_we1),
 	.data_a(ioctl_dout),
 	.q_a(rom1_q),
 	.ram_cs_b(1'b0),
@@ -580,8 +591,8 @@ dpram #(8, 12) rom2
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
-	.wren_a(we2),
+	.address_a(bios_dl ? ioctl_addr[11:0] : ram_a[11:0]),
+	.wren_a(bios_we2),
 	.data_a(ioctl_dout),
 	.q_a(rom2_q),
 	.ram_cs_b(1'b0),
@@ -595,8 +606,8 @@ dpram #(8, 12) rom3
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
-	.wren_a(we3),
+	.address_a(bios_dl ? ioctl_addr[11:0] : ram_a[11:0]),
+	.wren_a(bios_we3),
 	.data_a(ioctl_dout),
 	.q_a(rom3_q),
 	.ram_cs_b(1'b0),
@@ -610,7 +621,7 @@ dpram #(8, 12) rom4
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a(ioctl_download ? dl_a : ram_a[11:0]),
+	.address_a((ch8_dl || chip8_fw_dl) ? chip8_dl_a : ram_a[11:0]),
 	.wren_a(we4),
 	.data_a(ioctl_dout),
 	.q_a(rom4_q),
@@ -621,12 +632,81 @@ dpram #(8, 12) rom4
 	.q_b()
 );
 
-// CPU (and DMA) reads the shared CHIP-8 image when active, otherwise the BRAM
-// belonging to the selected native machine. Visicom can never select rom4.
+// Four cartridge BRAMs are addressed independently from firmware. Old bytes
+// may remain physically present after replacement or unload, but are invisible
+// unless the corresponding active-machine cart_page bit is set.
+dpram #(8, 12) cart0
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(cart_dl ? cart_a : ram_a[11:0]),
+	.wren_a(cart_we0),
+	.data_a(ioctl_dout),
+	.q_a(cart0_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
+dpram #(8, 12) cart1
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(cart_dl ? cart_a : ram_a[11:0]),
+	.wren_a(cart_we1),
+	.data_a(ioctl_dout),
+	.q_a(cart1_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
+dpram #(8, 12) cart2
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(cart_dl ? cart_a : ram_a[11:0]),
+	.wren_a(cart_we2),
+	.data_a(ioctl_dout),
+	.q_a(cart2_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
+dpram #(8, 12) cart3
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(cart_dl ? cart_a : ram_a[11:0]),
+	.wren_a(cart_we3),
+	.data_a(ioctl_dout),
+	.q_a(cart3_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
+// CPU (and DMA) reads the shared CHIP-8 image when active, otherwise firmware
+// from the selected native machine. Visicom can never select rom4.
 assign rom_q = chip8_active ? rom4_q :
 	           (machine == 2'd0) ? rom0_q :
 	           (machine == 2'd1) ? rom1_q :
 	           (machine == 2'd2) ? rom2_q : rom3_q;
+
+// Cartridge reads always come from the selected native machine's independent
+// cartridge BRAM. cart_sel/cart_page decides whether this data is visible.
+assign cart_q = (machine == 2'd0) ? cart0_q :
+	            (machine == 2'd1) ? cart1_q :
+	            (machine == 2'd2) ? cart2_q : cart3_q;
 
 // The RAM: 512 bytes ($0800-$08FF program/system, $0900-$09FF display on the
 // Studio II and III; $1000-$11FF on the Visicom, whose bit plane 0 is its top
