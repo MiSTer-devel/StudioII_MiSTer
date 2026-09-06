@@ -34,8 +34,8 @@ localparam [3:0] MAP_HB2P       = 4'd10;  // 2P homebrew (Hockey, Combat): cross
                                           // fire-on-0, each player's own pad. Normally
                                           // chosen by CRC, but also exposed in the OSD
                                           // list as "2P Homebrew" for manual override.
-localparam [3:0] MAP_RACE       = 4'd11;  // A-side 8-way; Fire is an independent A2
-                                          // so acceleration can be held while steering
+localparam [3:0] MAP_RACE       = 4'd11;  // Race: keypad B steering on 4/6,
+                                          // accelerate 2, brake 5
 localparam [3:0] MAP_TENNIS     = 4'd12;  // Gunfighter/Tennis. Auto/1P uses keypad B;
                                           // 2P splits the matching A/B controls.
                                           // Tennis/Squash uses left/fire/right for
@@ -49,22 +49,52 @@ localparam [3:0] MAP_EXPLORER   = 4'd15;  // Space Explorer: B-side 8-way, Fire 
                                           // Extra locks with B5
 
 reg [3:0] map_profile = MAP_NONE;
+reg [3:0] start_key   = 4'd1;
 
+// Cartridge profile residency mirrors the per-machine cartridge storage.
+// Loading or unloading a cartridge changes only the selected machine's profile;
+// firmware loads and ordinary resets do not destroy cartridge profile state.
+reg [3:0] cart_profile_s2      = MAP_8WAY;
+reg [3:0] cart_profile_s3_pal  = MAP_8WAY;
+reg [3:0] cart_profile_s3_ntsc = MAP_8WAY;
+reg [3:0] cart_profile_vis     = MAP_8WAY;
 
-// ---- CRC16-CCITT over the cartridge image, computed during ioctl_download ----
-// Seed on the first byte and hold the result after the download ends -- clearing
-// it whenever ioctl_download is low would wipe the CRC before it could be used.
+reg [3:0] cart_start_s2      = 4'd1;
+reg [3:0] cart_start_s3_pal  = 4'd1;
+reg [3:0] cart_start_s3_ntsc = 4'd1;
+reg [3:0] cart_start_vis     = 4'd0;
+
+reg cart_profile_valid_s2      = 1'b0;
+reg cart_profile_valid_s3_pal  = 1'b0;
+reg cart_profile_valid_s3_ntsc = 1'b0;
+reg cart_profile_valid_vis     = 1'b0;
+
+wire cart_profile_valid = (machine == MACHINE_STUDIO2) ? cart_profile_valid_s2
+                        : (machine == MACHINE_S3_PAL)  ? cart_profile_valid_s3_pal
+                        : (machine == MACHINE_S3_NTSC) ? cart_profile_valid_s3_ntsc
+                        :                                cart_profile_valid_vis;
+
+// ---- CRC16-CCITT over the cartridge image, computed during cartridge load ----
+// cart_crc remains the working/last-computed CRC for debug visibility. Cartridge
+// residency is tracked separately above, so a firmware download cannot
+// accidentally re-apply a stale CRC from another machine.
 reg [15:0] cart_crc = 16'hFFFF;
 reg        dl_d;
-wire       dl_done = dl_d & ~ioctl_download;      // falling edge: download finished
+reg        cart_dl_d = 1'b0;
+wire       dl_done      = dl_d & ~ioctl_download;  // generic download falling edge
+wire       cart_dl_start = cart_dl & ~cart_dl_d;
+wire       cart_dl_done  = cart_dl_d & ~cart_dl;
 
 always @(posedge clk_sys) begin
 	integer i;
 	reg [15:0] c;
-	dl_d <= ioctl_download;
-	if (cart_dl && ioctl_download && !dl_d) begin
+
+	dl_d      <= ioctl_download;
+	cart_dl_d <= cart_dl;
+
+	if (cart_dl_start)
 		cart_crc <= 16'hFFFF;
-	end
+
 	if (cart_dl && ioctl_wr) begin
 		c = (ioctl_addr == 0) ? 16'hFFFF : cart_crc;
 		c = c ^ {ioctl_dout, 8'h00};
@@ -74,29 +104,116 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// ---- CRC → profile + Start key ----------------------------------------------
-// Keep the CRC database in a separate source file without inserting a
-// combinational lookup between cart_crc and these registered results.
-reg [3:0] start_key = 4'd1;
+// ---- CRC -> profile + Start key ---------------------------------------------
+// The include contains only explicit CRC case items. Unknown cartridges fall
+// back to the useful neutral 8-way mapping rather than automatic NONE.
+function automatic [7:0] resolve_cart_profile(
+	input [15:0] crc,
+	input        visicom
+);
+	reg [3:0] p;
+	reg [3:0] s;
+	begin
+		p = MAP_8WAY;
+		s = visicom ? 4'd0 : 4'd1;
+
+		case (crc)
+`include "studio2_cart_profiles.svh"
+		default: ;
+		endcase
+
+		resolve_cart_profile = {p, s};
+	end
+endfunction
+
+wire [7:0] resolved_cart_profile = resolve_cart_profile(cart_crc, machine_visicom);
+
+// Keep active map_profile/start_key as registers for the existing Verilator
+// visibility while backing them with per-machine resident slots.
+reg [1:0] profile_machine_d = MACHINE_STUDIO2;
 
 always @(posedge clk_sys) begin
-	if (dl_done) begin
-		case (cart_crc)
-`include "studio2_cart_profiles.svh"
+	profile_machine_d <= machine;
 
+	// Switching machines selects that machine's remembered cartridge profile.
+	if (profile_machine_d != machine) begin
+		case (machine)
+		MACHINE_STUDIO2: begin
+			map_profile <= cart_profile_s2;
+			start_key   <= cart_start_s2;
+		end
+		MACHINE_S3_PAL: begin
+			map_profile <= cart_profile_s3_pal;
+			start_key   <= cart_start_s3_pal;
+		end
+		MACHINE_S3_NTSC: begin
+			map_profile <= cart_profile_s3_ntsc;
+			start_key   <= cart_start_s3_ntsc;
+		end
 		default: begin
-			map_profile <= MAP_8WAY;
-			start_key   <= machine_visicom ? 4'd0 : 4'd1;
+			map_profile <= cart_profile_vis;
+			start_key   <= cart_start_vis;
 		end
 		endcase
 	end
+
+	// Starting a replacement immediately invalidates only this machine's old
+	// profile. The new result becomes resident when the cartridge completes.
+	if (cart_dl_start) begin
+		case (machine)
+		MACHINE_STUDIO2: cart_profile_valid_s2      <= 1'b0;
+		MACHINE_S3_PAL:  cart_profile_valid_s3_pal  <= 1'b0;
+		MACHINE_S3_NTSC: cart_profile_valid_s3_ntsc <= 1'b0;
+		MACHINE_VISICOM: cart_profile_valid_vis     <= 1'b0;
+		endcase
+	end
+
+	if (cart_dl_done) begin
+		map_profile <= resolved_cart_profile[7:4];
+		start_key   <= resolved_cart_profile[3:0];
+
+		case (machine)
+		MACHINE_STUDIO2: begin
+			cart_profile_s2       <= resolved_cart_profile[7:4];
+			cart_start_s2         <= resolved_cart_profile[3:0];
+			cart_profile_valid_s2 <= 1'b1;
+		end
+		MACHINE_S3_PAL: begin
+			cart_profile_s3_pal       <= resolved_cart_profile[7:4];
+			cart_start_s3_pal         <= resolved_cart_profile[3:0];
+			cart_profile_valid_s3_pal <= 1'b1;
+		end
+		MACHINE_S3_NTSC: begin
+			cart_profile_s3_ntsc       <= resolved_cart_profile[7:4];
+			cart_start_s3_ntsc         <= resolved_cart_profile[3:0];
+			cart_profile_valid_s3_ntsc <= 1'b1;
+		end
+		MACHINE_VISICOM: begin
+			cart_profile_vis       <= resolved_cart_profile[7:4];
+			cart_start_vis         <= resolved_cart_profile[3:0];
+			cart_profile_valid_vis <= 1'b1;
+		end
+		endcase
+	end
+
+	// Unload is deliberately profile-only here. Cartridge BRAM/page ownership
+	// remains in the loader block and is not coupled back into this subsystem.
+	if (cart_unload) begin
+		case (machine)
+		MACHINE_STUDIO2: cart_profile_valid_s2      <= 1'b0;
+		MACHINE_S3_PAL:  cart_profile_valid_s3_pal  <= 1'b0;
+		MACHINE_S3_NTSC: cart_profile_valid_s3_ntsc <= 1'b0;
+		MACHINE_VISICOM: cart_profile_valid_vis     <= 1'b0;
+		endcase
+	end
 end
+
 // ---- built-in games -------------------------------------------------------
 // With no cartridge there is nothing to CRC, so resident games are told apart
 // by the firmware menu key that starts them. Only the first recognized press
 // after reset counts because those keys are reused during play.
 
-wire       no_cart = !chip8_active && (cart_crc == 16'hFFFF);
+wire       no_cart = !chip8_active && !cart_profile_valid;
 reg        builtin_sel;
 reg  [3:0] builtin_profile;
 reg  [3:0] builtin_start_key;
@@ -121,13 +238,13 @@ always @(posedge clk_sys) begin
 			// A3 = BOWLING; A4 = FREEWAY. If the service manual claims otherwise, it's wrong.
 			else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
 			else if (builtin_padA[4]) begin builtin_profile <= MAP_FREEWAY; builtin_sel <= 1'b1; end  // Freeway
-			else if (builtin_padA[5]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Addition
+			else if (builtin_padA[5]) begin builtin_profile <= MAP_8WAY; builtin_sel <= 1'b1; end  // Addition
 		end
 		MACHINE_S3_PAL, MACHINE_S3_NTSC: begin
 			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle
 			else if (builtin_padA[2] || (builtin_start_press && (active_start_key == 4'd2))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Patterns
 			else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
-			else if (builtin_padA[4] || builtin_padA[5]) begin builtin_profile <= MAP_NONE; builtin_sel <= 1'b1; end  // Blackjack
+			else if (builtin_padA[4] || builtin_padA[5]) begin builtin_profile <= MAP_8WAY; builtin_sel <= 1'b1; end  // Blackjack
 		end
 		MACHINE_VISICOM: begin
 			if (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin
@@ -149,7 +266,7 @@ always @(posedge clk_sys) begin
 				builtin_sel     <= 1'b1;
 			end
 			else if (builtin_padA[7]) begin
-				builtin_profile <= MAP_NONE; // Addition
+				builtin_profile <= MAP_8WAY; // Addition
 				builtin_sel     <= 1'b1;
 			end
 		end
@@ -236,10 +353,7 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 			k = map_cross(j);
 			if (j[4]) k[0] = 1'b1;
 		end
-		MAP_RACE: begin
-			k = map_8way(j);
-			if (j[4]) k[2] = 1'b1;           // accelerate independently
-		end
+		MAP_RACE: ;                         // Race reads gameplay controls on keypad B
 		MAP_8WAY: begin                      // CROSS + 8-way diagonals: 1/3/7/9 on corners
 			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;
@@ -313,7 +427,12 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 			k = map_cross(j);
 			if (j[4]) k[0] = 1'b1;
 		end
-		MAP_RACE: ;                         // all controls are on keypad A
+		MAP_RACE: begin                    // Race: B4/B6 steer, B2 accelerate, B5 brake
+			if (j[1]) k[4] = 1'b1;
+			if (j[0]) k[6] = 1'b1;
+			if (j[3] || j[4]) k[2] = 1'b1;   // Up or Fire: accelerate
+			if (j[2] || j[5]) k[5] = 1'b1;   // Down or Extra: brake
+		end
 		MAP_VIS_ART: begin                   // movement draws; 5/0 select colour/state
 			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;           // next colour
@@ -380,7 +499,11 @@ wire [3:0] active_start_key = (profile == MAP_TENNIS) ? (one_player ? 4'd1 : 4'd
 wire       builtin_keypad_only = no_cart && builtin_sel && (builtin_profile == MAP_NONE);
 wire       start_enabled = (active_start_key < 4'd10) && (profile != MAP_FREEWAY) &&
 	                       (profile != MAP_EXPLORER) && !builtin_keypad_only;
-wire [9:0] start_keys       = (start_enabled && start_press) ? (10'd1 << active_start_key) : 10'd0;
+wire       start_on_b = (profile == MAP_RACE);
+wire [9:0] start_keys_a = (start_enabled && start_press && !start_on_b)
+	                        ? (10'd1 << active_start_key) : 10'd0;
+wire [9:0] start_keys_b = (start_enabled && start_press && start_on_b)
+	                        ? (10'd1 << active_start_key) : 10'd0;
 
 // Gunfighter/Tennis is B-only in Auto/1P and splits across A/B in 2P. 8WAY
 // follows the normal CROSS path (A-side in 1P).
@@ -392,6 +515,6 @@ wire [9:0] joyA = ((profile == MAP_NONE) ? 10'd0
 wire [9:0] joyB = ((profile == MAP_NONE) ? 10'd0
 	            : ((profile == MAP_DOODLE) ? map_padB(MAP_DOODLE, joystick_0)
 	                                      : map_padB(profile, joyB_input)));
-wire [9:0] joyA_active = joyA | directA | start_keys;
-wire [9:0] joyB_active = joyB | directB;
+wire [9:0] joyA_active = joyA | directA | start_keys_a;
+wire [9:0] joyB_active = joyB | directB | start_keys_b;
 
