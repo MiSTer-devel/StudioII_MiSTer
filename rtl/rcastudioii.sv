@@ -553,7 +553,11 @@ always @(posedge clk_sys) begin
 	if (!ioctl_download) chip8_write_seen <= 1'b0;
 	else if (ch8_we)     chip8_write_seen <= 1'b1;
 
-	if ((cart_dl || fw_dl || chip8_fw_dl) && !dl_d) chip8_loaded <= 1'b0;
+	// Unload removes the active game regardless of whether it came through the
+	// native cartridge path or CHIP-8. Keep chip8_fw_loaded intact so the cached
+	// interpreter remains available for the next .ch8 selection.
+	if (cart_unload) chip8_loaded <= 1'b0;
+	else if ((cart_dl || fw_dl || chip8_fw_dl) && !dl_d) chip8_loaded <= 1'b0;
 	else if (dl_done && chip8_write_seen) chip8_loaded <= 1'b1;
 end
 

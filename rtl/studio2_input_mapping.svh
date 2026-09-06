@@ -218,6 +218,29 @@ reg        builtin_sel;
 reg  [3:0] builtin_profile;
 reg  [3:0] builtin_start_key;
 
+// Resident-game mappings belong to firmware, not to the cartridge currently
+// overlaid on it. Remember the last detected firmware mapping per machine so a
+// cartridge/CHIP-8 excursion can temporarily override it and unload can reveal
+// it again. MAP_8WAY is the neutral value before a resident game is identified.
+reg [3:0] resident_profile_s2      = MAP_8WAY;
+reg [3:0] resident_profile_s3_pal  = MAP_8WAY;
+reg [3:0] resident_profile_s3_ntsc = MAP_8WAY;
+reg [3:0] resident_profile_vis     = MAP_8WAY;
+
+reg [3:0] resident_start_s2      = 4'd1;
+reg [3:0] resident_start_s3_pal  = 4'd1;
+reg [3:0] resident_start_s3_ntsc = 4'd1;
+reg [3:0] resident_start_vis     = 4'd1;
+
+wire [3:0] resident_profile = (machine == MACHINE_STUDIO2) ? resident_profile_s2
+                            : (machine == MACHINE_S3_PAL)  ? resident_profile_s3_pal
+                            : (machine == MACHINE_S3_NTSC) ? resident_profile_s3_ntsc
+                            :                                resident_profile_vis;
+wire [3:0] resident_start_key = (machine == MACHINE_STUDIO2) ? resident_start_s2
+                              : (machine == MACHINE_S3_PAL)  ? resident_start_s3_pal
+                              : (machine == MACHINE_S3_NTSC) ? resident_start_s3_ntsc
+                              :                                resident_start_vis;
+
 // Consider on-screen keypad (osk_a) as well as the physical keypad for
 // selecting built-in games. Treat the on-screen keypad's key at
 // active_start_key as a Start press so numstick users can activate by the OSK.
@@ -226,9 +249,13 @@ wire        builtin_start_press = start_press | osk_a[active_start_key];
 
 always @(posedge clk_sys) begin
 	if (reset) begin
+		// Reset returns execution to firmware, but it must not forget which
+		// resident-game mapping belonged to that firmware before a cartridge
+		// or CHIP-8 game temporarily overrode it. Re-arm detection so choosing
+		// a different resident game can replace the remembered mapping.
 		builtin_sel       <= 1'b0;
-		builtin_profile   <= MAP_NONE;
-		builtin_start_key <= 4'd1;
+		builtin_profile   <= resident_profile;
+		builtin_start_key <= resident_start_key;
 	end
 	else if (no_cart && !builtin_sel) begin
 		case (machine)
@@ -269,6 +296,61 @@ always @(posedge clk_sys) begin
 				builtin_profile <= MAP_8WAY; // Addition
 				builtin_sel     <= 1'b1;
 			end
+		end
+		endcase
+	end
+end
+
+// Persist a resident-game selection independently of cartridge state. A manual
+// firmware replacement invalidates the previous selection because the new image
+// may expose a different resident menu. bootN.rom power-up needs no explicit
+// invalidation: these registers already begin at the neutral mapping.
+reg builtin_sel_d = 1'b0;
+reg resident_fw_dl_d = 1'b0;
+wire resident_fw_dl = ioctl_download && (ioctl_index[5:0] == 6'd2);
+wire resident_fw_dl_start = resident_fw_dl && !resident_fw_dl_d;
+
+always @(posedge clk_sys) begin
+	builtin_sel_d   <= builtin_sel;
+	resident_fw_dl_d <= resident_fw_dl;
+
+	if (resident_fw_dl_start) begin
+		case (machine)
+		MACHINE_STUDIO2: begin
+			resident_profile_s2 <= MAP_8WAY;
+			resident_start_s2   <= 4'd1;
+		end
+		MACHINE_S3_PAL: begin
+			resident_profile_s3_pal <= MAP_8WAY;
+			resident_start_s3_pal   <= 4'd1;
+		end
+		MACHINE_S3_NTSC: begin
+			resident_profile_s3_ntsc <= MAP_8WAY;
+			resident_start_s3_ntsc   <= 4'd1;
+		end
+		MACHINE_VISICOM: begin
+			resident_profile_vis <= MAP_8WAY;
+			resident_start_vis   <= 4'd1;
+		end
+		endcase
+	end
+	else if (builtin_sel && !builtin_sel_d) begin
+		case (machine)
+		MACHINE_STUDIO2: begin
+			resident_profile_s2 <= builtin_profile;
+			resident_start_s2   <= builtin_start_key;
+		end
+		MACHINE_S3_PAL: begin
+			resident_profile_s3_pal <= builtin_profile;
+			resident_start_s3_pal   <= builtin_start_key;
+		end
+		MACHINE_S3_NTSC: begin
+			resident_profile_s3_ntsc <= builtin_profile;
+			resident_start_s3_ntsc   <= builtin_start_key;
+		end
+		MACHINE_VISICOM: begin
+			resident_profile_vis <= builtin_profile;
+			resident_start_vis   <= builtin_start_key;
 		end
 		endcase
 	end
