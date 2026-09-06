@@ -209,13 +209,13 @@ localparam CONF_STR = {
 	"F1,ST2BIN,Load Cartridge;",
 	// Main sends chip8.bin from same dir as selected .ch8 before F3
 	"f,!chip8.bin;",
-	// Studio II/III only
-	"D3F3,CH8,Load CHIP-8;",
+	// CHIP-8 data can be preloaded regardless of the active machine.
+	"F3,CH8,Load CHIP-8;",
 	"-;",
 	"F2,BINROM,Load Firmware;",
 	"F4,BIN,Load CHIP-8 Interpreter;",
 	"-;",	
-	// Machine held until Apply and reset
+	// Machine held until Apply
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"R[15],Apply and Reset;",
 	"-;",
@@ -229,18 +229,20 @@ localparam CONF_STR = {
 	"D4O[19:17],NE555 pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"D5O[20],CDP1863 pitch,Original,PAL;",
 	"-;",
-	"D7F5,VCP,Load Visicom Palette;",
-	"D8F6,GBP,Load Studio II Palette;",
 	"O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"d6O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"O[26],Borders,On,Off;",
 	"-;",
+	"F5,VCP,Load Visicom Palette;",
+	"F6,GBP,Load Studio II Palette;",
+	"-;",
 	"T[1],Clear;",
-	"T[0],Reset;",
-	"R[27],Reset and Unload Cartridge;",
 	"R[28],Unload Cartridge;",
+	"T[0],Reset;",
+	"R[27],Unload Cartridge and Reset;",
+	// Virtual mapping, not menu items
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
 	// jn is default virtual mapping
 	"jn,A,B,Start,Select;",
@@ -550,22 +552,18 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// D2 disables the manual Joystick row while Mapping is Auto. D3 disables the
-// CHIP-8 picker on Visicom. D4 disables NE555 tuning on the Studio III machines.
-// D5 enables the NTSC tone-pitch selector only on the Studio III NTSC. d6
-// enables 216p crop controls only for un-doubled 1080p. D7 enables the Visicom
-// palette picker only while Visicom is active. D8 enables the Studio II palette
-// picker only while Studio II is active.
+// D2 disables the manual Joystick row while Mapping is Auto. D4 disables NE555
+// tuning on the Studio III machines. D5 enables the NTSC tone-pitch selector
+// only on the Studio III NTSC. d6 enables 216p crop controls only for
+// un-doubled 1080p. Loaders remain available regardless of the active machine:
+// their data is retained until the corresponding hardware path uses it.
 // Use machine_active so a staged selection does not take effect before Apply
 // and reset.
 assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
-	                     ((machine_active == 2'd3) ? 16'h0008 : 16'h0000) |
 	                     (((machine_active == 2'd1) ||
 	                       (machine_active == 2'd2)) ? 16'h0010 : 16'h0000) |
 	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
-	                     (en216p ? 16'h0040 : 16'h0000) |
-	                     ((machine_active != 2'd3) ? 16'h0080 : 16'h0000) |
-	                     ((machine_active == 2'd0) ? 16'h0100 : 16'h0000);
+	                     (en216p ? 16'h0040 : 16'h0000);
 
 // The scaler can't handle the very low res native raster. So the video
 // chain runs on the PLL's 42.24 MHz output and samples the core's pixel 
