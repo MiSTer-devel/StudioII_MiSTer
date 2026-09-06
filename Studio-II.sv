@@ -236,7 +236,7 @@ localparam CONF_STR = {
 	"O[26],Borders,On,Off;",
 	"-;",
 	"F6,GBP,Load Studio II Palette;",
-	"F5,VCPGBP,Load Visicom Palette;",
+	"F5,GBP,Load Visicom Palette;",
 	"-;",
 	"T[1],Clear;",
 	"R[28],Unload Cartridge;",
