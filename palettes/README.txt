@@ -3,18 +3,19 @@ Visicom Color Palettes
 .vcp files provide alternate four-color palettes for Toshiba Visicom
 COM-100 video.
 
-.vcp format is 16 bytes. First 12 bytes are four RGB888 colors:
+The current .vcp format is 16 bytes. The first 12 bytes are four RGB888
+colors in Visicom index order:
 
-  0  Green
-  1  Blue
+  0  Green (border/background)
+  1  Blue/cyan
   2  Yellow
   3  Red
 
 The final four bytes are reserved and must be zero.
 
-This matches the format of the .gbp (Game Boy Palette) file used in the 
-MiSTer Game Boy core. .gbp palettes can be used if renamed to .vcp, but no
-testing has been done regarding this.
+This is the same 16-byte size as MiSTer's .gbp (Game Boy Palette) format,
+but the current color ordering is reversed relative to GBP semantics.
+Do not rename or load .gbp files as .vcp directly.
 
 mame.vcp
   Green   #004000

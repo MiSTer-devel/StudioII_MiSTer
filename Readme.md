@@ -34,7 +34,7 @@ Put the four native firmware files below in `/media/fat/games/Studio-II/`. For C
 
 Other firmware images may work; those listed above were used during development and testing.
 
-The native firmware includes resident games. Using a resident game's start key causes the core to attempt to load an appropriate controller profile. Games often start on a black screen.Selection keys and play instructions are listed in [docs/how-to-play.md](docs/how-to-play.md).
+The native firmware includes resident games. Using a resident game's start key causes the core to attempt to load an appropriate controller profile. Games often start on a black screen. Selection keys and play instructions are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Keypad and CLEAR
 
@@ -76,6 +76,8 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 ## Options
 
+**Reset and Unload Cartridge** ejects the active cartridge and resets the machine. **Unload Cartridge** ejects it without resetting; video remains active and the previous firmware or resident-game mapping becomes visible again.
+
 **Sound: Off** mutes the core without stopping the machine's tone generator.
 
 **NE555 pitch** adjusts the Studio II and Visicom beeper. Original follows the measured December 1976 RCA demonstration unit at approximately 625 Hz initially and 502.5 Hz sustained. The other settings proportionally scale the same pitch curve higher or lower.
@@ -85,10 +87,9 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 **VCP: Load Visicom Palette** loads a custom four-colour palette without
 resetting the machine. Reference and example `.vcp` files are bundled in
 [`palettes`](palettes/). To generate one, build and run
-[`tools/vispalette`](tools/vispalette); it writes the 16-byte `.vcp` format.
-The format is compatible with MiSTer's 16-byte `.gbp` layout, so an existing
-`.gbp` file can be renamed to `.vcp` (the final four reserved bytes must be
-zero).
+[`tools/vispalette`](tools/vispalette); it writes the current 16-byte `.vcp`
+format. VCP and MiSTer's 16-byte `.gbp` format currently use different colour
+ordering, so `.gbp` files should not be used directly yet.
 
 **Vertical Crop: 216p (5x)** crops 1080p HDMI output to 216 lines for exact 5x integer scaling. **Crop Offset** moves the crop window up or down. The scandoubler must be off and output resolution set to 1080p.
 
