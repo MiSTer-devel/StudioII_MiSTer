@@ -1347,22 +1347,40 @@ int main(int argc, char** argv) {
                        0, (1u << 5) | (1u << 0) | (1u << 1),
                        "Visicom Art controls");
         expect_profile(8, 1u << 4, 1u << 5, 1u << 5, "Flappy Fire");
-        expect_profile_players(12, 2, 1u << 6, 0, 1u << 2, 0,
+        expect_profile_players(12, 2, 1u << 6, 0, 1u << 1, 0,
                                "Gunfighter/Tennis two-player Start");
         expect_profile(11, (1u << 4) | (1u << 1), 0, (1u << 2) | (1u << 4),
                        "Race accelerate+left");
         expect_profile_players(12, 1, (1u << 3) | (1u << 4) | (1u << 5), 0,
-                               0, (1u << 2) | (1u << 5) | (1u << 0),
-                               "Squash one-player controls");
+                               (1u << 2) | (1u << 5) | (1u << 0),
+                               (1u << 2) | (1u << 5) | (1u << 0),
+                               "Gunfighter/Tennis one-controller mirror");
         expect_profile_players(12, 1, 1u << 6, 0, 1u << 1, 0,
                                "Squash one-player Start");
         expect_profile_players(12, 2, (1u << 3) | (1u << 4) | (1u << 5),
-                               (1u << 2) | (1u << 0) | (1u << 5),
+                               (1u << 2) | (1u << 5),
                                (1u << 2) | (1u << 5) | (1u << 0),
-                               (1u << 8) | (1u << 6) | (1u << 0),
+                               (1u << 8) | (1u << 0),
                                "Tennis two-player controls");
-        expect_profile_players(12, 2, 1u << 6, 0, 1u << 2, 0,
+        expect_profile_players(12, 2, 1u << 6, 0, 1u << 1, 0,
                                "Tennis two-player Start");
+        // Cover setup digits, Moonship diagonals and changes of routing.
+        const uint32_t tennis_inputs[] = {32u, 10u, 8u, 9u, 2u,
+                                         16u, 1u, 6u, 4u, 5u};
+        const unsigned tennis_modes[] = {0u, 1u, 2u, 1u, 0u};
+        for (unsigned mode : tennis_modes) {
+            for (unsigned digit = 0; digit < 10; digit++) {
+                const unsigned key = 1u << digit;
+                expect_profile_players(12, mode, tennis_inputs[digit], 0,
+                                       mode == 0 ? 0 : key, mode == 2 ? 0 : key,
+                                       "Gunfighter/Tennis digit routing");
+                expect_profile_players(12, mode, 0, tennis_inputs[digit],
+                                       0, mode == 2 ? key : 0,
+                                       "Gunfighter/Tennis second controller");
+            }
+            expect_profile_players(12, mode, 1u << 6, 0, 1u << 1, 0,
+                                   "Gunfighter/Tennis stable Start");
+        }
         expect_profile(14, (1u << 5) | (1u << 1), 1u << 4, 1u << 4,
                        "Outbreak fast-left");
         expect_profile(14, 1u << 4, 0, 1u << 1, "Climber/Outbreak replay");

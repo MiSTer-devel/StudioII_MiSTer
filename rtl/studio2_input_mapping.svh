@@ -36,10 +36,8 @@ localparam [3:0] MAP_HB2P       = 4'd10;  // 2P homebrew (Hockey, Combat): cross
                                           // list as "2P Homebrew" for manual override.
 localparam [3:0] MAP_RACE       = 4'd11;  // Race: keypad B steering on 4/6,
                                           // accelerate 2, brake 5
-localparam [3:0] MAP_TENNIS     = 4'd12;  // Gunfighter/Tennis. Auto/1P uses keypad B;
-                                          // 2P splits the matching A/B controls.
-                                          // Tennis/Squash uses left/fire/right for
-                                          // racket size and Extra for pause.
+localparam [3:0] MAP_TENNIS     = 4'd12;  // 8-way: Auto uses B, 1P mirrors A/B,
+                                          // 2P splits pads; Start stays A1.
 localparam [3:0] MAP_CHIP8      = 4'd13;  // common CHIP-8 movement cluster: 5/7/8/9
                                           // on pad A; Start 1, Fire F, Extra 0.
 localparam [3:0] MAP_CLIMB      = 4'd14;  // Climber/Outbreak: A-side movement, Fire
@@ -453,7 +451,7 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_TENNIS: begin
-			k = map_cross(j);
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;   if (j[5]) k[0] = 1'b1;
 		end
 		MAP_CHIP8: begin                     // common WASD-shaped CHIP-8 cluster
@@ -536,7 +534,7 @@ function automatic [9:0] map_padB(input [3:0] prof, input [31:0] j);
 			if (j[5]) k[0] = 1'b1;
 		end
 		MAP_TENNIS: begin                    // movement, racket-size setup, and pause
-			k = map_cross(j);
+			k = map_8way(j);
 			if (j[4]) k[5] = 1'b1;   if (j[5]) k[0] = 1'b1;
 		end
 		MAP_CHIP8:                           // Fire = virtual F = physical B6
@@ -579,7 +577,7 @@ always @* begin
 	end
 end
 wire       start_press = joystick_0[6] | joystick_1[6];
-wire [3:0] active_start_key = (profile == MAP_TENNIS) ? (one_player ? 4'd1 : 4'd2)
+wire [3:0] active_start_key = (profile == MAP_TENNIS) ? 4'd1
 	                         : cart_s3_menu ? 4'd1
 	                         : ((profile == MAP_VIS_ART) && no_cart && builtin_sel) ? builtin_start_key
 	                         : no_cart ? ((profile == MAP_DOODLE) ? 4'd1 : resident_start_key)
@@ -594,10 +592,9 @@ wire [9:0] start_keys_a = (start_enabled && start_press && !start_on_b)
 wire [9:0] start_keys_b = (start_enabled && start_press && start_on_b)
 	                        ? (10'd1 << active_start_key) : 10'd0;
 
-// Gunfighter/Tennis is B-only in Auto/1P and splits across A/B in 2P. 8WAY
-// follows the normal CROSS path (A-side in 1P).
+// Gunfighter/Tennis keeps B-only Auto; explicit 1P mirrors both pads.
 wire [9:0] joyA = ((profile == MAP_NONE) ? 10'd0
-	            : ((profile == MAP_TENNIS) && one_player) ? 10'd0
+	            : ((profile == MAP_TENNIS) && (players == 2'd0)) ? 10'd0
 	            : ((profile == MAP_DOODLE) ? 10'd0
 	                                      : map_padA(profile, joystick_0)));
 

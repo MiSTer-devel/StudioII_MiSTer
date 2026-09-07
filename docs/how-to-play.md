@@ -169,10 +169,10 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - Each player chooses racquet size on their pad: `4` small, `5` medium, `6` large.
 - Player A selects ball speed and begins: `A7` slow, `A8` normal, `A9` fast.
 - During play, `2` moves a racquet up and `8` down on its player's keypad. Between serves, `0` pauses/resumes.
-- The `Gunfighter/Tennis` controller profile starts `A1` Squash in Auto/1P and drives
-  keypad B from controller 1. With Players set to 2, Start selects `A2` Tennis
-  and controllers 1/2 drive keypads A/B. Extra supplies each player's `0`
-  pause key.
+- The `Gunfighter/Tennis` profile uses eight directions, Fire `5` and Extra `0`.
+  Auto drives B; Players 1 mirrors controller 1 onto both pads; Players 2 splits
+  controllers 1/2 onto A/B. Start always selects `A1` Squash. Select `A2` Tennis
+  separately on keypad A; in Auto use Numstick A or direct keys for A-side setup.
 - Tennis is first to 21, winning by two. Squash ends after 21 misses or 200 completed volleys.
 
 ### TV Arcade IV - Baseball
@@ -388,10 +388,12 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 
 ### Race
 
-- Move in eight directions on keypad A.
-- `A2` accelerates and may be held together with a direction key. The automatic
-  profile maps acceleration to Fire independently so steering remains available.
-- Physical-keypad handling of every `A2`-plus-direction chord is not yet verified.
+- The Race source excerpt supplied by the user scans `B4/B6` for steering;
+  the user confirms `B2` acceleration and `B8` braking.
+- Current mapping has a known mismatch: Down/Extra emits `B5` rather than `B8`.
+  Use direct keypad B8 for braking until corrected.
+- Exact source/image correspondence and full start/restart behavior still need
+  verification.
 
 ### Rocket v1.01
 

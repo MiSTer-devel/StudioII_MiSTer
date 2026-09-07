@@ -60,10 +60,9 @@ the `B1` replay key, and Extra plus left/right to Outbreak's simultaneous
 keypad B, Fire to `A0`, and Extra to the `B5` target lock; Start is idle because
 the program begins directly.
 
-The `Race` profile keeps the eight directional keys on keypad A and maps Fire
-to an independent `A2`. The core can therefore present `A2` acceleration and a
-direction key simultaneously; whether the original keypad accepts every such
-chord remains a hardware-testing question.
+The current `Race` profile uses B4/B6 steering, Up/Fire B2 acceleration and
+Down/Extra B5 braking. The user confirms B8 braking from Race's controls;
+this mismatch remains open in the audit below. Start currently emits B2.
 
 The `Visicom Art` profile keeps all eight drawing directions and both colour
 controls on keypad B. Movement draws; Fire maps to `B5` to cycle forward and
@@ -83,20 +82,39 @@ License A/easy (`B0`), Extra selects License B/hard (`B5`), Fire duplicates
 D-pad Up acceleration (`B2`), and Down/Left/Right map to `B8/B4/B6`. The two
 difficulty choices remain mutually exclusive.
 
-Gunfighter and Tennis share one profile because their complete controller
-outputs and Auto/1P/2P routing are identical. It defaults to a one-player mode:
-Start selects `A1` and controller 1 drives keypad B. With Players set to 2,
-Start selects `A2` and the controllers drive keypads A and B respectively.
-D-pad up/down maps to `2/8`, left/Fire/right maps to `4/5/6`, and Extra maps to
-that player's `0` key (pause in Tennis/Squash).
+Gunfighter/Moonship Battle and Tennis/Squash share stock eight-way directions,
+Fire `5` and Extra `0`. Auto keeps controller 1 on B for solo play; explicit
+Players 1 mirrors it onto A/B, and Players 2 splits controllers 1/2 onto A/B.
+Start always selects `A1`; select `A2` Tennis/two-player Gunfighter or `A3`
+Moonship through keypad A. Players changes routing only. In Auto, use Numstick A
+or direct keys for A-side setup; Players 1 exposes all ten digits on both pads.
+Gameplay verification of this correction remains pending.
+
+## Initial mapping audit
+
+These are candidates from documented controls and RTL inspection, not completed
+play tests. Keep working mappings until replacements pass setup and play.
+
+| Game / existing CRCs | Candidate bucket | Finding / remaining check |
+|---|---|---|
+| Gunfighter / Moonship (`043E`, `3CDC`) | Stock 8-way; routing separate | Restored 1P mirroring and diagonals. Verify solo Gunfighter, both sides in 1P, independent 2P and Moonship movement. |
+| Tennis / Squash (`88FB`, `FB76`) | Stock 8-way; routing separate | Restored 1P mirroring and setup digits. Verify A1/A2 selection, both pads' 4/5/6 racquet choices, A7/A8/A9 speed, both paddles and 0 pause. |
+| Race | Stock 8-way on B, or custom acceleration button | User's source excerpt establishes B4/B6 steering; user confirms B2 acceleration and B8 brake. RTL emits B5 for brake. Check exact source/image correspondence and setup before changing profile. |
+| Pinball | Stock 8-way on B | Preserve working solo B controls when generic Auto routing changes; check alternating players. |
+| Bowling / Baseball | Stock 8-way candidate | Justify direction restrictions; check alternating keypad roles, including fielding after sides swap. |
+| Robson games | Assess individually | Check setup digits, B0 fire versus A0 restart, and Pacman's B8 down before sharing layouts. |
+
+For both corrected cartridges, switch Players during play and confirm selection
+is unchanged. Exact image bytes and machine must accompany gameplay results;
+the existing CRC assignments have not been expanded or revalidated here.
 
 ## Current boundary
 
-The controller architecture is accepted: verified cartridge profiles,
-Auto/Manual mapping, Auto/1/2-player selection, Numstick assignment, and the
-manual keypad paths form one coherent input model. The compiled profile system
-remains its source of truth; no external replacement or parallel profile path is
-planned.
+The compiled profile system remains the implementation source of truth, with
+Auto/Manual mapping, Numstick assignment, and manual keypad access. Player
+routing and profile restrictions need the focused cleanup tracked in the
+roadmap; the current behavior should not be treated as the acceptance target.
+No external replacement or parallel profile path is planned.
 
 Profile coverage is deliberately open to evidence-backed additions. All default
 firmware menus select an existing shared profile or the neutral fallback from

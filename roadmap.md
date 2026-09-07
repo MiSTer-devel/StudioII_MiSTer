@@ -53,9 +53,53 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Controller and keypad refinements
 
-- Prefer eight-way movement for new generic mappings. Keep specialized buttons
-  and keypad routing where documented; audit existing restrictions title by
-  title rather than changing every profile together.
+### Near-term automapping cleanup
+
+Every game's profile must answer: **is this mapping better than stock 8-way?**
+Stock 8-way provides all ten keypad digits through directions, Fire and Extra;
+the consistent 1P routing below should make both pads accessible to one person.
+Audit existing profiles and classify each verified game in this order:
+
+1. **Stock 8-way:** use it whenever it covers setup and play adequately.
+2. **8-way with custom buttons:** retain all eight directions and change only
+   Fire/Extra/Start where that improves play. Check whether reassigned buttons
+   remove access to a digit needed during setup or play.
+3. **Custom control layout:** only when both eight-way options are demonstrably
+   worse. Group by verified control needs, sometimes a single game or an
+   author's shared layout. Freeway, Doodle and Robson's games are candidates;
+   each still needs to justify its exception.
+
+Record the concrete benefit over both simpler options for every custom profile.
+Account for keypad routing separately before creating a mapping variant, and
+consolidate games that need the same directions and button assignments. Evaluate
+renaming `Homebrew` to `Robson`: it represents Paul Robson's controls, not a
+generic homebrew layout; review `2P Homebrew` naming and coverage as well.
+
+- Gameplay-verify the Tennis/Squash and Gunfighter/Moonship correction: explicit
+  1P now mirrors A/B, eight-way keys are restored, and Start stays A1 across
+  Players settings. Auto retains solo B routing. The initial audit in
+  `docs/controller.md` also records Race's reported B8 brake mismatch.
+- Keep Auto/1/2 for the initial cleanup, with consistent meanings: Auto uses
+  the title's normal layout; 1P gives one controller access to both keypads,
+  mirroring symmetric controls; 2P assigns controllers 1/2 to keypads A/B.
+  Preserve documented controls spanning both pads in asymmetric games.
+- Make generic 8-way Auto stop mirroring both pads by default. Preserve access
+  to the correct gameplay pad for titles such as Pinball, whose one-player
+  mode uses B. Separate keypad routing from directional/button mappings.
+- Require a documented gameplay or setup reason for restricting directions;
+  specialized Fire/Extra assignments alone do not justify removing keypad
+  directions. Check complete setup sequences, including Tennis/Squash racquet
+  choices and A7/A8/A9 speed/start keys.
+- Reassess the Gunfighter/Tennis merge against actual play, including Moonship
+  Battle's eight directions. Identical current RTL outputs do not establish
+  that two games need identical mappings.
+- Verify normal play, one controller operating both sides, two controllers
+  independently operating their pads, and switching routing without changing
+  the selected game. Use these outcomes as regression expectations.
+- Consider clearer Normal/Mirror labels later; the immediate priority is
+  predictable behavior under the existing settings, not a menu redesign.
+
+### Other keypad refinements
 
 - Prevent the left analog stick from also generating ordinary profile movement
   while Numstick is using it to select `0`. Prefer automatic suppression while
