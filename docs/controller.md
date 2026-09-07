@@ -23,9 +23,17 @@ polynomial `0x1021` and initial value `0xFFFF`. Headered and raw images therefor
 have different CRCs. Resident games are identified from the first recognized
 firmware selection key after reset. Studio II and both Studio III timings map
 Doodle/Patterns to the shared Doodle profile and Bowling to Bowling; Studio II
-Freeway uses its dedicated profile, while Studio III Blackjack remains
-keypad-only. Visicom maps Doodle and Patterns to Visicom Art, Bowling to
-Bowling, Freeway to Freeway, and Addition to keypad-only.
+Freeway uses its dedicated profile, while Studio III Blackjack uses the neutral
+8-way fallback with numeric entry through the keypads. Visicom maps Doodle and
+Patterns to Visicom Art, Bowling to Bowling, Freeway to Freeway, and Addition
+to the neutral fallback.
+
+Grand Pack's verified paged image (CRC `1594`) reuses the Studio III selection
+decoder on PAL and NTSC: A1/A2 select Doodle, A3 Bowling, and A4/A5 the neutral
+8-way fallback. CLEAR re-arms selection; gameplay keys cannot change it. Its
+selection does not overwrite the remembered resident-firmware mapping, which
+unload restores. Start selects A1. Use the `.st2` image: the raw `EF21` image
+needs discontiguous placement that the generic raw loader does not provide.
 
 The generic `8-way` fallback is the neutral controller profile. D-pad cardinals
 produce keypad A `2/4/6/8`, diagonals produce `1/3/7/9`, Fire produces `A5`,
@@ -41,7 +49,12 @@ sequence, keypad roles, and mapped actions. `tools/cart-crc.sh` hashes explicitl
 supplied images; `crc16-ccitt-hashes-by-game_20260829.txt` is the dated grouped
 inventory. Hash newer in-repo builds directly before adding them.
 
-The `Climb/Outbreak` profile maps D-pad up/left/right to `A2/A4/A6`, Fire to
+Pinball's raw/headered CRCs `D3E2`/`92BA` select `8-way`. Auto mirrors the
+controller onto both pads, so the one-player game on keypad B is playable;
+Players 2 separates the pads. Up-left supplies `1` to launch and Extra supplies
+`0` to shove. Left/right remain `4/6` flippers.
+
+The `Climber/Outbreak` profile keeps all eight keypad A directions, Fire to
 the `B1` replay key, and Extra plus left/right to Outbreak's simultaneous
 `A4+B4` / `A6+B6` fast movement. `Space Explorer` maps the eight directions on
 keypad B, Fire to `A0`, and Extra to the `B5` target lock; Start is idle because
@@ -86,7 +99,7 @@ remains its source of truth; no external replacement or parallel profile path is
 planned.
 
 Profile coverage is deliberately open to evidence-backed additions. All default
-firmware menus select an existing shared profile or keypad-only behavior from
+firmware menus select an existing shared profile or the neutral fallback from
 the first recognized selection key after reset. Numstick also consumes the
 analog sticks without suppressing ordinary left-stick profile movement, so
 selecting `0` can produce an unwanted direction. This focused refinement remains

@@ -48,6 +48,9 @@ localparam [3:0] MAP_CLIMB      = 4'd14;  // Climber/Outbreak: A-side movement, 
 localparam [3:0] MAP_EXPLORER   = 4'd15;  // Space Explorer: B-side 8-way, Fire A0,
                                           // Extra locks with B5
 
+// Non-key value in cached cartridge metadata selects the shared firmware menu.
+localparam [3:0] START_S3_MENU = 4'd14;
+
 reg [3:0] map_profile = MAP_NONE;
 reg [3:0] start_key   = 4'd1;
 
@@ -214,6 +217,9 @@ end
 // after reset counts because those keys are reused during play.
 
 wire       no_cart = !chip8_active && !cart_profile_valid;
+wire       cart_s3_menu = !chip8_active && cart_profile_valid &&
+                         is_studio3 && (start_key == START_S3_MENU);
+wire       firmware_menu = no_cart || cart_s3_menu;
 reg        builtin_sel;
 reg  [3:0] builtin_profile;
 reg  [3:0] builtin_start_key;
@@ -248,16 +254,16 @@ wire [9:0] builtin_padA = playerA | osk_a;
 wire        builtin_start_press = start_press | osk_a[active_start_key];
 
 always @(posedge clk_sys) begin
-	if (reset) begin
+	if (reset || (cart_unload && cart_s3_menu)) begin
 		// Reset returns execution to firmware, but it must not forget which
 		// resident-game mapping belonged to that firmware before a cartridge
 		// or CHIP-8 game temporarily overrode it. Re-arm detection so choosing
 		// a different resident game can replace the remembered mapping.
 		builtin_sel       <= 1'b0;
-		builtin_profile   <= resident_profile;
-		builtin_start_key <= resident_start_key;
+		builtin_profile   <= (cart_s3_menu && !cart_unload) ? MAP_DOODLE : resident_profile;
+		builtin_start_key <= (cart_s3_menu && !cart_unload) ? 4'd1 : resident_start_key;
 	end
-	else if (no_cart && !builtin_sel) begin
+	else if (firmware_menu && !builtin_sel) begin
 		case (machine)
 		MACHINE_STUDIO2: begin
 			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle
@@ -334,7 +340,7 @@ always @(posedge clk_sys) begin
 		end
 		endcase
 	end
-	else if (builtin_sel && !builtin_sel_d) begin
+	else if (no_cart && builtin_sel && !builtin_sel_d) begin
 		case (machine)
 		MACHINE_STUDIO2: begin
 			resident_profile_s2 <= builtin_profile;
@@ -362,7 +368,7 @@ end
 // "0 = auto" value inside the profile enum, so every one of the 16 encodings --
 // MAP_NONE included -- is selectable, and the top level can display the
 // detected profile in the same row the user would edit (see Studio-II.sv).
-assign     auto_profile = chip8_active ? MAP_CHIP8 : (no_cart ? builtin_profile : map_profile);
+assign     auto_profile = chip8_active ? MAP_CHIP8 : (firmware_menu ? builtin_profile : map_profile);
 wire [3:0] profile      = joy_manual ? joy_override : auto_profile;
 
 // ---- profile -> keypad presses ---------------------------------------------
@@ -456,8 +462,7 @@ function automatic [9:0] map_padA(input [3:0] prof, input [31:0] j);
 			if (j[5]) k[0] = 1'b1;           // Extra
 		end
 		MAP_CLIMB: begin
-			if (j[3]) k[2] = 1'b1;
-			if (j[1]) k[4] = 1'b1;   if (j[0]) k[6] = 1'b1;
+			k = map_8way(j);
 		end
 		MAP_EXPLORER:
 			if (j[4]) k[0] = 1'b1;           // Fire
@@ -575,6 +580,7 @@ always @* begin
 end
 wire       start_press = joystick_0[6] | joystick_1[6];
 wire [3:0] active_start_key = (profile == MAP_TENNIS) ? (one_player ? 4'd1 : 4'd2)
+	                         : cart_s3_menu ? 4'd1
 	                         : ((profile == MAP_VIS_ART) && no_cart && builtin_sel) ? builtin_start_key
 	                         : no_cart ? ((profile == MAP_DOODLE) ? 4'd1 : resident_start_key)
 	                         : (((profile == MAP_DOODLE) || (profile == MAP_CHIP8)) ? 4'd1
@@ -600,4 +606,3 @@ wire [9:0] joyB = ((profile == MAP_NONE) ? 10'd0
 	                                      : map_padB(profile, joyB_input)));
 wire [9:0] joyA_active = joyA | directA | start_keys_a;
 wire [9:0] joyB_active = joyB | directB | start_keys_b;
-

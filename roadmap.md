@@ -15,6 +15,14 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Fidelity work
 
+### Studio III NTSC display control
+
+- Replay resident and Grand Pack Bowling through both players and multiple
+  frames after the `OUT 1` decode correction; test Blackjack A4/A5 from CLEAR.
+- Compare exact firmware bytes, display enable, PC, and DMA around any remaining
+  blackout before attributing it to firmware or changing timing. Record the
+  user's suspected A0 case separately; its behavior remains unconfirmed.
+
 ### Visicom video
 
 - Keep the evidence, current comparison, and future runtime-selection contract
@@ -44,6 +52,10 @@ technical documents; completed milestones belong in release notes and Git.
   aggregate scores or unverified assumptions.
 
 ## Controller and keypad refinements
+
+- Prefer eight-way movement for new generic mappings. Keep specialized buttons
+  and keypad routing where documented; audit existing restrictions title by
+  title rather than changing every profile together.
 
 - Prevent the left analog stick from also generating ordinary profile movement
   while Numstick is using it to select `0`. Prefer automatic suppression while

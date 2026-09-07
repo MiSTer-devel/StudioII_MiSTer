@@ -32,7 +32,7 @@ high-page diagnostics such as ST3CTA Tester 3 remain unsupported.
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, 
 memory maps, cartridge loader, keypad/controller mapping, and machine selection. 
 `rtl/audio/studio2_beeper.sv` contains the Studio II/Visicom NE555 beeper. The 
-CRC-to-profile database is included from `rtl/studio2_cart_profiles.sv`.
+CRC-to-profile database is included from `rtl/studio2_cart_profiles.svh`.
 
 The Studio II/Visicom NE555 pitch selector occupies `status[19:17]`. Codes 0--6
 are Original, High, Higher, Highest, Lowest, Lower, and Low; unused code 7
@@ -78,6 +78,20 @@ instantiates `rtl/rcastudioii.sv`, not the MiSTer top, so it cannot prove HPS
 boot ordering, Apply classification, OSD menu masking, or F1-F4 sync preservation.
 
 ## Video behavior
+
+Studio III NTSC uses `INP 1` for display enable and `OUT 1` for the CDP1862
+background step, with no software display-off port in
+[Emma 02's Studio III NTSC configuration](https://github.com/etxmato/emma_02/blob/master/data/Xml/StudioIII/standard-ntsc.xml).
+The Studio II `OUT 1` display-off decode must not apply to Studio III NTSC.
+PAL retains `INP 4` display-off; CLEAR/download blanking remains independent.
+
+The reported NTSC blackout after one player's Bowling frame and on selecting
+Blackjack (A4/A5) is consistent with the previous erroneous `OUT 1` disable.
+The decode is corrected, but the reported gameplay sequence still needs replay
+on MiSTer. Grand Pack's eight pages (`04-07`, `0C-0F`) exactly match those in
+`rom/studio3_ntsc.bin` (CRC16 `ED56`), so the cartridge and resident failures
+exercise identical game code. This is not evidence that every firmware variant
+is defective. Doodle/Patterns A1/A2 work in the user's report; A0 is unconfirmed.
 
 The normal output path is:
 
@@ -224,6 +238,18 @@ Canonical paths are `rom/` for firmware, `software/` for the corpus, `tools/refe
 Quartus commands are `tools/quartus-build.sh`, `tools/quartus-build.sh map`, and `tools/quartus-build.sh clean`. The script uses the amd64 Quartus 17 container with `--parallel=1`, which is required under Apple Silicon emulation. After RAM changes, inspect `output_files/Studio-II.map.rpt` for inferred `altsyncram` instances.
 
 Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, `tools/visicom-test.sh`, and `tools/verify-beeper.sh`. The older corpus sweeps are diagnostics, not release gates.
+
+The focused input/display checks in `--loader-check` cover Pinball CRC selection,
+Grand Pack's PAL/NTSC menu selection and unload, Climber directions, and `OUT 1`
+display enable. After changing the included mapping files, explicitly rebuild:
+
+```sh
+make -C verilator -B headless
+verilator/obj_dir_headless/Vtop --bios rom/studio2.rom --loader-check --quiet
+```
+
+Expected result: `Loader and input checks: PASS (0 mismatches)`. These directed
+checks do not replace gameplay verification on MiSTer.
 
 ## References and provenance
 

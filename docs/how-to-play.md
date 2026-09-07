@@ -266,6 +266,7 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 
 - `A1`: one player, using keypad B. `A2`: two players, alternating pads.
 - On the active pad, `1` puts a ball in play, `4/6` operate the left/right flippers and `0` reverses the ball to simulate shoving the cabinet.
+- Automatic mapping is `8-way`: up-left launches (`1`), left/right operate the flippers, and Extra shoves (`0`). Auto drives both pads; Players 2 separates them.
 - Bumpers change randomly between values 2–9. Repeated use of `0` causes TILT. Each player receives five balls; a score above 999 ends the game.
 
 ## Studio III / MPT-02 programs
@@ -280,7 +281,10 @@ Studio II-compatible cartridges above also run on several MPT-02-family machines
 - Bowling follows the resident controls and lasts ten frames; a strike scores 20, a spare 15 and a perfect game 200. The automatic profile mirrors controller 1 onto A and B; select Players 2 to split them between two controllers.
 - In Blackjack, players can bet $01–$99; active-pad actions are `1` hit, `2` double and `0` stand.
 
-The merged Grand Pack and its two split dumps represent the same package and should share mapping research.
+Use the paged `grand-pack.st2` image (CRC16 `1594`); its first A1-A5 selection
+chooses the same automatic profile as Studio III firmware. CLEAR permits a new
+selection. Raw and split dumps need the correct placement of both ROM regions;
+the merged raw file cannot be loaded correctly by the generic contiguous loader.
 
 ## Studio II non-retail and homebrew software
 

@@ -15,12 +15,10 @@
 	end
 
 // Pinball
-// Per-player flippers are 4/6 and cabinet shove is 0, matching HB2P's
-// left/right + Fire-on-0 shape much better than the MPT-02 Cross profile.
 16'h92BA, 16'hD3E2:
 	begin
 
-		p = MAP_HB2P;
+		p = MAP_8WAY;
 
 		s = 4'd1;
 
@@ -87,8 +85,15 @@
 
 	end
 
-// Game Pack / Grand Pack
-16'h1594, 16'h3505, 16'h74AB, 16'h815E,
+// Grand Pack: paged image, sharing the Studio III firmware menu.
+16'h1594:
+	begin
+		p = MAP_DOODLE;
+		s = START_S3_MENU;
+	end
+
+// Game Pack / raw and split pack images
+16'h3505, 16'h74AB, 16'h815E,
 16'hEF21, 16'hFC34, 16'hFC72:
 	begin
 
