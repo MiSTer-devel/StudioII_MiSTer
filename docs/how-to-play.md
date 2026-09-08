@@ -235,7 +235,7 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 
 - `A1`: one player, using keypad B. `A2`: two players, alternating pads.
 - On the active pad, `1` puts a ball in play, `4/6` operate the left/right flippers and `0` reverses the ball to simulate shoving the cabinet.
-- Automatic mapping is `8-way`: up-left launches (`1`), left/right operate the flippers, and Extra shoves (`0`). Auto drives both pads; Players 2 separates them.
+- Automatic mapping is `8-way`: up-left launches (`1`), left/right operate the flippers, and Extra shoves (`0`). Auto drives B only; Players 1 mirrors A/B and Players 2 separates them.
 - Bumpers change randomly between values 2–9. Repeated use of `0` causes TILT. Each player receives five balls; a score above 999 ends the game.
 
 ## Studio III / MPT-02 programs
@@ -485,8 +485,13 @@ alcohol, horse racing, love, money, travel, health, work and study.
 - Intercept names describe target movement, not firing direction. Space War's
   `A1` default is Horizontal Intercept, with vertical firing at horizontal targets;
   Marcel's supplied instructions agree with the Space War selections above.
-- Verify the exact Space Command image, selection sequence and gameplay keys
-  before assigning a profile.
+- User reports the same controls as Space War, with a possible left/right
+  difference, and clarifies that holding `5` increases height, not `2`.
+  The applicable keypad and mode for this action are not yet recorded here.
+- The local cartridge text identifies the game as Space War but supplies no
+  key assignments. Reconcile the reported `5` action with the Space War
+  reference before assigning exact gameplay keys to a profile; do not copy
+  its `A2/B2` assignments into this entry as verified Visicom controls.
 
 ### Other dumped Visicom cartridges
 

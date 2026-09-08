@@ -1190,6 +1190,19 @@ int main(int argc, char** argv) {
                 failures++;
             }
 
+            if (c.profile == 8) {
+                top->players = 0;
+                top->joystick_0 = 1u << 4;
+                top->eval();
+                const bool pad_b = c.machine == 1 || c.machine == 2;
+                if ((unsigned)RS(joyA_active) != (pad_b ? 0u : 1u << 5) ||
+                    (unsigned)RS(joyB_active) != (pad_b ? 1u << 5 : 0u)) {
+                    printf("FAIL %s eight-way Auto keypad routing\n", c.name);
+                    failures++;
+                }
+                top->joystick_0 = 0;
+            }
+
             RS(playerA) = 1u << c.followup;
             clock_core();
             RS(playerA) = 0;
@@ -1346,7 +1359,7 @@ int main(int argc, char** argv) {
         expect_profile(7, (1u << 4) | (1u << 5) | (1u << 3) | (1u << 1),
                        0, (1u << 5) | (1u << 0) | (1u << 1),
                        "Visicom Art controls");
-        expect_profile(8, 1u << 4, 1u << 5, 1u << 5, "Flappy Fire");
+        expect_profile(8, 1u << 4, 1u << 5, 0, "Flappy Fire on A only");
         expect_profile_players(12, 2, 1u << 6, 0, 1u << 1, 0,
                                "Gunfighter/Tennis two-player Start");
         expect_profile(11, (1u << 4) | (1u << 1), 0, (1u << 2) | (1u << 4),
@@ -1368,6 +1381,56 @@ int main(int argc, char** argv) {
         const uint32_t tennis_inputs[] = {32u, 10u, 8u, 9u, 2u,
                                          16u, 1u, 6u, 4u, 5u};
         const unsigned tennis_modes[] = {0u, 1u, 2u, 1u, 0u};
+        for (unsigned mode : tennis_modes) {
+            for (unsigned digit = 0; digit < 10; digit++) {
+                const unsigned key = 1u << digit;
+                expect_profile_players(8, mode, tennis_inputs[digit], 0,
+                                       key, mode == 1 ? key : 0,
+                                       "Eight-way A digit routing");
+                expect_profile_players(8, mode, 0, tennis_inputs[digit],
+                                       0, mode == 2 ? key : 0,
+                                       "Eight-way second controller");
+            }
+        }
+        const unsigned saved_pad_b_s2 = RS(cart_pad_b_s2);
+        RS(cart_pad_b_s2) = 1;
+        for (unsigned mode : tennis_modes) {
+            for (unsigned digit = 0; digit < 10; digit++) {
+                const unsigned key = 1u << digit;
+                expect_profile_players(8, mode, tennis_inputs[digit], 0,
+                                       mode == 0 ? 0 : key, mode == 2 ? 0 : key,
+                                       "Eight-way B digit routing");
+                expect_profile_players(8, mode, 0, tennis_inputs[digit],
+                                       0, mode == 2 ? key : 0,
+                                       "Eight-way B second controller");
+            }
+            expect_profile_players(8, mode, 1u << 6, 0, 1u << 1, 0,
+                                   "Eight-way B Start stays on A");
+            expect_profile_players(8, mode, 1u << 11, 1u << 25,
+                                   1u << 3, 1u << 7,
+                                   "Eight-way direct keypads remain independent");
+        }
+        RS(cart_pad_b_s2) = saved_pad_b_s2;
+
+        const unsigned saved_crc = RS(cart_crc);
+        const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
+                                       0xc8b4, 0xcec2, 0x8cde, 0xda69};
+        for (unsigned crc : b_side_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            const unsigned start = crc == 0x8cde || crc == 0xda69 ? 0 : 1;
+            if ((unsigned)RS(resolved_cart_profile) != (0x180u | start)) {
+                printf("FAIL CRC %04X eight-way B metadata\n", crc);
+                failures++;
+            }
+        }
+        RS(cart_crc) = 0xffff;
+        top->eval();
+        if ((unsigned)RS(resolved_cart_profile) != 0x81u) {
+            printf("FAIL unknown CRC must default to eight-way A\n");
+            failures++;
+        }
+        RS(cart_crc) = saved_crc;
         for (unsigned mode : tennis_modes) {
             for (unsigned digit = 0; digit < 10; digit++) {
                 const unsigned key = 1u << digit;

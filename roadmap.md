@@ -86,9 +86,9 @@ generic homebrew layout; review `2P Homebrew` naming and coverage as well.
   the title's normal layout; 1P gives one controller access to both keypads,
   mirroring symmetric controls; 2P assigns controllers 1/2 to keypads A/B.
   Preserve documented controls spanning both pads in asymmetric games.
-- Make generic 8-way Auto stop mirroring both pads by default. Preserve access
-  to the correct gameplay pad for titles such as Pinball, whose one-player
-  mode uses B. Separate keypad routing from directional/button mappings.
+- Verify generic 8-way Auto's single-pad routing in play, including Pinball's
+  B-side controls and switching Players 1/2. Audit remaining fallback titles
+  for their normal keypad before treating their automatic mapping as complete.
 - Require a documented gameplay or setup reason for restricting directions;
   specialized Fire/Extra assignments alone do not justify removing keypad
   directions. Check complete setup sequences, including Tennis/Squash racquet

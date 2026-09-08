@@ -98,6 +98,11 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
+For `8-way`, **Players: Auto** uses the game's normal keypad (A for unknown
+images). **Players: 1** mirrors controller 1 onto both keypads; **Players: 2**
+assigns controllers 1 and 2 to A and B. Start and direct keypad bindings remain
+available independently.
+
 ## Numstick (on-screen keypad)
 
 **Numstick** assigns the overlay to keypad A or B. The right stick selects 1–9 and the left stick selects 0. Hold a direction for about half a second to register it; nudge and release the right stick for 5.

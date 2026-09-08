@@ -45,6 +45,15 @@ reg [3:0] cart_profile_s3_pal  = MAP_8WAY;
 reg [3:0] cart_profile_s3_ntsc = MAP_8WAY;
 reg [3:0] cart_profile_vis     = MAP_8WAY;
 
+reg cart_pad_b_s2      = 1'b0;
+reg cart_pad_b_s3_pal  = 1'b0;
+reg cart_pad_b_s3_ntsc = 1'b0;
+reg cart_pad_b_vis     = 1'b0;
+wire cart_pad_b = (machine == MACHINE_STUDIO2) ? cart_pad_b_s2
+                : (machine == MACHINE_S3_PAL) ? cart_pad_b_s3_pal
+                : (machine == MACHINE_S3_NTSC) ? cart_pad_b_s3_ntsc
+                : cart_pad_b_vis;
+
 reg [3:0] cart_start_s2      = 4'd1;
 reg [3:0] cart_start_s3_pal  = 4'd1;
 reg [3:0] cart_start_s3_ntsc = 4'd1;
@@ -90,26 +99,28 @@ end
 
 // ---- CRC -> profile + Start key ---------------------------------------------
 // Unknown cartridges use the neutral eight-way layout.
-function automatic [7:0] resolve_cart_profile(
+function automatic [8:0] resolve_cart_profile(
 	input [15:0] crc,
 	input        visicom
 );
 	reg [3:0] p;
 	reg [3:0] s;
+	reg b;
 	begin
 		p = MAP_8WAY;
 		s = visicom ? 4'd0 : 4'd1;
+		b = 1'b0;
 
 		case (crc)
 `include "studio2_cart_profiles.svh"
 		default: ;
 		endcase
 
-		resolve_cart_profile = {p, s};
+		resolve_cart_profile = {b, p, s};
 	end
 endfunction
 
-wire [7:0] resolved_cart_profile = resolve_cart_profile(cart_crc, machine_visicom);
+wire [8:0] resolved_cart_profile = resolve_cart_profile(cart_crc, machine_visicom);
 
 // Active profile registers are also exposed to the simulation harness.
 reg [1:0] profile_machine_d = MACHINE_STUDIO2;
@@ -157,21 +168,25 @@ always @(posedge clk_sys) begin
 		case (machine)
 		MACHINE_STUDIO2: begin
 			cart_profile_s2       <= resolved_cart_profile[7:4];
+			cart_pad_b_s2         <= resolved_cart_profile[8];
 			cart_start_s2         <= resolved_cart_profile[3:0];
 			cart_profile_valid_s2 <= 1'b1;
 		end
 		MACHINE_S3_PAL: begin
 			cart_profile_s3_pal       <= resolved_cart_profile[7:4];
+			cart_pad_b_s3_pal         <= resolved_cart_profile[8];
 			cart_start_s3_pal         <= resolved_cart_profile[3:0];
 			cart_profile_valid_s3_pal <= 1'b1;
 		end
 		MACHINE_S3_NTSC: begin
 			cart_profile_s3_ntsc       <= resolved_cart_profile[7:4];
+			cart_pad_b_s3_ntsc         <= resolved_cart_profile[8];
 			cart_start_s3_ntsc         <= resolved_cart_profile[3:0];
 			cart_profile_valid_s3_ntsc <= 1'b1;
 		end
 		MACHINE_VISICOM: begin
 			cart_profile_vis       <= resolved_cart_profile[7:4];
+			cart_pad_b_vis         <= resolved_cart_profile[8];
 			cart_start_vis         <= resolved_cart_profile[3:0];
 			cart_profile_valid_vis <= 1'b1;
 		end
@@ -244,7 +259,11 @@ always @(posedge clk_sys) begin
 			if      (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Doodle
 			else if (builtin_padA[2] || (builtin_start_press && (active_start_key == 4'd2))) begin builtin_profile <= MAP_DOODLE; builtin_sel <= 1'b1; end  // Patterns
 			else if (builtin_padA[3]) begin builtin_profile <= MAP_BOWLING; builtin_sel <= 1'b1; end  // Bowling
-			else if (builtin_padA[4] || builtin_padA[5]) begin builtin_profile <= MAP_8WAY; builtin_sel <= 1'b1; end  // Blackjack
+			else if (builtin_padA[4] || builtin_padA[5]) begin // Blackjack
+				builtin_profile   <= MAP_8WAY;
+				builtin_start_key <= builtin_padA[4] ? 4'd4 : 4'd5;
+				builtin_sel       <= 1'b1;
+			end
 		end
 		MACHINE_VISICOM: begin
 			if (builtin_padA[1] || (builtin_start_press && (active_start_key == 4'd1))) begin
@@ -541,13 +560,22 @@ wire [9:0] start_keys_a = (start_enabled && start_press && !start_on_b)
 wire [9:0] start_keys_b = (start_enabled && start_press && start_on_b)
 	                        ? (10'd1 << active_start_key) : 10'd0;
 
+// Eight-way layout and its normal keypad are independent of Players routing.
+wire eightway_pad_b = firmware_menu
+                   ? (is_studio3 && (builtin_profile == MAP_8WAY) &&
+                      ((builtin_start_key == 4'd4) || (builtin_start_key == 4'd5)))
+                   : cart_pad_b;
+wire eightway_auto = (profile == MAP_8WAY) && (players == 2'd0);
+
 // Gunfighter/Tennis keeps B-only Auto; explicit 1P mirrors both pads.
 wire [9:0] joyA = ((profile == MAP_NONE) ? 10'd0
 	            : ((profile == MAP_TENNIS) && (players == 2'd0)) ? 10'd0
+	            : (eightway_auto && eightway_pad_b) ? 10'd0
 	            : ((profile == MAP_DOODLE) ? 10'd0
 	                                      : map_padA(profile, joystick_0)));
 
 wire [9:0] joyB = ((profile == MAP_NONE) ? 10'd0
+	            : (eightway_auto && !eightway_pad_b) ? 10'd0
 	            : ((profile == MAP_DOODLE) ? map_padB(MAP_DOODLE, joystick_0)
 	                                      : map_padB(profile, joyB_input)));
 wire [9:0] joyA_active = joyA | directA | start_keys_a;

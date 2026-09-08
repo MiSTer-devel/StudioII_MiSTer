@@ -26,6 +26,7 @@ image, container, machine, selection sequence and controls before adding an
 entry; `tools/cart-crc.sh` hashes supplied images. Unknown images use `8-way`.
 
 Each machine retains separate cartridge and resident-firmware profile state.
+Cartridge metadata also records the normal keypad for the generic 8-way layout.
 Cartridge loading replaces that machine's cartridge selection. Unload reveals
 its remembered resident mapping. Ordinary reset re-arms resident selection;
 firmware replacement invalidates the resident selection.
@@ -57,7 +58,13 @@ supplies those masks; asymmetric games can use both pads for one player's
 actions. Start supplies the profile's selection key independently of movement.
 The current routing exceptions are:
 
-- Generic `8-way` and Bowling mirror controller 1 in Auto/1P and split A/B in 2P.
+- Generic `8-way` Auto sends controller 1 to the normal keypad only: A by
+  default; B for recognized Pinball, Blackjack, Fun with Numbers and Biorhythm
+  images, and Studio III/Grand Pack Blackjack. Players 1 mirrors A/B;
+  Players 2 splits controllers 1/2 across A/B. Start remains on A and direct
+  keypad bindings remain independent. Manual `8-way` retains the detected
+  game's normal keypad.
+- Bowling mirrors controller 1 in Auto/1P and splits A/B in 2P.
 - Gunfighter/Tennis uses B in Auto, mirrors A/B in 1P, and splits A/B in 2P.
   Start stays A1; game selection is independent of Players.
 - Doodle always draws on B from controller 1.
