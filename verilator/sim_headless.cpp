@@ -1405,7 +1405,7 @@ int main(int argc, char** argv) {
                                        0, mode == 2 ? key : 0,
                                        "Eight-way B second controller");
             }
-            for (unsigned start : {0u, 1u, 15u}) {
+            for (unsigned start : {0u, 1u, 5u, 15u}) {
                 RS(start_key) = start;
                 expect_profile_players(8, mode, 1u << 6, 0,
                                        start < 10 ? 1u << start : 0u, 0,
@@ -1420,11 +1420,13 @@ int main(int argc, char** argv) {
 
         const unsigned saved_crc = RS(cart_crc);
         const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
-                                       0xc8b4, 0xcec2, 0x8cde, 0xda69};
+                                       0xc8b4, 0xcec2, 0x8cde, 0xda69,
+                                       0x2f1a, 0xf178, 0x5433, 0xb7a7};
         for (unsigned crc : b_side_crcs) {
             RS(cart_crc) = crc;
             top->eval();
-            const unsigned start = crc == 0x8cde || crc == 0xda69 ? 0 : 1;
+            const unsigned start = crc == 0x8cde || crc == 0xda69 ? 0
+                                 : crc == 0x2f1a || crc == 0xf178 ? 5 : 1;
             if ((unsigned)RS(resolved_cart_profile) != (0x180u | start)) {
                 printf("FAIL CRC %04X eight-way B metadata\n", crc);
                 failures++;

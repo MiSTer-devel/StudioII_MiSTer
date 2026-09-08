@@ -221,8 +221,8 @@
 
 	end
 
-// Blackjack and Fun with Numbers: one-player input on B, selection on A.
-16'h29B8, 16'hAF65, 16'hC8B4, 16'hCEC2:
+// Blackjack, Gambler I and Fun with Numbers: one-player B, selection A1.
+16'h29B8, 16'hAF65, 16'hC8B4, 16'hCEC2, 16'h5433, 16'hB7A7:
 	begin
 		p = MAP_8WAY;
 		s = 4'd1;
@@ -249,12 +249,20 @@
 
 	end
 
-// Visicom Inspiration, Visicom Gambler, Sansu Drill,
+// Gambler II: default to Slot Machine 1; play on B, selection on A.
+16'h2F1A, 16'hF178:
+	begin
+		p = MAP_8WAY;
+		s = 4'd5;
+		b = 1'b1;
+	end
+
+// Visicom Inspiration, Sansuu Drill,
 // Space Command, and Q-Sound Test: neutral automatic fallback
-16'h12E8, 16'h2BC5, 16'h2F1A, 16'h5433,
-16'h9BCF, 16'h9F6E, 16'hA7DF, 16'hB7A7, 16'hBF97,
+16'h12E8, 16'h2BC5,
+16'h9BCF, 16'h9F6E, 16'hA7DF, 16'hBF97,
 16'hC106, 16'hC7C6, 16'hDCFA, 16'hE4C4,
-16'hEBF4, 16'hF178:
+16'hEBF4:
 	begin
 
 		p = MAP_8WAY;

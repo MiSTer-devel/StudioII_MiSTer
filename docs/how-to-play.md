@@ -129,10 +129,11 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - `A1`: Squash, one player using keypad B.
 - `A2`: Tennis, two players using both keypads.
 - In Squash, choose racquet size on B: `B4` small, `B5` medium, `B6` large.
-  In Tennis, each player makes the same choice on their own pad.
+  In Tennis, A chooses first, then B, each on their own pad.
 - Ball speed and start are always selected on A: `A7` slow, `A8` normal,
   `A9` fast. There is no dedicated gamepad shortcut for these setup keys.
-- During play, `2` moves a racquet up and `8` down on its player's keypad. Between serves, `0` pauses/resumes.
+- During play, `2` moves a racquet up and `8` down on its player's keypad.
+  Between serves, `0` on either pad pauses; resume with `0` on that same pad.
 - The `Gunfighter/Tennis` profile uses eight directions, Fire `5` and Extra `0`.
   Auto drives B; Players 1 mirrors controller 1 onto both pads; Players 2 splits
   controllers 1/2 onto A/B. Start always selects `A1` Squash. Select `A2` Tennis
@@ -227,9 +228,15 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 ### Concentration + Match
 
 - Either player starts by pressing a digit on their own keypad. The first pad used becomes the first player.
-- The starting digit controls how long symbols are exposed: `0` shows none; `9` shows them longest.
+- The starting digit controls how long symbols are exposed: `0` shows none;
+  `1` is shortest and `9` longest, as confirmed by the MG-202 cartridge label.
 - During play, keypad A positions `1`–`9` select the nine cards on the left and keypad B positions `1`–`9` select the nine on the right.
 - A match scores one point and keeps the turn; a miss passes it. After all nine pairs are found, a new layout begins with the other player. First to 25 points wins.
+
+Use `8-way` on A with Numstick B to select all 18 positions independently.
+Players 1 mirroring couples matching keypad positions, so use Players Auto
+for this arrangement. Both players need access to both card banks during
+their turns; keypad routing does not track whose turn it is.
 
 ### Pinball
 
@@ -435,20 +442,48 @@ Studio II Freeway gamepad controls.
 
 ### Sports Fan (Baseball & Sumo Wrestling) (CAS-130)
 
-Test `A0` and `A5` independently from reset. Existing `A0` then `A5` captures do not establish a successful Sumo start.
+Controls below are translated from the original CAS-130 cartridge label
+supplied by the user. Both games are for two players; play verification of the
+core's profile remains pending.
 
-**Baseball** uses the same role-swapping controls as Studio II Baseball: active-pad `5` swings/throws straight, `2/8` select curves and move fielders, and holding a pitch produces a change-up.
+**Baseball**
+
+- Press CLEAR, then `A0`.
+- A bats first: `A5` swings. B pitches and fields.
+- Pitching: `2` inside curve, `5` straight, `8` outside curve on the
+  pitching player's keypad. Hold a key longer, then release for a slow pitch.
+- Fielding: `2` moves up and `8` moves down on the fielding player's keypad.
+- After three outs, batting and fielding roles swap.
 
 **Sumo Wrestling**
 
-- `A5` begins the event; press `A0` and `B0` for the initial charge.
+- Press CLEAR, then `A5`; press `A0` and `B0` for the initial charge.
 - Player A: `A6` push, `A4` pull, `A5` throw.
 - Player B: `B4` push, `B6` pull, `B5` throw.
+- After each bout, the winner's tally is displayed. Both players press `0`
+  again for the next charge. The contest lasts 15 bouts.
+
+### Gambler I — Blackjack (CAS-140)
+
+At the user's request, the recognized `.st2`/`.bin` images (CRC16
+`5433`/`B7A7`) use the RCA Blackjack manual's control scheme for Visicom
+play testing. These controls are verified for RCA Blackjack; the Visicom
+selection keys and behavior remain to be confirmed.
+
+- CLEAR then `A1`: one player on B; CLEAR then `A2`: two players on A/B.
+- `0` cuts at CUT. At BET, `1`–`9` bet $1–$9 and `0` bets $10.
+- During a hand, `1` hits, `2` doubles down and `0` stands on the active pad.
+- `8-way` Auto drives B only; Start sends `A1`. Up-left supplies `B1` hit,
+  Up supplies `B2` double, Extra supplies `B0` cut/stand, and Fire supplies
+  `B5` for a $5 bet. All betting digits remain available.
+- For two players, choose Players 2 and select `A2` directly; Start stays
+  `A1`. Players 1 explicitly mirrors controller 1 onto both pads.
 
 ### Gambler II (CAS-141)
 
-The manual specifies three selections; confirm them against the exact cartridge
-image before assigning an automatic profile.
+The CAS-141 manual specifies the controls below. Recognized `.st2`/`.bin`
+images (CRC16 `2F1A`/`F178`) use `8-way` with B-side Auto and Start `A5`
+for Slot Machine 1. Core play verification remains pending.
 
 - `A5`: Slot Machine 1. It starts with 500 points and ends at zero or 1500.
   Bet 10-50 points with `B1`-`B5`, start the reels with `B0`, and hold `B5`
@@ -461,12 +496,22 @@ image before assigning an automatic profile.
   use `1`, `2` or `3` to start that die and `5` to stop it. After both players
   use all eight hands, the higher score wins.
 
+Gamepad Fire supplies `5` (hold to stop), Extra supplies `0` (spin/roll),
+and directions provide the remaining digits. Select Slot Machine 2 with
+CLEAR then direct `A6`. For Electronic Dice, select Players 2, press CLEAR,
+then direct `A0`; controllers 1/2 operate A/B independently. Start remains
+`A5` in every Players mode; use Extra to roll during Dice, not Start.
+
 ### Reikan (CAS-190)
+
+Use direct A/B keypad bindings or Numstick: B enters numbers and choices,
+while A confirms or corrects them. The generic 8-way Auto fallback operates
+A only; no dedicated gamepad profile is provided.
 
 The manual specifies the selectors below; test them independently against the
 exact cartridge image. Numeric data is entered on B in two-digit groups. Press
 `A5` after each group; before accepting a mistaken group, `A0` restarts it.
-Target dates use `YY`, `MM`, `DD`, with only the final two digits of the Western
+Birth and target dates use `YY`, `MM`, `DD`, with only the final two digits of the Western
 year. The nine fortune categories are selected with `B1`-`B9`: mahjong,
 alcohol, horse racing, love, money, travel, health, work and study.
 
@@ -498,7 +543,6 @@ alcohol, horse racing, love, money, travel, health, work and study.
 These need independent start-key probing and do not have enough verified post-start controls for a reliable profile:
 
 - Sansuu Drill (CAS-110)
-- Gambler I (Blackjack) (CAS-140)
 
 Do not infer their controls merely from similarly named Studio II cartridges; verify them by manual, trace or direct play first.
 
