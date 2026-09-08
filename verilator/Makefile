@@ -94,6 +94,9 @@ all: $(EXE)
 
 headless: $(HL_EXE)
 
+loader-regression:
+	python3 test_loader.py
+
 $(HL_EXE): $(V_SRC) $(HL_HEADERS) $(HL_SRC) Makefile
 	$V -cc $(HL_VOPT) -exe --Mdir ./$(HL_DIR) $(V_INC) $(TOP) \
 		-CFLAGS "-O2 -std=c++17" -LDFLAGS "-lz" $(V_SRC) $(HL_SRC)
@@ -115,4 +118,4 @@ lint:
 clean:
 	rm -rf obj_dir $(HL_DIR)
 
-.PHONY: all headless lint fast clean
+.PHONY: all headless loader-regression lint fast clean

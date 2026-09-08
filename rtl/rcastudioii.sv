@@ -106,14 +106,11 @@ reg  chip8_loaded = 1'b0;
 reg  chip8_write_seen = 1'b0;
 reg  chip8_fw_start_seen = 1'b0;
 reg  chip8_fw_os2 = 1'b0;
-reg  dl_d = 1'b0;
-wire dl_done = dl_d && !ioctl_download;
 wire chip8_active = chip8_loaded && !machine_visicom;
 wire chip8_os2_active = chip8_active && chip8_fw_os2;
 wire chip8_marcel_active = chip8_active && !chip8_fw_os2;
 wire preserve_sync_reset = reset && !video_reset;
 
-always @(posedge clk_sys) dl_d <= ioctl_download;
 wire [2:0] io_n;
 wire       io_inp;
 wire       io_out;

@@ -40,6 +40,7 @@
 #define ROM2      (top->rootp->top__DOT__rcastudio__DOT__rom2__DOT__mem)
 #define ROM3      (top->rootp->top__DOT__rcastudio__DOT__rom3__DOT__mem)
 #define ROM4      (top->rootp->top__DOT__rcastudio__DOT__rom4__DOT__mem)
+#define CHIP8RAM  (top->rootp->top__DOT__rcastudio__DOT__chip8_ram__DOT__mem)
 #define SRAM      (top->rootp->top__DOT__rcastudio__DOT__sram__DOT__mem)    // the 512 bytes of RAM, $0800-$09FF
 #define COLRAM    (top->rootp->top__DOT__rcastudio__DOT__colour_ram)         // 64 CDP1864 colour cells
 
@@ -156,6 +157,22 @@ static uint8_t read_cpu_bus(uint16_t addr) {
     top->clk_48 = 0;
     top->eval();
     return data;
+}
+
+// Execute one STR R1 cycle with D as the write byte. As with read_cpu_bus(),
+// this deliberately uses the CPU-facing bus instead of changing a memory
+// array directly, so the test covers the real decode and write-enable path.
+static void write_cpu_bus(uint16_t addr, uint8_t data) {
+    top->clk_48 = 0;
+    CPU(state) = 2;       // EXECUTE
+    CPU(IR) = 0x51;       // STR R1
+    CPU(R)[1] = addr;
+    CPU(D) = data;
+    top->eval();
+    top->clk_48 = 1;
+    top->eval();
+    top->clk_48 = 0;
+    top->eval();
 }
 
 // ---------------------------------------------------------------------------
@@ -523,8 +540,8 @@ static void usage(const char* argv0) {
 "  Software\n"
 "    --bios FILE          BIOS image, ioctl index 0   (default ../rom/studio2.rom)\n"
 "    --cart FILE          cartridge image, ioctl index 1 (raw: Studio $0400, Visicom $0800)\n"
-"    --chip8-fw FILE      Marcel's 768-byte companion, ioctl index $0103\n"
-"    --manual-chip8-fw FILE  same image through the F4 OSD path, ioctl index 4\n"
+"    --chip8-fw FILE      768-byte Marcel or 2 KiB OpenStudio2 companion, index $0103\n"
+"    --manual-chip8-fw FILE  same interpreter choices through the F4 OSD path, index 4\n"
 "    --ch8 FILE           CHIP-8 program, ioctl index 3\n"
 "    --loader-check       verify ROM loading, CHIP-8 mapping and firmware profiles\n"
 "\n"
@@ -854,6 +871,7 @@ int main(int argc, char** argv) {
         for (int slot = 0; slot < 4; slot++)
             for (int addr = 0; addr < 0x1000; addr++)
                 cart_memory(slot)[addr] = 0xA5;
+        for (int addr = 0; addr < 0x1000; addr++) CHIP8RAM[addr] = 0xA5;
     }
 
     // Hardware RAM is wiped only by CLEAR and survives loads and machine
@@ -1082,19 +1100,27 @@ int main(int argc, char** argv) {
         if (!swap_file.empty()) expected_pages = apply_cart_image(expected_cart[machine], swap_file, machine);
 
         bool fw_valid = false;
+        bool fw_os2 = false;
         if (!chip8_fw.empty()) {
             const std::vector<uint8_t> fw_data = read_binary(chip8_fw);
-            for (size_t i = 0; i < fw_data.size() && i < 0x300; i++) expected[4][i] = fw_data[i];
+            for (size_t i = 0; i < fw_data.size() && i < 0x800; i++) expected[4][i] = fw_data[i];
             fw_valid = fw_data.size() >= 0x300;
+            fw_os2 = fw_data.size() >= 0x800;
         }
 
         bool ch8_accepted = fw_valid && (machine != 3) && !ch8.empty();
+        std::vector<uint8_t> expected_chip8_ram(0x1000, 0xA5);
         if (!ch8.empty()) {
             const std::vector<uint8_t> ch8_data = read_binary(ch8);
             if (ch8_accepted) {
-                for (size_t i = 0; i < ch8_data.size() && i < 0x900; i++) {
-                    size_t addr = (i < 0x500) ? (0x300 + i) : (0xC00 + i - 0x500);
-                    expected[4][addr] = ch8_data[i];
+                if (fw_os2) {
+                    for (size_t i = 0; i < ch8_data.size() && i < 0xE00; i++)
+                        expected_chip8_ram[0x200 + i] = ch8_data[i];
+                } else {
+                    for (size_t i = 0; i < ch8_data.size() && i < 0x900; i++) {
+                        size_t addr = (i < 0x500) ? (0x300 + i) : (0xC00 + i - 0x500);
+                        expected[4][addr] = ch8_data[i];
+                    }
                 }
             }
             ch8_accepted = ch8_accepted && !ch8_data.empty();
@@ -1123,9 +1149,23 @@ int main(int argc, char** argv) {
                 }
             }
         }
+        for (int addr = 0; addr < 0x1000; addr++) {
+            uint8_t got = CHIP8RAM[addr];
+            if (got != expected_chip8_ram[addr]) {
+                if (failures < 12)
+                    printf("FAIL chip8_ram[$%03X] = %02X, expected %02X\n",
+                           addr, got, expected_chip8_ram[addr]);
+                failures++;
+            }
+        }
         if ((RS(chip8_fw_loaded) != 0) != fw_valid) {
             printf("FAIL chip8_fw_loaded = %u, expected %u\n",
                    (unsigned)RS(chip8_fw_loaded), fw_valid ? 1u : 0u);
+            failures++;
+        }
+        if ((RS(chip8_fw_os2) != 0) != fw_os2) {
+            printf("FAIL chip8_fw_os2 = %u, expected %u\n",
+                   (unsigned)RS(chip8_fw_os2), fw_os2 ? 1u : 0u);
             failures++;
         }
         if ((RS(chip8_loaded) != 0) != ch8_accepted) {
@@ -1158,6 +1198,93 @@ int main(int argc, char** argv) {
                 }
             }
         }
+
+        // Exercise all three CPU-visible memory maps regardless of which
+        // interpreter image this particular invocation downloaded. This keeps
+        // native Studio, Marcel, and OpenStudio2 decode behavior in one directed
+        // regression and covers OS2 writes through the actual CDP1802 bus.
+        const uint8_t saved_rom1_c00 = ROM1[0xC00];
+        const uint8_t saved_rom4_c00 = ROM4[0xC00];
+        const uint8_t saved_sram_000 = SRAM[0x000];
+        const uint8_t saved_sram_0bc = SRAM[0x0BC];
+        const uint8_t saved_os2_000 = CHIP8RAM[0x000];
+        const uint8_t saved_os2_abc = CHIP8RAM[0xABC];
+        ROM1[0xC00] = 0x31;
+        ROM4[0xC00] = 0x4D;
+        SRAM[0x000] = 0x58;
+        SRAM[0x0BC] = 0xBC;
+        CHIP8RAM[0x000] = 0x02;
+        CHIP8RAM[0xABC] = 0xAB;
+
+        auto select_chip8_map = [&](bool loaded, bool os2) {
+            top->machine = 1;  // Studio III also exercises its high-ROM decode
+            RS(chip8_fw_loaded) = loaded;
+            RS(chip8_fw_os2) = os2;
+            RS(chip8_loaded) = loaded;
+            top->eval();
+        };
+        auto expect_bus = [&](uint16_t addr, uint8_t want, const char* name) {
+            uint8_t got = read_cpu_bus(addr);
+            if (got != want) {
+                printf("FAIL %s bus[$%04X] = %02X, expected %02X\n",
+                       name, addr, got, want);
+                failures++;
+            }
+        };
+
+        select_chip8_map(false, false);
+        expect_bus(0x0C00, 0x31, "native Studio III");
+        expect_bus(0x1000, 0x58, "native Studio III mirror");
+        if (RS(os2_ram_sel)) {
+            printf("FAIL native mode selected OpenStudio2 RAM\n");
+            failures++;
+        }
+
+        select_chip8_map(true, false);
+        expect_bus(0x0C00, 0x4D, "Marcel high ROM");
+        expect_bus(0x1000, 0x58, "Marcel Studio RAM mirror");
+        if (RS(os2_ram_sel) || !RS(chip8_marcel_active)) {
+            printf("FAIL Marcel mode selected the wrong CHIP-8 memory map\n");
+            failures++;
+        }
+        write_cpu_bus(0x1ABC, 0x6C);
+        if (CHIP8RAM[0xABC] != 0xAB) {
+            printf("FAIL Marcel write reached OpenStudio2 RAM\n");
+            failures++;
+        }
+
+        select_chip8_map(true, true);
+        expect_bus(0x0C00, 0x58, "OpenStudio2 suppressed high ROM");
+        expect_bus(0x1000, 0x02, "OpenStudio2 RAM base");
+        expect_bus(0x1ABC, 0xAB, "OpenStudio2 RAM body");
+        if (!RS(os2_ram_sel) || !RS(chip8_os2_active) || RS(chip8_marcel_active)) {
+            printf("FAIL OpenStudio2 mode selected the wrong CHIP-8 memory map\n");
+            failures++;
+        }
+        write_cpu_bus(0x1ABC, 0x6D);
+        if (CHIP8RAM[0xABC] != 0x6D || SRAM[0x0BC] != 0xBC) {
+            printf("FAIL OpenStudio2 CPU write did not stay in dedicated RAM\n");
+            failures++;
+        }
+
+        select_chip8_map(false, false);
+        write_cpu_bus(0x1ABC, 0x6E);
+        if (CHIP8RAM[0xABC] != 0x6D) {
+            printf("FAIL native write reached OpenStudio2 RAM\n");
+            failures++;
+        }
+
+        ROM1[0xC00] = saved_rom1_c00;
+        ROM4[0xC00] = saved_rom4_c00;
+        SRAM[0x000] = saved_sram_000;
+        SRAM[0x0BC] = saved_sram_0bc;
+        CHIP8RAM[0x000] = saved_os2_000;
+        CHIP8RAM[0xABC] = saved_os2_abc;
+        RS(chip8_fw_loaded) = fw_valid;
+        RS(chip8_fw_os2) = fw_os2;
+        RS(chip8_loaded) = ch8_accepted;
+        top->machine = machine;
+        top->eval();
 
         // With no cartridge, the first recognized firmware-menu key selects
         // the resident game's automatic profile and later keys must not change
