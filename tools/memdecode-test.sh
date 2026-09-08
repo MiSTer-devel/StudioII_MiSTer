@@ -2,10 +2,10 @@
 # ---------------------------------------------------------------------------
 # Directed test for the memory decode in rtl/rcastudioii.sv.
 #
-# None of the commercial or homebrew software in software/ or refs/ touches the
-# RAM mirrors, so the frame comparison cannot tell a correct decode from
-# the old truncate-to-12-bits one. This builds a tiny native-1802 cartridge that
-# pokes every case and checks the result out of the simulated RAM.
+# The known software corpus does not touch the RAM mirrors, so frame comparison
+# cannot distinguish a correct decode from truncating addresses to 12 bits. This
+# builds a tiny native-1802 cartridge that pokes every case and checks the result
+# in simulated RAM.
 #
 #   tools/memdecode-test.sh
 #
@@ -31,7 +31,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 # Hand-assembled, because it is 90 bytes and the point is to have no build step.
 # The cartridge starts with the usual two-byte CHIP-8 "call machine code" word
-# that every Studio II native program uses (see refs/studio2-games).
+# used by Studio II native programs.
 python3 - "$TMP/memtest.bin" <<'EOF'
 import sys
 LDI = lambda v: [0xF8, v]

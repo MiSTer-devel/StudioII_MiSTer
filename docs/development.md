@@ -4,6 +4,11 @@ Architecture, verification scope, and build mechanics live here. `AGENTS.md` con
 permanent repository rules. Current RTL defines what is implemented; primary 
 documentation and measured hardware define the target.
 
+**Maintainer reminder:** enable branch protection on `main` if it is not already
+enabled. A mistaken doc-only push can trigger `mister-unstable-nightlies` even
+when the automated build has no new core behavior to test. Remove this reminder
+after protection is confirmed.
+
 Read the focused references when relevant:
 
 - `docs/how-to-play.md` — game selection and keypad research.

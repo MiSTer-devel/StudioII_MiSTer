@@ -17,11 +17,6 @@
 //
 //============================================================================
 //
-//  Replaces pixie_video_studioii.v, which was not a 1861 at all: it ignored the
-//  CPU and continuously scraped $0900-$09FF over a second dpram port, so display
-//  DMA never stole machine cycles, the base address was hardwired, and software
-//  that scrolls by moving R(0) could not work.
-//
 //  The real part has no frame buffer. It asserts DMA-OUT and the 1802 performs
 //  8 DMA-OUT machine cycles per displayed scanline, reading bytes through R(0)
 //  and handing them over; the 1861 shifts them straight out as pixels. Because
@@ -131,18 +126,9 @@ localparam DMA_ADAPT         = 1;
 // machine cycle, so it is shifted out over the following 8 pixels: active display is 24..87.
 localparam DMA_START         = 16;
 localparam DMA_END           = DMA_START + 64;        // 80  (8 machine cycles)
-// The CPU sees the request at the machine-cycle boundary *before* it can run the DMA cycle, so
-// the earliest burst latches byte 0 at hcount 31 (DMA cycle 24..31). But the burst phase is set
-// by the ISR's cycle-counted preamble, and interrupt entry lands 0 or 1 machine cycle late
-// depending on which instruction the main program was in when INT asserted -- so byte 0 arrives
-// at hcount 31 on some frames and 39 on others, for the same software. Reading the line buffer
-// at 32+8k only tolerated the early phase: on late frames every slot was read 8 pixels before
-// its byte landed, so each line replayed the previous line's buffer -- the picture dropped one
-// scanline and the top line showed the previous frame's bottom row (Robson's 2000-build
-// Invaders wobbled vertically every ~14 frames as its wait loop drifted across the two phases).
-// Reading at 40+8k accepts both phases with identical output. The real 1861 shifts bytes out as
-// DMA delivers them, so on hardware the late phase is an 8-pixel horizontal nudge a CRT hides;
-// holding a fixed window one cycle later gives the same tolerance without the jitter.
+// Interrupt entry can place the first DMA byte at hcount 31 or 39. Reading at
+// 40+8k accepts either phase. Hardware may show the late phase as an 8-pixel
+// horizontal nudge; the fixed window keeps digital output stable.
 localparam ACTIVE_START      = DMA_START + 24;        // 40  (three machine cycles behind the request)
 localparam ACTIVE_END        = ACTIVE_START + 64;     // 104
 // The shifter is aligned to the 8-pixel byte boundaries above; the visible window is tuned
@@ -150,16 +136,9 @@ localparam ACTIVE_END        = ACTIVE_START + 64;     // 104
 localparam DE_START          = ACTIVE_START;
 localparam DE_END            = DE_START + 64;
 
-// HSync must sit in the blanking interval. At 84..92 it overlapped the active window, so the
-// line's column counter reset mid-picture and the image came out rotated. With the active
-// window now ending at 104 (last pixel out at 104), only 105..111 is left free -- a 7-pixel
-// HSync, ~4.0us at this dot clock, close enough to NTSC's 4.7us.
-// Sync and blanking, laid out as a real NTSC line rather than as a window around
-// the bitmap. Previously HSync sat at 105..112 with the active window covering
-// only the 64 display pixels, which left a 22.7us back porch against a 0.57us
-// front porch and gave a display no TV could render -- see
-// docs/succession-plan.md §8. Against the CDP1864 datasheet's Fig 6 (the 1861 has
-// no equivalent figure, and the two parts share a 112-pixel line):
+// Sync and blanking use a complete NTSC line rather than the bitmap window.
+// The 1861 has no equivalent timing figure; these proportions follow the
+// CDP1864 datasheet's Fig. 6 because both parts use a 112-pixel line:
 //
 //     front porch   0..8    4.54us   (Fig 6: 3.14)
 //     HSync         8..16   4.54us   (Fig 6: 4.57)
@@ -172,18 +151,14 @@ localparam DE_END            = DE_START + 64;
 localparam HSYNC_START       = 8;
 localparam HSYNC_END         = 16;
 localparam H_ACTIVE_START    = 24;
-// Vertical sync stays at 254 rather than moving to line 0. The sim advances its
-// frame counter on the VSync edge, so moving it would shift every capture by a
-// few lines and quietly invalidate the recorded scores for no gain. Vertical
-// blanking therefore wraps the end of the frame: 20 lines from 254 through 12.
+// The capture harness advances frames on VSync's rising edge. Keep it at 254;
+// vertical blanking wraps the frame boundary from line 254 through line 11.
 localparam VSYNC_START       = 254;
 localparam VSYNC_END         = 258;
 localparam VBLANK_END        = 12;
 
 // ---------------------------------------------------------------------------
-// Counters -- both advance exactly once per pixel time. The old state machine
-// bumped the horizontal counter from seven different places and stalled in
-// some states, which stretched the active window to 74 real clocks.
+// Counters -- both advance exactly once per pixel time.
 // ---------------------------------------------------------------------------
 reg [7:0] hcount;
 reg [8:0] vcount;
@@ -218,31 +193,14 @@ wire line_displayed = (vcount >= DISPLAY_START) && (vcount < DISPLAY_END);
 // ---------------------------------------------------------------------------
 // DMA request and byte capture
 // ---------------------------------------------------------------------------
-// The request stays up until 8 cycles have actually been serviced on this line,
-// not for a fixed slice of it. The CPU only honours DMA between instructions
-// (see cdp1802.v FETCH), so the burst can begin up to a few machine cycles
-// after the request; a positional window would then cut the burst short and
-// R(0) would fall behind the display.
-// Drop the request at the 7th acknowledge: the CPU commits one more DMA cycle
-// after the request falls (the state decision samples DMAO before the count
-// updates), which is what delivers the 8th byte. Holding it through the 8th
-// ack ran a 9th cycle -- R(0) then advanced by 9 a line and the ISR's
-// rewind-by-8 arithmetic unravelled.
-// Fetch/execute parity resync, the AVI1861's state-14 trick: the real 1861
-// watches the CPU's SC lines and slips its line timing by one machine cycle
-// when the CPU is fetching where it should be executing, so the DMA burst
-// always interleaves the ISR's cycle-counted display loop at the intended
-// instruction. With a rigid HDMI line we slip the *request* instead: when the
-// CPU's parity is odd at the head of a line, assert DMAO one machine cycle
-// early so the burst begins one instruction earlier in the stream -- the same
-// interleave the real part restores by sliding its line. Without this, frames
-// whose interrupt entry lands on odd parity ran the BIOS display loop one
-// instruction out of phase: R(0) was rewound every line, every line re-read
-// row 0, and Robson's Hockey rendered whole frames as the solid border row
-// (the reported "flashing strobes"). Line 80 is exempt: the ISR preamble is
-// still running there and an early request would preempt it before PLO R0
-// loads the display base -- the read window already tolerates line 80's two
-// possible locks.
+// Hold DMAO until eight cycles are serviced because the CPU accepts DMA only
+// between instructions. Drop it at the seventh acknowledge: the CPU has
+// already sampled the request and commits the eighth cycle.
+//
+// The AVI1861 slips line timing by one machine cycle when fetch/execute parity
+// is odd. A fixed HDMI raster cannot move the line, so DMA_ADAPT asserts the
+// request one cycle early instead. Exempt line 80 while the ISR preamble is
+// still loading R(0); its two possible phases fit the tolerant read window.
 reg dma_early;
 always @(posedge clk) begin
     if (reset) dma_early <= 1'b0;
@@ -377,8 +335,6 @@ assign bg_colour_out = bg_colour;
 assign bg_active     = in_raster && display_enabled && colour_on_seen &&
                        !(in_active_d && shift_con && shift_reg[7]);
 
-// were emitted this frame.
-
 // ---------------------------------------------------------------------------
 // Sync, blanking and the CPU-visible status flags
 // ---------------------------------------------------------------------------
@@ -396,31 +352,15 @@ always @(posedge clk) begin
         HBlank <= (hcount < H_ACTIVE_START);
         VBlank <= (vcount >= VSYNC_START) || (vcount < VBLANK_END);
 
-        // INT leads the line-78 boundary by one machine cycle, per the AVI1861
-        // (hardware-verified 1861 replacement): its 74HC4040 line counter is
-        // clocked by the active-low HCLOCK asserted in line states 14+0, so it
-        // increments at the START of state 14 -- one machine cycle before the
-        // line boundary -- and INTREQ (= LC:'D'39) rises with it. That cycle
-        // is exactly the margin the BIOS ISR needs: its display preamble is 27
-        // cycles plus up to 4 cycles of interrupt-entry latency (a 3-cycle LBR
-        // in flight when INT rises), and the line-80 DMA burst can steal at 31
-        // cycles after line 78. Asserting INT at line 78 exactly meant the
-        // worst-case entry finished PLO R0 one instruction too late, the burst
-        // preempted the preamble with R(0) still stale, and the whole frame
-        // displayed from $09F8/$0A00 -- Robson's Hockey and Combat, whose main
-        // loops keep LBRs in flight at interrupt time, strobed 2 frames in 8.
+        // AVI1861 hardware advances its line counter at the start of state 14,
+        // one machine cycle before the line boundary. INT must lead likewise so
+        // the BIOS can finish its preamble before line 80 DMA uses R(0).
         INT <= display_enabled &&
                (((vcount == INT_START - 1)     && (hcount >= 112 - INT_LEAD)) ||
                 ((vcount >= INT_START) && (vcount < DISPLAY_START) &&
                  !((vcount == DISPLAY_START - 1) && (hcount >= 112 - INT_LEAD))));
-        // EFx leads its line boundaries by one machine cycle for the same
-        // reason as INT: the AVI1861's line counter increments one machine
-        // cycle before the line boundary and DISP_STATUS decodes straight off
-        // it. The BIOS ISR spins on the EF1 edge to align its display loop, so
-        // this edge's position sets which instruction the first DMA burst
-        // lands after -- one cycle late here left the loop misaligned for some
-        // interrupt-entry phases (rows never advanced; whole frames rendered
-        // as the border row).
+        // EFx leads for the same AVI1861 line-counter reason. The BIOS waits on
+        // this edge to align its display loop with the first DMA burst.
         EFx <= display_enabled &&
                ((((vcount == EFX_TOP_START - 1) && (hcount >= 112 - EFX_LEAD)) ||
                  ((vcount >= EFX_TOP_START) && (vcount < DISPLAY_START) &&
@@ -434,7 +374,7 @@ end
 assign csync    = ~(HSync ^ VSync);
 assign video_de = ~(VBlank | HBlank);
 
-// The bitmap's own window, for the harness. This is what video_de used to be.
+// Capture-only bitmap window; video_de covers the full active raster.
 reg bitmap_de_r, bitmap_hblank_r, bitmap_vblank_r;
 always @(posedge clk) begin
     if (reset) begin

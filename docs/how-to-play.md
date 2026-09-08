@@ -1,4 +1,4 @@
-# Master how-to-play and control reference
+# How to play
 
 This is the gameplay and keypad reference for the RCA Studio II, Studio III / MPT-02 and Visicom COM-100 software supported by this core. Unknown controls are marked unverified rather than guessed.
 
@@ -355,7 +355,7 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 
 ### Race
 
-- `B2` accelerates, `B4/B6` steer left/right and `B5` brakes. Confirmed in play.
+- `B2` accelerates, `B4/B6` steer left/right and `B5` brakes.
 - Gamepad: Up/Fire accelerates, Left/Right steer, Down/Extra brakes, and Start sends B2.
 
 ### Rocket v1.01
@@ -490,6 +490,6 @@ alcohol, horse racing, love, money, travel, health, work and study.
 - `5` fires the missile. `4` and `6` steer left or right.
 
 - `A0`: Vertical Intercept, a two-player game.
-- Holding `5` increases missile height. 
+- Holding `5` increases missile height.
 
 - Controls *should* match TV Arcade I - Space War.

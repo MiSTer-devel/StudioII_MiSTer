@@ -3,13 +3,10 @@
 //  CDP1864 "PAL Compatible Color TV Interface".
 //
 //  Written 2026 by Alan Steremberg. Structure, and all of the DMA/INT/EFx
-//  timing detail, is derived from this repo's rtl/pixie/cdp1861.v -- the two
-//  parts have the same architecture (no frame buffer, the 1802 DMAs display
-//  bytes out through R(0)) and the same CPU-side contract, so the hard-won
-//  behaviour there applies here unchanged. Geometry and colour follow the RCA
-//  datasheet (refs/rca-studio2/Documents/cdp1864.pdf, distilled in
-//  docs/succession-plan.md §6), MAME's cdp1864 device by Curt Coder
-//  (BSD-3-Clause), and Emma 02's machine XML.
+//  timing detail, is derived from this repo's rtl/pixie/cdp1861.v. Both parts
+//  have no frame buffer and share the same CPU/DMA contract. Geometry and colour
+//  follow the RCA datasheet, MAME's cdp1864 device by Curt Coder (BSD-3-Clause),
+//  and Emma 02's machine XML.
 //
 //  This program is free software; you can redistribute it and/or modify it
 //  under the terms of the GNU General Public License as published by the Free
@@ -18,12 +15,9 @@
 //
 //============================================================================
 //
-//  Deliberately a separate module rather than a parameterised cdp1861. The 1861
-//  is delicately tuned -- see the INT_LEAD / EFX_LEAD / DMA_ADAPT commentary
-//  there, every value of which was swept against real software -- and making its
-//  geometry runtime-selectable would put the working Studio II at risk for no
-//  gain. Both parts are tiny, so the top level instantiates each and selects.
-//  If a timing fix lands in one, port it to the other by hand.
+//  This remains separate from cdp1861 so PAL geometry cannot alter Studio II
+//  timing. Port shared DMA, interrupt, EF, and horizontal timing fixes between
+//  the modules by hand.
 //
 //  Differences from the 1861:
 //
@@ -40,10 +34,8 @@
 //  untouched. 1.75MHz / 50Hz / 312 lines = 14.02 cycles a line, against the
 //  Studio II's 1.76MHz / 60Hz / 262 = 14.0.
 //
-//  The tone generator is NOT here: it lives in rtl/pixie/cdp1863.v, shared with
-//  the NTSC Studio III, which has that part as a separate chip alongside a 1861
-//  and a 1862 (docs/succession-plan.md §9). The 1864 integrates the same
-//  generator, and cdp1863's div4 input selects which division chain to use.
+//  The tone generator lives in rtl/pixie/cdp1863.v. Its div4 input selects the
+//  CDP1864's integrated divider or the standalone CDP1863 path.
 //
 //============================================================================
 
@@ -99,38 +91,18 @@ module cdp1864
 localparam PIXELS_PER_LINE   = 112;                   // 14 machine cycles, as the 1861
 localparam LINES_PER_FRAME   = 312;                   // PAL. INLACE low = 312 non-interlaced.
 
-// Display window: 192 lines, which every source agrees on (the feature list, the
-// "192" dimension inside Fig 4's display area, and its 192H bracket). Where those
-// 192 lines *sit* in the 312-line frame is not agreed, and was investigated on
-// 2026-08-18 without being settled:
-//
-//   Emma 02  76..267 inclusive -- exactly 192, and hardware-tested
-//   MAME     60, carrying a "// ???" MAME wrote itself
-//   Fig 4    both EF pulses and both dashed lines land on 96 and 264, which is
-//            168 lines, not the 192 the bracket beside them is labelled. The
-//            figure disagrees with itself by 24 lines, so it cannot arbitrate.
-//
-// Emma's 76 is kept because it is the only value from something known to run on
-// real hardware, and because it sits the picture roughly centred: vertical
-// blanking is 20H (Fig 4), so centring 192 lines in the remaining 292 would put
-// it at 70, which is near 76 and nowhere near 96.
-//
-// It makes no observable difference today, and that was measured rather than
-// assumed: moving the whole window to Fig 4's 96..288 gives byte-identical
-// results across all 14 Conic cartridges (14/28 either way). It cannot matter
-// while everything outside the window is blanked and the harness captures only
-// the display window. It starts to matter with the full raster (see
-// docs/succession-plan.md §8), where this offset is what positions the picture
-// on screen -- decide it there, against the photographs of real hardware.
+// Sources agree on a 192-line display but not its position. Use Emma 02's
+// hardware-tested 76..267 window; RCA Fig. 4 contradicts its own 192H label and
+// MAME's start value is marked uncertain. Recheck against hardware before moving
+// this window because its offset positions the picture in the full raster.
 localparam DISPLAY_START     = 76;
 localparam DISPLAY_END       = 268;                   // one past the last (192 lines)
 localparam INT_START         = DISPLAY_START - 2;     // 74
 localparam EFX_TOP_START     = DISPLAY_START - 4;     // 72
 localparam EFX_BOT_START     = DISPLAY_END   - 4;     // 264
 
-// Carried over from the 1861 verbatim: same line length, same CPU, same ISR
-// structure, so the same leads and the same parity resync apply. See the long
-// commentary in cdp1861.v for why each is what it is.
+// Same line length, CPU, and ISR structure as the 1861; keep its interrupt/EF
+// leads and parity adaptation synchronized.
 localparam INT_LEAD          = 8;
 localparam EFX_LEAD          = 8;
 localparam DMA_ADAPT         = 1;
@@ -141,9 +113,8 @@ localparam ACTIVE_END        = ACTIVE_START + 64;     // 104
 localparam DE_START          = ACTIVE_START;
 localparam DE_END            = DE_START + 64;
 
-// Sync and blanking as a real PAL line, straight off the datasheet's Fig 6
-// (p8), rather than a window around the bitmap. See docs/succession-plan.md §8
-// for why the old layout could not be displayed.
+// Sync and blanking follow the PAL line in the datasheet's Fig. 6 (p. 8), not
+// the narrower bitmap window.
 //
 //     front porch   0..8    4.54us   (Fig 6: 3.14)
 //     HSync         8..16   4.54us   (Fig 6: 4.57)
@@ -197,8 +168,8 @@ end
 // ---------------------------------------------------------------------------
 // Background colour: 1-of-4, stepped by OUT 1. Order and values follow Emma 02's
 // palette list for this machine -- back_blue, back_black, back_green, back_red.
-// The datasheet's BCKGND pin, which lowers background luminance so one colour can
-// serve as both background and data, is not modelled: we have one bit a channel.
+// RGB alone cannot encode the BCKGND luminance difference; bckgnd carries that
+// qualifier to the top level.
 // ---------------------------------------------------------------------------
 reg [1:0] bg_index;
 always @(posedge clk) begin
@@ -294,11 +265,6 @@ always @(posedge clk) begin
     else if (ce_pix) in_active_d <= in_active;
 end
 
-// Outside the display window the screen is black, not the background colour:
-// the background only applies within the displayed picture.
-// Before CON the part is monochrome: white dots on black, exactly as an 1861.
-// After it, a lit pixel takes its dot colour and an unlit one the background.
-//
 // Outside the bitmap but still inside the raster the part paints the background
 // colour -- Fig 4 shows BACKGROUND filling the area around the DISPLAY AREA, and
 // it is what makes the picture full-screen on a TV. Outside the raster it is
@@ -347,10 +313,8 @@ always @(posedge clk) begin
     end
     else if (ce_pix) begin
         HSync  <= (hcount >= HSYNC_START) && (hcount < HSYNC_END);
-        // VSYNC_START is line 0, so the lower bound is implicit: spelling it out
-        // as (vcount >= VSYNC_START) is an always-true unsigned comparison, which
-        // the linter rightly flags. The 1861 needs both terms because its VSync
-        // sits at 254..257 instead.
+        // VSYNC_START is zero; an explicit unsigned lower-bound comparison is
+        // always true. The 1861 still needs both bounds for its 254..257 pulse.
         VSync  <= (vcount < VSYNC_END);
         // Blanking describes the raster now. Everything inside it but outside the
         // bitmap is active picture painted in the background colour, which is what
@@ -376,7 +340,7 @@ end
 assign csync    = ~(HSync ^ VSync);
 assign video_de = ~(VBlank | HBlank);
 
-// The bitmap's own window, for the harness. This is what video_de used to be.
+// Capture-only bitmap window; video_de covers the full active raster.
 reg bitmap_de_r, bitmap_hblank_r, bitmap_vblank_r;
 always @(posedge clk) begin
     if (reset) begin

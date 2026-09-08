@@ -221,10 +221,8 @@ static bool write_ppm(const std::string& path, int w, int h, const std::vector<u
 static const int MAX_W = 2048;
 static const int MAX_H = 1024;
 
-// {R,G,B} -> one character. Black is a space and white is '#', exactly as the
-// pre-colour harness printed them, so every Studio II capture and the whole §9
-// comparison is byte-identical. The six chromatic values only ever
-// appear on a CDP1864 machine, and get their initials.
+// {R,G,B} -> one character. Preserve space/black and #/white so existing Studio
+// II ASCII baselines remain byte-identical. Colour-machine values use initials.
 static inline char ascii_for(uint8_t rgb) {
     switch (rgb & 7) {
         case 0: return ' ';   // black
@@ -251,8 +249,7 @@ struct FrameGrabber {
 
     // Returns true on the clock where a frame boundary was crossed.
     // `rgb` is {R,G,B}, one bit per channel, matching the core's video output.
-    // The Studio II is monochrome so only 0 and 7 ever occur, which is what
-    // keeps the ASCII output byte-identical to the pre-colour harness.
+    // Studio II emits only black and white; colour machines can use all eight.
     bool clock(bool vs, bool hs, bool de, uint8_t rgb) {
         bool boundary = false;
 
@@ -619,8 +616,8 @@ int main(int argc, char** argv) {
     uint32_t joy_mask = 0; long joy_from = -1, joy_to = -1;
     uint32_t joy2_mask = 0; long joy2_from = -1, joy2_to = -1;
     std::string swap_file; long swap_frame = -1; bool swap_done = false;
-    // Mid-run firmware load and machine switch, to replay the OSD flow of
-    // switching machines on a running core (docs/handoff.md, 2026-08-19).
+    // Mid-run firmware load and machine switch replay the OSD flow on a
+    // running core.
     std::string swap0_file; long swap0_frame = -1; bool swap0_done = false;
     uint8_t  machine_at = 0; long machine_at_frame = -1; bool machine_at_done = false;
     uint8_t  joy_override = 0;   // applied once top exists
@@ -843,13 +840,9 @@ int main(int argc, char** argv) {
             for (int addr = 0; addr < 0x1000; addr++)
                 set_rom_byte(slot, addr, 0xA5);
 
-    // Pre-fill the RAM arrays with junk before the machine boots. On hardware
-    // the 512-byte RAM (and the Visicom's plane-1 RAM) is wiped only by CLEAR:
-    // it survives firmware/cartridge loads and OSD machine switches, so a
-    // Visicom booted after a Studio II session starts with the Studio II's
-    // leftovers. The sim's arrays start zeroed, which hid the Visicom
-    // display-base rotation (docs/handoff.md, 2026-08-19). A simple xorshift
-    // keyed by --ram-junk SEED makes that difference reproducible.
+    // Hardware RAM is wiped only by CLEAR and survives loads and machine
+    // switches. Verilator starts arrays at zero, so --ram-junk uses a seeded
+    // xorshift to expose behavior that depends on uncleared RAM.
     if (ram_junk_seed) {
         uint32_t s = ram_junk_seed;
         auto nxt = [&s]() { s ^= s << 13; s ^= s >> 17; s ^= s << 5; return (uint8_t)s; };

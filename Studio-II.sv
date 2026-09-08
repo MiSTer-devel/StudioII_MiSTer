@@ -326,8 +326,8 @@ pll pll
 	.outclk_1(clk_vid)
 );
 
-// The CDP1861 emits one pixel per CPU clock: 1.7897725 MHz nominal, 1.760229 MHz
-// here (clk_sys/4). TODO: A point of potential accuracy improvement.
+// The CDP1861 emits one pixel per CPU clock: 1.7897725 MHz nominal versus
+// 1.760229 MHz here (clk_sys/4).
 reg [1:0] ce_cnt = 2'd0;
 always @(posedge clk_sys) ce_cnt <= ce_cnt + 2'd1;
 wire ce_pix = (ce_cnt == 2'd0);
@@ -799,6 +799,6 @@ video_freak video_freak
     .SCALE({1'b0, status[12:11]})
 );
 
-assign LED_USER = 1'b0;   // was undriven
+assign LED_USER = 1'b0;
 
 endmodule

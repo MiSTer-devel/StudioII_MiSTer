@@ -141,17 +141,15 @@ module cdp1802 (
   wire take = sense ^ N[3];
 
   // ---------- interrupt / DMA arbitration ----------------------------
-  // The 1802 samples DMA and interrupt requests at a machine-cycle boundary, DMA first. INT_N is
-  // active low -- rcastudioii.sv drives it from ~INT -- so a request is INT_N == 0. The old code
-  // tested INT_N == 1'b1, which is why the interrupt was never taken even once it was uncommented.
-  // DMA outranks the interrupt, and both are only taken between instructions.
+  // The 1802 samples DMA and interrupt requests between instructions at a
+  // machine-cycle boundary. DMA has priority; INT_N is active low.
   wire int_pending = ~INT_N & IE;
   wire [3:0] next_cycle = dma_in_req  ? DMA_IN    :
                           dma_out_req ? DMA_OUT   :
                           int_pending ? INTERRUPT : FETCH;
 
   // ---------- fetch/interrupt/dma/execute ----------------------------
-  // state_n is assigned on every path: leaving DMA_IN/DMA_OUT unassigned inferred a latch.
+  // Assign state_n on every path to avoid a latch.
   always @*
     case (state)
     // A real 1802 honours DMA only between instructions -- fetch always

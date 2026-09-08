@@ -205,7 +205,7 @@ cdp1802 cdp1802 (
   .WAIT_N       (WAIT_N),       // I
   .INT_N        (~INT),         // I
   .dma_in_req   (dma_in_req),   // I
-  .dma_out_req  (DMAO),         // I  TODO: check
+  .dma_out_req  (DMAO),         // I  active-high DMA-OUT request
   .SC           (SC),           // O
 
   .io_din       (cpu_din),      // I
@@ -716,7 +716,7 @@ assign cart_q = (machine == 2'd0) ? cart0_q :
 // Studio II and III; $1000-$11FF on the Visicom, whose bit plane 0 is its top
 // half). The Visicom's plane 1 is the separate 256-byte array below.
 // Selected by A9 = 0, so the address inside it is just A8-A0.
-// Add a port-B writer used to clear VRAM on CLEAR without resetting the Pixie
+// CLEAR wipes display RAM without resetting the Pixie.
 reg [8:0] clear_addr_b = 9'd0;
 reg       clear_active = 1'b0;
 

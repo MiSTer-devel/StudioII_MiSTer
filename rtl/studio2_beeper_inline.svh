@@ -295,10 +295,9 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// Scale the 8-bit envelope by 24 (maximum 6120, close to the old +/-6000).
+// Scale the 8-bit envelope by 24 for a maximum magnitude of 6120.
 // Production Studio III machines use the CDP1864's fixed-level tone instead.
 wire [13:0] snd_magnitude = ({6'd0, snd_amp} << 4) + ({6'd0, snd_amp} << 3);
 wire signed [15:0] snd_sample = snd_out ? $signed({2'b00, snd_magnitude})
 	                                   : -$signed({2'b00, snd_magnitude});
 assign audio = is_studio3 ? (aud_tone ? 16'sd6000 : -16'sd6000) : snd_sample;
-
