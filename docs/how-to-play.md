@@ -23,7 +23,7 @@ The machines have two ten-key pads, identified here as **A** and **B**. `A5` mea
   0
 ```
 
-Many games treat `2/4/6/8` as up/left/right/down and `1/3/7/9` as diagonals. This document names the console keys directly; references to PC arrow keys, Space, Tab, W/A/S/Z or a numeric keypad in emulator documentation have been translated back to A/B keypad positions where the relationship is known.
+Most games treat `2/4/6/8` as up/left/right/down, with some also including `1/3/7/9` as diagonals. This document names the console keys directly; references to PC arrow keys, Space, Tab, W/A/S/Z or a numeric keypad in emulator documentation have been translated back to A/B keypad positions where the relationship is known.
 
 `CLEAR` means the console CLEAR button, available from F3, the OSD or gamepad Select in this core. Unless an entry says otherwise, press CLEAR before selecting or restarting a program.
 
@@ -453,8 +453,7 @@ and behavior have not been confirmed.
 
 ### Gambler II (CAS-141)
 
-Playability is confirmed by the maintainer report above; the individual keypad
-sequences below have not been separately verified.
+Individual keypad sequences below have not been separately verified.
 
 - `A5`: Slot Machine 1. It starts with 500 points and ends at zero or 1500.
   Bet 10-50 points with `B1`-`B5`, start the reels with `B0`, and hold `B5`
