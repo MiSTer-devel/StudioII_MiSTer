@@ -21,10 +21,10 @@
 #   $1000 read   -> RAM $0800        ROM is NOT mirrored above $0FFF
 #   $1200 read   -> open bus         A9 = 1
 # ---------------------------------------------------------------------------
-set -uo pipefail
+set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RTL="$ROOT/verilator/obj_dir_headless/Vtop"
+RTL="${HEADLESS_SIM:-$ROOT/verilator/obj_dir_headless/Vtop}"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 [[ -x "$RTL" ]] || { echo "error: build the RTL sim: (cd verilator && make headless)" >&2; exit 1; }
@@ -58,7 +58,7 @@ open(sys.argv[1], 'wb').write(bytes(code) + bytes(0x400 - len(code)))
 EOF
 
 "$RTL" --bios "$ROOT/rom/studio2.rom" --cart "$TMP/memtest.bin" \
-       --frames 30 --dump 29 --vram --dump-file "$TMP/dump.txt" --quiet >/dev/null 2>&1
+       --frames 30 --dump 29 --vram --dump-file "$TMP/dump.txt" --quiet >/dev/null
 
 byte() {  # $1 = address, e.g. 08F0
     local row=${1:0:3}0 col=$(( 16#${1:3:1} ))

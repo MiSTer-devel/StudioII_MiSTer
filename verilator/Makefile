@@ -86,6 +86,7 @@ VOUT = obj_dir/Vtop.cpp
 HL_DIR = obj_dir_headless
 HL_EXE = ./$(HL_DIR)/Vtop
 HL_SRC = sim_headless.cpp
+HL_HEADERS = $(wildcard $(RTL)/*.svh)
 HL_VOPT = -O3 --x-assign fast --x-initial fast --noassert --public-flat-rw \
 	-Wno-fatal -Wno-PINMISSING -Wno-WIDTH -Wno-UNOPTFLAT -Wno-CASEINCOMPLETE
 
@@ -93,7 +94,7 @@ all: $(EXE)
 
 headless: $(HL_EXE)
 
-$(HL_EXE): $(V_SRC) $(HL_SRC) Makefile
+$(HL_EXE): $(V_SRC) $(HL_HEADERS) $(HL_SRC) Makefile
 	$V -cc $(HL_VOPT) -exe --Mdir ./$(HL_DIR) $(V_INC) $(TOP) \
 		-CFLAGS "-O2 -std=c++17" -LDFLAGS "-lz" $(V_SRC) $(HL_SRC)
 	$(MAKE) -C $(HL_DIR) -f Vtop.mk

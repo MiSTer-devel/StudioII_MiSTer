@@ -47,6 +47,15 @@ static Vtop* top = nullptr;
 static vluint64_t main_time = 0;
 double sc_time_stamp() { return (double)main_time; }
 
+static auto& cart_memory(int slot) {
+    switch (slot) {
+        case 0: return RS(cart0__DOT__mem);
+        case 1: return RS(cart1__DOT__mem);
+        case 2: return RS(cart2__DOT__mem);
+        default: return RS(cart3__DOT__mem);
+    }
+}
+
 static uint8_t rom_byte(int slot, int addr) {
     switch (slot) {
         case 0: return ROM0[addr];
@@ -82,13 +91,13 @@ static std::vector<uint8_t> read_binary(const std::string& path) {
 }
 
 // Apply one cartridge image to an expected ROM image and return its final
-// $08-$0F page-ownership mask. This mirrors the RTL loader closely enough to
+// $00-$0F page-ownership mask. This mirrors the RTL loader closely enough to
 // check sequential downloads without treating stale BRAM bytes as visible ROM.
-static uint8_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& path, int machine) {
+static uint16_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& path, int machine) {
     const std::vector<uint8_t> data = read_binary(path);
     const bool st2 = data.size() >= 4 && data[0] == 'R' && data[1] == 'C' &&
                      data[2] == 'A' && data[3] == '2';
-    uint8_t pages = 0;
+    uint16_t pages = 0;
 
     for (size_t i = 0; i < data.size(); i++) {
         size_t addr;
@@ -123,9 +132,12 @@ static uint8_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& pa
 
         if (!write) continue;
         rom[addr] = data[i];
-        bool claim = (addr & 0x800) && (machine == 3 || (addr & 0x600));
+        unsigned page = addr >> 8;
+        bool claim = machine == 3 ? page >= 8 :
+            page >= 4 && page != 8 && page != 9 &&
+            !((machine == 1 || machine == 2) && page == 0x0b);
         bool format_known = st2 ? i >= 0x100 : i >= 3;
-        if (claim && format_known) pages |= (uint8_t)(1u << ((addr >> 8) & 7));
+        if (claim && format_known) pages |= (uint16_t)(1u << page);
     }
     return pages;
 }
@@ -835,10 +847,14 @@ int main(int argc, char** argv) {
     // Give the loader check a known background in every slot. It can then
     // prove both positive routing and that rejected/unsupported bytes did not
     // modify any destination.
-    if (loader_check)
+    if (loader_check) {
         for (int slot = 0; slot < 5; slot++)
             for (int addr = 0; addr < 0x1000; addr++)
                 set_rom_byte(slot, addr, 0xA5);
+        for (int slot = 0; slot < 4; slot++)
+            for (int addr = 0; addr < 0x1000; addr++)
+                cart_memory(slot)[addr] = 0xA5;
+    }
 
     // Hardware RAM is wiped only by CLEAR and survives loads and machine
     // switches. Verilator starts arrays at zero, so --ram-junk uses a seeded
@@ -1047,14 +1063,23 @@ int main(int argc, char** argv) {
         cycles++;
     }
 
+    if (loader_check && (!io.finished || io.active || (swap_frame >= 0 && !swap_done))) {
+        fprintf(stderr, "error: loader check stopped before downloads completed\n");
+        top->final();
+        if (df != stdout) fclose(df);
+        delete top;
+        return 2;
+    }
+
     if (loader_check) {
         std::vector<std::vector<uint8_t>> expected(5, std::vector<uint8_t>(0x1000, 0xA5));
         const std::vector<uint8_t> bios_data = read_binary(bios);
         for (size_t i = 0; i < bios_data.size() && i < 0x1000; i++) expected[machine][i] = bios_data[i];
 
-        uint8_t expected_pages = 0;
-        if (!cart.empty()) expected_pages = apply_cart_image(expected[machine], cart, machine);
-        if (!swap_file.empty()) expected_pages = apply_cart_image(expected[machine], swap_file, machine);
+        std::vector<std::vector<uint8_t>> expected_cart(4, std::vector<uint8_t>(0x1000, 0xA5));
+        uint16_t expected_pages = 0;
+        if (!cart.empty()) expected_pages = apply_cart_image(expected_cart[machine], cart, machine);
+        if (!swap_file.empty()) expected_pages = apply_cart_image(expected_cart[machine], swap_file, machine);
 
         bool fw_valid = false;
         if (!chip8_fw.empty()) {
@@ -1087,6 +1112,17 @@ int main(int argc, char** argv) {
                 }
             }
         }
+        for (int slot = 0; slot < 4; slot++) {
+            for (int addr = 0; addr < 0x1000; addr++) {
+                uint8_t got = cart_memory(slot)[addr];
+                if (got != expected_cart[slot][addr]) {
+                    if (failures < 12)
+                        printf("FAIL cart%d[$%03X] = %02X, expected %02X\n",
+                               slot, addr, got, expected_cart[slot][addr]);
+                    failures++;
+                }
+            }
+        }
         if ((RS(chip8_fw_loaded) != 0) != fw_valid) {
             printf("FAIL chip8_fw_loaded = %u, expected %u\n",
                    (unsigned)RS(chip8_fw_loaded), fw_valid ? 1u : 0u);
@@ -1098,21 +1134,21 @@ int main(int argc, char** argv) {
             failures++;
         }
 
-        if ((uint8_t)RS(cart_page) != expected_pages) {
-            printf("FAIL cart_page = %02X, expected %02X\n",
+        if ((uint16_t)RS(cart_page) != expected_pages) {
+            printf("FAIL cart_page = %04X, expected %04X\n",
                    (unsigned)RS(cart_page), (unsigned)expected_pages);
             failures++;
         }
 
         // Visicom's resident half is always visible. Its cartridge half is
         // visible page by page, and an omitted page must return $FF even though
-        // a preceding cartridge's bytes remain physically present in ROM3.
+        // a preceding cartridge's bytes remain physically present in cart3.
         if (machine == 3) {
             for (int page = 0; page < 16; page++) {
                 for (int offset : {0x00, 0xff}) {
                     int addr = (page << 8) | offset;
-                    bool visible = page < 8 || (expected_pages & (1u << (page - 8)));
-                    uint8_t want = visible ? expected[3][addr] : 0xff;
+                    uint8_t want = page < 8 ? expected[3][addr] :
+                        (expected_pages & (1u << page)) ? expected_cart[3][addr] : 0xff;
                     uint8_t got = read_cpu_bus((uint16_t)addr);
                     if (got != want) {
                         printf("FAIL Visicom bus[$%03X] = %02X, expected %02X\n",
@@ -1169,6 +1205,9 @@ int main(int argc, char** argv) {
         top->joystick_1 = 0;
         for (const FirmwareProfileCase& c : firmware_profiles) {
             top->machine = c.machine;
+            top->rootp->top__DOT__cart_unload = 1;
+            clock_core();
+            top->rootp->top__DOT__cart_unload = 0;
             RS(builtin_sel) = 0;
             RS(builtin_profile) = 0;
             RS(builtin_start_key) = 1;
@@ -1581,11 +1620,12 @@ int main(int argc, char** argv) {
     printf("      last frame %dx%d, hash %08X, %s\n",
            fg.last_width, fg.last_height, fg.hash(),
            fg.blank() ? "BLANK (nothing was drawn)" : "has content");
-    if (cycles >= max_cycles) printf("      NOTE: stopped on --max-cycles\n");
+    const bool incomplete = fg.frame <= frames;
+    if (incomplete) fprintf(stderr, "error: simulation stopped before requested frames completed\n");
     if (!fg.complete)         printf("      WARNING: no complete frame was ever captured\n");
 
     top->final();
     if (df != stdout) fclose(df);
     delete top;
-    return 0;
+    return incomplete ? 2 : 0;
 }

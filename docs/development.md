@@ -240,16 +240,57 @@ No single test establishes overall accuracy:
 
 Canonical paths are `rom/` for firmware, `software/` for the corpus, `tools/refemu/` for the reference emulator, `verilator/obj_dir_headless/Vtop` for the headless model, and `out/` for generated captures. `refs/` is optional research material and must not be a normal build dependency. Scripts derive the repository root from their own location; never embed a maintainer's private path.
 
-Quartus commands are `tools/quartus-build.sh`, `tools/quartus-build.sh map`, and `tools/quartus-build.sh clean`. The script uses the amd64 Quartus 17 container with `--parallel=1`, which is required under Apple Silicon emulation. After RAM changes, inspect `output_files/Studio-II.map.rpt` for inferred `altsyncram` instances.
+Local builds normally use the Quartus 17.0.x GUI: open `Studio-II.qpf` and use
+**Processing > Start Compilation** (or **Start > Start Analysis & Synthesis**
+for a map-only check). After RAM changes, inspect
+`output_files/Studio-II.map.rpt` for inferred `altsyncram` instances.
+
+The current Windows installation is `C:\intelFPGA_lite\17.0\quartus\bin64`.
+For an explicitly requested command-line build, run from the repository root
+in PowerShell:
+
+```powershell
+& 'C:\intelFPGA_lite\17.0\quartus\bin64\quartus_sh.exe' --flow compile Studio-II
+# Analysis & synthesis only:
+& 'C:\intelFPGA_lite\17.0\quartus\bin64\quartus_map.exe' Studio-II
+```
+
+No PATH change is needed with these absolute paths. Verify the installation path
+on other machines. `tools/quartus-build.sh` is a separate, Docker-only workflow
+for the amd64 Quartus 17 container; its `--parallel=1` workaround is for Apple
+Silicon emulation. It is not the default local build command.
 
 Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, and `tools/verify-beeper.sh`. The old corpus runners (`score-21.sh`, `score-conic.sh`, `play-test.sh`, `probe-keys.sh`, `visicom-test.sh`, and `contact-sheet.py`) are disabled because they use obsolete dump paths. Use the game-start sweep below for game captures. Synthetic device/loader tests remain separate from game-start discovery.
 
+Run `bash tools/headless-smoke.sh` in the configured Verilator build shell for
+the existing loader/input, memory, CHIP-8, Visicom ownership, and tone checks.
+It never builds: missing output or an unsuccessful `make -q` freshness check
+stops the suite. Build explicitly with `make -C verilator headless` first;
+the headless target tracks the RTL's `.svh` includes as well as source files.
+Freshness uses dependency timestamps, not a content-addressed build record.
+The suite needs Bash, make, Python 3, and GNU timeout, plus the firmware used by
+the existing checks. The CHIP-8 loader check generates its own interpreter-sized
+byte fixture; it tests routing and acceptance, not interpreter execution.
+Each check has a 120-second limit (`HEADLESS_TIMEOUT` overrides seconds), and
+each invocation retains separate logs in a new `out/headless-smoke.*` directory.
+Any failed or timed-out check makes the suite return nonzero; remaining checks
+still run. `tools/verify-beeper.sh` stays separate because it starts builds.
+
+`python3 -B tools/test-headless-smoke.py` exercises crash propagation, empty
+measurements, stale-build rejection, timeouts, and log retention using substitute
+programs; it does not run RTL. Individual directed scripts accept `HEADLESS_SIM`
+for these negative controls; the suite always selects the canonical model.
+These checks establish runner behavior, not that every RTL assertion detects
+the corresponding hardware defect. The simulator returns an error if it stops
+before completing the requested frames or loader downloads. An intentionally
+disabled display remains valid for audio-only tests.
+
 The focused input/display checks in `--loader-check` cover Pinball CRC selection,
 Grand Pack's PAL/NTSC menu selection and unload, Climber directions, and `OUT 1`
-display enable. After changing the included mapping files, explicitly rebuild:
+display enable. To build and run these checks separately:
 
 ```sh
-make -C verilator -B headless
+make -C verilator headless
 verilator/obj_dir_headless/Vtop --bios rom/studio2.rom --loader-check --quiet
 ```
 

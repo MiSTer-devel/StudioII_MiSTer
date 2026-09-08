@@ -393,6 +393,12 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 
 ## Visicom COM-100
 
+Maintainer hardware testing on 2026-09-08 confirms all Visicom games are playable
+with the existing control schemes on the current build. This is overall
+playability confirmation; individual keypad details still marked unverified
+below need specific confirmation, and exact-image automated startup baselines
+have not been established by this report.
+
 Select the Visicom machine and use its firmware. `A1/A2/A3/A4/A7` select resident games even with a cartridge loaded. After CLEAR, select a cartridge game directly; do not prefix its selector with `A0`.
 
 ### Resident games
@@ -447,7 +453,8 @@ and behavior have not been confirmed.
 
 ### Gambler II (CAS-141)
 
-**Unverified.** Core play has not been confirmed.
+Playability is confirmed by the maintainer report above; the individual keypad
+sequences below have not been separately verified.
 
 - `A5`: Slot Machine 1. It starts with 500 points and ends at zero or 1500.
   Bet 10-50 points with `B1`-`B5`, start the reels with `B0`, and hold `B5`

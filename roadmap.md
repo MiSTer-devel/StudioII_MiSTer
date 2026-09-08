@@ -38,6 +38,9 @@ technical documents; completed milestones belong in release notes and Git.
 
 ## Regression suite
 
+- Extend the screenshot corpus to Fullset Homebrew, Prototypes, and Revisions
+  after the directed smoke suite is trustworthy; keep them outside the current
+  default scope and review exact-image startup expectations before promotion.
 - Document the headless harness contract: loading, reset settling, frame and input
   timing, capture outputs, machine selection, and reference-emulator limits.
 - Replace uniform corpus scoring with a small declarative scenario manifest and
