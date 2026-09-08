@@ -1393,6 +1393,7 @@ int main(int argc, char** argv) {
             }
         }
         const unsigned saved_pad_b_s2 = RS(cart_pad_b_s2);
+        const unsigned saved_start_key = RS(start_key);
         RS(cart_pad_b_s2) = 1;
         for (unsigned mode : tennis_modes) {
             for (unsigned digit = 0; digit < 10; digit++) {
@@ -1404,13 +1405,18 @@ int main(int argc, char** argv) {
                                        0, mode == 2 ? key : 0,
                                        "Eight-way B second controller");
             }
-            expect_profile_players(8, mode, 1u << 6, 0, 1u << 1, 0,
-                                   "Eight-way B Start stays on A");
+            for (unsigned start : {0u, 1u, 15u}) {
+                RS(start_key) = start;
+                expect_profile_players(8, mode, 1u << 6, 0,
+                                       start < 10 ? 1u << start : 0u, 0,
+                                       "Eight-way B preserves configured Start on A");
+            }
             expect_profile_players(8, mode, 1u << 11, 1u << 25,
                                    1u << 3, 1u << 7,
                                    "Eight-way direct keypads remain independent");
         }
         RS(cart_pad_b_s2) = saved_pad_b_s2;
+        RS(start_key) = saved_start_key;
 
         const unsigned saved_crc = RS(cart_crc);
         const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
