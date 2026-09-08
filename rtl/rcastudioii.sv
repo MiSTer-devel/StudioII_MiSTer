@@ -164,8 +164,8 @@ reg  [9:0] playerB = 10'h0;
 `include "studio2_input_mapping.svh"
 ////////////////// CPU //////////////////////////////////////////////////////////////////
 
-// EF4=player B, EF3=player A, EF2 unused (high), EF1=1861 display status. Only keys 0-9 exist, so
-// guard the index: keylatch 10-15 used to read off the end of the 10-bit playerA/playerB vectors.
+// EF4=B, EF3=A, EF2=unused (high), EF1=1861 display status.
+// The CD4515 outputs 10-15 have no keypad connection.
 wire  [3:0] EF;
 wire        key_valid = (keylatch < 4'd10);
 wire  [9:0] padA = playerA | joyA_active | osk_a;

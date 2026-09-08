@@ -75,10 +75,13 @@ consolidate games that need the same directions and button assignments. Evaluate
 renaming `Homebrew` to `Robson`: it represents Paul Robson's controls, not a
 generic homebrew layout; review `2P Homebrew` naming and coverage as well.
 
-- Gameplay-verify the Tennis/Squash and Gunfighter/Moonship correction: explicit
-  1P now mirrors A/B, eight-way keys are restored, and Start stays A1 across
-  Players settings. Auto retains solo B routing. The initial audit in
-  `docs/controller.md` also records Race's reported B8 brake mismatch.
+- One-player Gunfighter is confirmed working. Complete the remaining
+  Tennis/Squash and Gunfighter/Moonship coverage: two-player Gunfighter, both
+  controllers, Moonship diagonals, Squash's B-side racquet choice, the A-side
+  ball-speed choices and routing changes during play.
+- Verify Race Colour v1/v2 controls separately from Race.
+- Audit Bowling/Baseball direction restrictions and alternating keypad roles;
+  assess Robson games individually for setup digits and cross-pad actions.
 - Keep Auto/1/2 for the initial cleanup, with consistent meanings: Auto uses
   the title's normal layout; 1P gives one controller access to both keypads,
   mirroring symmetric controls; 2P assigns controllers 1/2 to keypads A/B.
@@ -104,10 +107,10 @@ generic homebrew layout; review `2P Homebrew` naming and coverage as well.
 - Prevent the left analog stick from also generating ordinary profile movement
   while Numstick is using it to select `0`. Prefer automatic suppression while
   Numstick is active, unless an explicit left-stick option proves necessary.
-- Verify the physical MPT-02-family joystick directions from primary material
-  or hardware before describing them as equivalent to the neutral eight-way
-  fallback. The matching Visicom layout is documented; similarity alone is not
-  evidence for the MPT-02 family.
+- MPT-02 manuals confirm the optional joystick adaptor's `2/4/6/8` cardinals
+  for Speedway/Tag and Star Wars. Verify other titles and the Fire/Extra buttons
+  from primary material or hardware before generalizing that equivalence across
+  the machine family. The matching Visicom layout is documented separately.
 
 ## Keyboard and keypad options
 

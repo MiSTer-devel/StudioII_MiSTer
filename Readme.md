@@ -96,7 +96,7 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 **Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** allows direct profile selection.
 
-**Mapping: Manual** overrides automatic mappings and enables the Profile field.
+Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Numstick (on-screen keypad)
 

@@ -8,7 +8,6 @@ Game names follow the Fullset v12.1 filenames. Instructions are consolidated fro
 
 - [Console keypad notation](#console-keypad-notation)
 - [CHIP-8 programs](#chip-8-programs)
-- [Profile-oriented quick index](#profile-oriented-quick-index)
 - [RCA Studio II resident games](#rca-studio-ii-resident-games)
 - [Studio II retail cartridges](#studio-ii-retail-cartridges)
 - [Studio III / MPT-02 programs](#studio-iii--mpt-02-programs)
@@ -58,47 +57,6 @@ not supported. The `$900`-byte payload limit follows from loading at virtual
 `$0200` and requiring the program to end by `$0AFF`; it is not an `$0B00`-byte
 file-size allowance.
 
-## Profile-oriented quick index
-
-This table records the minimum input shape needed for a useful controller profile. Full setup and play instructions follow.
-
-| Game or program | Machine | Start / selection | Input shape |
-|---|---|---|---|
-| Classic CHIP-8 programs | Studio II / III | Load `.ch8` directly | D-pad `5/7/8/9`; Start `1`; Fire `F`; Extra `0` |
-| Resident Doodle / Patterns | Studio II / III | `A1` / `A2` | 8-way on B plus B5/B0; Studio III colour/tone on A |
-| Resident Bowling | Studio II / III / Visicom | Studio `A3`; Visicom `A2` | 2/5/8, alternating A/B |
-| Resident Freeway | Studio II | `A4`, then B0/A0 | B4/B6 steer; A2 accelerates; A8 brakes |
-| Resident Addition | Studio II | `A5` | Full numeric keypad |
-| Baseball | Studio II / Visicom | `A0` | A/B cross plus center; roles swap |
-| Biorhythm | Studio II | `A0` | Full numeric keypad B |
-| Blackjack | Studio II | `A1` or `A2` | Full numeric keypads; 1/2/0 actions |
-| Concentration + Match | Studio III / MPT-02 | Any digit chooses a player | Full numeric A/B |
-| Fun with Numbers | Studio II | `A1`, `A2` or `A3` | Full numeric A/B |
-| Gunfighter / Moonship Battle | Studio II | `A1`, `A2` or `A3` | Cross/8-way plus center on A/B |
-| Pinball | Studio III / MPT-02 | `A1` or `A2` | 4/6 flippers, 1 launch, 0 shove |
-| Space War | Studio II | `A1` or `A3` | Asymmetric A/B fire and steering |
-| Speedway / Tag | Studio II | `A1` or `A2` | Cross on both pads |
-| Star Wars | Studio III / MPT-02 | `A1`, `A2` or `A3` | Cross on both pads; role inversion |
-| Tennis / Squash | Studio II | `A2` / `A1` | 2/8 paddles plus setup digits |
-| TV Bingo | Studio III / MPT-02 | `A1`–`A4` | Full numeric B |
-| Asteroids | Studio II | `A5` | 2/4/6 plus 0; either pad |
-| Berzerk | Studio II | `A5` | 8-way A, fire B0 |
-| Fifteen Puzzle | Studio II | any A key | Cross plus center on A |
-| Combat | Studio II | game code on A, then B0 | Cross plus fire on both pads |
-| Hockey | Studio II | `A1`–`A4`, then `A8/A9` | 2/8/0 on both pads |
-| Invaders | Studio II | `A0` restarts | A4/A6 movement, B0 fire |
-| Invasion, The | Studio II | `A1`–`A6` difficulty | A4/A6 movement, A5 fire |
-| Flappy Pixel | Studio II | `A1` | A5 flap; existing 8-way profile fits |
-| Kaboom | Studio II | `A0` | A4/A6 movement |
-| Pacman | Studio II | `A0` | A2/A4/A6 and B8 |
-| Race | Studio II | not yet documented | 8-way A; A2 acceleration can be held while steering |
-| Scramble | Studio II | `A6` or `B6` | 2/4/8/0; either pad |
-| Space Explorer | Studio II | program starts directly | 8-way B, B5 lock, A0 fire |
-| Visicom Doodle / Patterns | Visicom | `A1` / `A3` | 8-way B draws; B5/B0 cycle colour forward/backward; Start repeats/resumes Patterns; A0 stops repetition |
-| Visicom Freeway | Visicom | `A4`, then B0/B5 | B2/B8 accelerate/brake; B4/B6 steer |
-| Visicom Addition | Visicom | `A7` | Full numeric keypad A or B |
-| Visicom cartridges | Visicom | normally `A0` | Per-title; several remain unknown |
-
 ## RCA Studio II resident games
 
 The standard Studio II firmware contains five selectable programs.
@@ -107,7 +65,10 @@ The standard Studio II firmware contains five selectable programs.
 
 - Move the dot with the eight direction keys on keypad B.
 - `B5` draws; `B0` moves without drawing. Retracing a line erases it.
-- Doodle can be handed into Patterns by pressing `A2`. Press a direction, then `B0`, to begin transforming the image; `B5` freezes and `B0` resumes.
+- Doodle can be handed into Patterns without pressing CLEAR. Press `A2`, enter
+  a pattern on B and press `B0` to repeat it over the drawing. For the manual's
+  full-screen colour reversal, press `A2`, `B6`, then `B0`. `B5` freezes and
+  `B0` resumes.
 
 ### Patterns — `A2`
 
@@ -125,7 +86,8 @@ The standard Studio II firmware contains five selectable programs.
 ### Freeway — `A4`
 
 - `B0` starts the normal game; `A0` starts the difficult game.
-- `A2` accelerates, `A8` brakes, and `B4/B6` steer left/right.
+- `A2` accelerates, `A8` slows the car back to normal speed, and `B4/B6`
+  steer left/right.
 - Avoid the computer car. Distance is scored after two minutes.
 
 ### Addition — `A5`
@@ -166,14 +128,17 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 
 - `A1`: Squash, one player using keypad B.
 - `A2`: Tennis, two players using both keypads.
-- Each player chooses racquet size on their pad: `4` small, `5` medium, `6` large.
-- Player A selects ball speed and begins: `A7` slow, `A8` normal, `A9` fast.
+- In Squash, choose racquet size on B: `B4` small, `B5` medium, `B6` large.
+  In Tennis, each player makes the same choice on their own pad.
+- Ball speed and start are always selected on A: `A7` slow, `A8` normal,
+  `A9` fast. There is no dedicated gamepad shortcut for these setup keys.
 - During play, `2` moves a racquet up and `8` down on its player's keypad. Between serves, `0` pauses/resumes.
 - The `Gunfighter/Tennis` profile uses eight directions, Fire `5` and Extra `0`.
   Auto drives B; Players 1 mirrors controller 1 onto both pads; Players 2 splits
   controllers 1/2 onto A/B. Start always selects `A1` Squash. Select `A2` Tennis
   separately on keypad A; in Auto use Numstick A or direct keys for A-side setup.
-- Tennis is first to 21, winning by two. Squash ends after 21 misses or 200 completed volleys.
+- Tennis is first to 21, winning by two; extended play ends at 200. Squash ends
+  after 21 misses or 200 completed volleys.
 
 ### TV Arcade IV - Baseball
 
@@ -192,6 +157,7 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - Each player uses `2/8` to move up/down and `5` to fire.
 - Tap `5` for one fast bullet; hold it for two slower bullets.
 - Two minutes; most hits wins.
+- One-player Gunfighter has been confirmed working with the current profile.
 
 **Moonship Battle — `A3`**
 
@@ -216,6 +182,8 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - At `SPEED 1 2 3?`, choose `1` slow, `2` medium or `3` fast. In two-player mode, the keypad used for this choice starts as the chaser.
 - Both players use `2/4/6/8` on their own pad.
 - When chased, the keys move normally. When pursuing as the viewfinder, directions invert: `2` moves the target down, `8` up, `4` right and `6` left.
+- Escaping the viewfinder normally swaps roles. In advanced one-player mode,
+  the computer scores when it escapes and the player remains the chaser.
 - First to nine destroyed ships wins.
 
 ### TV Casino Series - Blackjack
@@ -238,6 +206,7 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 - Press `A0`.
 - Enter birth date and then chart start date on keypad B in `MM DD YYYY` form.
 - The 32-day chart labels physical (`P`), emotional (`E`) and intellectual (`I`) cycles and marks seven-day intervals.
+- Press `A0` again to enter new birth and start dates.
 
 ### TV School House I
 
@@ -271,7 +240,7 @@ The one-player Guess the Number game allows 20 guesses. In Reverse, reorder 1–
 
 ## Studio III / MPT-02 programs
 
-Studio II-compatible cartridges above also run on several MPT-02-family machines. Their physical joystick commonly maps the cross to `2/4/6/8`, fire to `5` and the extra button to `0`.
+Studio II-compatible cartridges above also run on several MPT-02-family machines. See each game below for keypad controls.
 
 ### Grand Pack
 
@@ -323,6 +292,7 @@ Normal program space starts at `$0800`; bitmap RAM is `$0900-$09FF` and can be r
 - `A3` novice, `A4` standard, `A5` advanced, `A6` expert.
 - Move with `A2` up and `A4/A6` left/right.
 - After game over, `B1` plays again; CLEAR generates a fresh start.
+- Gamepad Fire supplies `B1` replay.
 
 ### Fifteen Puzzle
 
@@ -385,15 +355,14 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 - `A0` novice, `A1` standard, `A2` advanced, `A3` expert.
 - `A4/A6` move the reflector. Hold the corresponding `B4/B6` simultaneously for double speed.
 - After game over, `B1` plays again; CLEAR begins a fresh game.
+- Gamepad Fire replays; Extra plus Left/Right selects double speed.
 
 ### Race
 
-- The Race source excerpt supplied by the user scans `B4/B6` for steering;
-  the user confirms `B2` acceleration and `B8` braking.
-- Current mapping has a known mismatch: Down/Extra emits `B5` rather than `B8`.
-  Use direct keypad B8 for braking until corrected.
-- Exact source/image correspondence and full start/restart behavior still need
-  verification.
+- `B2` accelerates, `B4/B6` steer left/right and `B5` brakes. Confirmed in play.
+- Gamepad: Up/Fire accelerates, Left/Right steer, Down/Extra brakes, and Start sends B2.
+- Race Colour v1/v2 select the same profile; their controls still need
+  separate play verification.
 
 ### Rocket v1.01
 
@@ -404,6 +373,7 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 
 - Move the central cursor over a target with keypad B's eight direction keys.
 - `B5` locks onto the target; `A0` fires.
+- Gamepad Extra locks, Fire shoots, and Start is unused.
 - Eliminate all nine dots before the timer expires. The objective is a low score; taking longer to destroy a target reduces it.
 
 ### TV Arcade 2012 v1.00
@@ -423,7 +393,30 @@ Game code is a bit sum: add 128 for plane, 64 for long-range missiles, 32 for sl
 
 ## Visicom COM-100
 
-Select the Visicom machine and use its firmware. Visicom cartridges normally enter from `A0`; their internal game-selection keys are listed separately below.
+Select the Visicom machine and use its firmware. `A1/A2/A3/A4/A7` select resident games even with a cartridge loaded. Test cartridge selectors independently after CLEAR; do not prefix them with `A0`. User observations suggest `A0` and `A5` select different modes on multiple cartridges; each image still needs verification.
+
+### Cartridge names
+
+Use ASCII-compatible Hepburn with Wapuro long vowels and loan words restored to
+their original-language spelling. Preserve all existing filename metadata.
+The [No-Intro convention dated 2007-10-30](https://datomatic.no-intro.org/stuff/The%20Official%20No-Intro%20Convention%20%2820071030%29.pdf)
+specifies ASCII titles and Hepburn; the project's explicit Wapuro and loan-word
+rules resolve details not specified in that edition's abbreviated section 2.2.
+
+| Serial | Japanese title | Canonical base title |
+|---|---|---|
+| CAS-110 | 算数ドリル | Sansuu Drill |
+| CAS-130 | スポーツファン | Sports Fan |
+| CAS-140 | ギャンブラーI | Gambler I |
+| CAS-141 | ギャンブラーII | Gambler II |
+| CAS-160 | スペースコマンド | Space Command |
+| CAS-190 | 霊感 | Reikan |
+
+Japanese title spellings agree with the local cartridge notes and
+[MAME's Visicom software list](https://github.com/mamedev/mame/blob/master/hash/visicom.xml).
+`Sansuu` retains the long vowel in さんすう; `Drill` restores ドリル.
+`Reikan` is the base title; Inspiration, Bagua and Biorhythm are descriptive
+aliases, not replacements for it. This title audit does not verify game controls.
 
 ### Resident games
 
@@ -442,7 +435,7 @@ Studio II Freeway gamepad controls.
 
 ### Sports Fan (Baseball & Sumo Wrestling) (CAS-130)
 
-The cartridge enters on `A0`.
+Test `A0` and `A5` independently from reset. Existing `A0` then `A5` captures do not establish a successful Sumo start.
 
 **Baseball** uses the same role-swapping controls as Studio II Baseball: active-pad `5` swings/throws straight, `2/8` select curves and move fielders, and holding a pitch produces a change-up.
 
@@ -452,22 +445,55 @@ The cartridge enters on `A0`.
 - Player A: `A6` push, `A4` pull, `A5` throw.
 - Player B: `B4` push, `B6` pull, `B5` throw.
 
-### Inspiration (Fortunetelling & Biorhythm) (CAS-190)
+### Gambler II (CAS-141)
 
-The cartridge enters on `A0`. Keypad A controls editing: `A5` accepts/enters and `A0` deletes the current input. Dates and answers are entered on keypad B.
+The manual specifies three selections; confirm them against the exact cartridge
+image before assigning an automatic profile.
 
-- `A5`: Bagua Fortune Telling. Enter dates as `YYYY MM DD` on B.
-- `A6`: Blood Horoscope. On B, `1` blood type A, `2` B, `3` AB, `4` O.
-- `A0`: Horoscope. Enter `YYYY MM DD`; where only a birthday is requested, enter `MM DD`.
+- `A5`: Slot Machine 1. It starts with 500 points and ends at zero or 1500.
+  Bet 10-50 points with `B1`-`B5`, start the reels with `B0`, and hold `B5`
+  until the stop marker appears.
+- `A6`: Slot Machine 2. It uses the same controls, starts with 100 points and
+  permits ten bets; it also ends at zero or 1500.
+- `A0`: Electronic Dice, two players. Each player uses their own pad. Press `0`
+  to start the three dice and hold `5` until the stop marker appears, then choose
+  one of the eight displayed hands with `1`-`8`. Each die may be rerolled once:
+  use `1`, `2` or `3` to start that die and `5` to stop it. After both players
+  use all eight hands, the higher score wins.
+
+### Reikan (CAS-190)
+
+The manual specifies the selectors below; test them independently against the
+exact cartridge image. Numeric data is entered on B in two-digit groups. Press
+`A5` after each group; before accepting a mistaken group, `A0` restarts it.
+Target dates use `YY`, `MM`, `DD`, with only the final two digits of the Western
+year. The nine fortune categories are selected with `B1`-`B9`: mahjong,
+alcohol, horse racing, love, money, travel, health, work and study.
+
+- `A5`: Bagua Fortune Telling. Enter the birth date and target date, then choose
+  a category. `A0` returns to category selection for the same dates.
+- `A6`: Blood-type Fortune Telling. On B, `1` selects type A, `2` B, `3` AB and
+  `4` O; then enter the target date and choose a category.
+- `A0`: Zodiac Fortune Telling. Enter the birth month and day, then the target
+  date and category.
+
+### Space Command (CAS-160)
+
+- User observation: `A0` starts Vertical Intercept, the two-player game with
+  horizontal firing at a central target moving vertically.
+- User observation: `A5` starts Horizontal Intercept.
+- Intercept names describe target movement, not firing direction. Space War's
+  `A1` default is Horizontal Intercept, with vertical firing at horizontal targets;
+  Marcel's supplied instructions agree with the Space War selections above.
+- Verify the exact Space Command image, selection sequence and gameplay keys
+  before assigning a profile.
 
 ### Other dumped Visicom cartridges
 
-These enter on `A0`, but the supplied sources do not document enough post-start controls for a reliable profile:
+These need independent start-key probing and do not have enough verified post-start controls for a reliable profile:
 
-- Arithmetic Drill (Math Fun & Fun with Numbers) (CAS-110)
+- Sansuu Drill (CAS-110)
 - Gambler I (Blackjack) (CAS-140)
-- Gambler II (Slot Machine and Dice) (CAS-141)
-- Space Command (CAS-160)
 
 Do not infer their controls merely from similarly named Studio II cartridges; verify them by manual, trace or direct play first.
 
@@ -475,9 +501,8 @@ Do not infer their controls merely from similarly named Studio II cartridges; ve
 
 The Fullset v12.1 also contains software for which the supplied sources give no dependable gameplay instructions. These are explicit research items for future profile work:
 
-- Public-domain games: noshaders. Flappy Pixel and Race now have mapped play
-  controls, but their complete start/restart behavior is not yet documented;
-  Race's physical-keypad acceleration chords also need verification.
+- Public-domain games: noshaders; complete start/restart behavior for Flappy
+  Pixel and Race.
 - Non-retail/prototype software: Baseball-2K, Basic Videomate, Biorhythm prototype, Color Demo, Color Runs, Colors Stars and Trek, Gunfight, New Studio 2-5 Game Set, Numbers, Paul's Printer, Print Snoopy, Secret Number, Space War (512 Bytes), ST3CTA Tester 3, Studio 2 Quiz, the Studio II-TV Tennis variants and Tag-Race.
 - Utility/firmware images: AM4KBAS, the Studio IV interpreter images, VIP firmware and the 40th Anniversary Multi-Cart.
 
@@ -486,10 +511,14 @@ When filling a gap, record at minimum: exact Fullset filename and CRC, machine, 
 ## Source notes
 
 - Original RCA cartridge manuals and standalone manual transcriptions supplied with the software.
-- The original RCA *Game Instruction Manual for Studio II and Studio III* and Toshiba Visicom COM-100 manual supplied with the project.
+- The original RCA *Game Instruction Manual for Studio II and Studio III*,
+  Toshiba Visicom COM-100 manual, and Toshiba CAS-141/CAS-190 cartridge manuals
+  supplied with the project.
 - Paul Robson's author readmes for Asteroids, Berzerk, Combat, Hockey, Invaders, Kaboom, Pacman and Scramble.
 - Lee Romanow's author documentation for Climber, Fifteen Puzzle, Invasion, Outbreak, Rocket and TV Arcade 2012.
-- Direct project control testing for Flappy Pixel, Race and Speedway.
+- Azya52's Race source (`scanAccelKey`, `scanTurnKey`) and direct project
+  control testing for Flappy Pixel, Race, Pinball, Speedway and one-player
+  Gunfighter; initial play checks for Tennis/Squash.
 - Andrew Modla's `rca-studio2` data notes for Pinball, Space Explorer, the test cartridge and demonstration images.
 - Emma 02 how-to-play material for Studio II, MPT-02 and Visicom resident/cartridge software.
 - AtariAge user etxmato's documented controls for Visicom Inspiration.
