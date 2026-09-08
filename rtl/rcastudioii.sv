@@ -105,8 +105,15 @@ wire machine_visicom = (machine == MACHINE_VISICOM);
 reg  chip8_loaded = 1'b0;
 reg  chip8_write_seen = 1'b0;
 reg  chip8_fw_start_seen = 1'b0;
+reg  chip8_fw_os2 = 1'b0;
+reg  dl_d = 1'b0;
+wire dl_done = dl_d && !ioctl_download;
 wire chip8_active = chip8_loaded && !machine_visicom;
+wire chip8_os2_active = chip8_active && chip8_fw_os2;
+wire chip8_marcel_active = chip8_active && !chip8_fw_os2;
 wire preserve_sync_reset = reset && !video_reset;
+
+always @(posedge clk_sys) dl_d <= ioctl_download;
 wire [2:0] io_n;
 wire       io_inp;
 wire       io_out;
@@ -266,8 +273,8 @@ wire        rom_sel  = bank0 && !ram_a[11];
 // .rom() there as well as at $0000-$07FF, and the BIOS is a 4K image covering
 // both. Marcel's interpreter needs the same window on Studio II while CHIP-8 is
 // active. It takes precedence over the normal $0C00-$0DFF RAM mirror.
-wire        rom_hi   = (is_studio3 || chip8_active) && bank0 &&
-	                   (ram_a[11:10] == 2'b11);                              // $0C00-$0FFF
+wire        rom_hi   = (((is_studio3 && !chip8_os2_active) || chip8_marcel_active) &&
+	                   bank0 && (ram_a[11:10] == 2'b11));                    // $0C00-$0FFF
 // Colour RAM: 64 cells behind a one-page window at $0B00-$0BFF. Only six address
 // lines are decoded, which is why MAME names the storage ($0B00-$0B3F) and Emma 02
 // the window ($0B00-$0BFF) without disagreeing. See AGENTS.md for the unified-model rule.
@@ -294,9 +301,14 @@ wire        cart_sel = bank0 && cart_page[ram_a[11:8]] &&
 wire        vis_ram  = machine_visicom && !bank0 && !ram_a[9];            // 512B, plane 0 in its top half
 wire        vis_pl1  = machine_visicom && !bank0 && (ram_a[9:8] == 2'b11);// 256B, plane 1
 
+// OpenStudio2 owns a real, contiguous 4 KiB RAM window at $1000-$1FFF.
+// Suppress the Studio's normal 512-byte RAM mirrors there only while OS2 is
+// active; native firmware and Marcel retain the original mirror behavior.
+wire        os2_ram_sel = chip8_os2_active && (ram_a[15:12] == 4'h1);
 wire        ram_sel  = machine_visicom
                      ? (vis_ram || vis_pl1)
-                     : (!rom_sel && !rom_hi && !col_sel && !cart_sel && !ram_a[9]);
+                     : (!os2_ram_sel && !rom_sel && !rom_hi && !col_sel &&
+                        !cart_sel && !ram_a[9]);
 
 // Plane 1 is its own 256-byte array rather than a second window into the main
 // RAM, and it is addressed by A7-A0 in both of its roles: the video reads it
@@ -304,8 +316,9 @@ wire        ram_sel  = machine_visicom
 // reads or writes it at $13xx. Same low byte either way, so one single-port
 // array serves both and there is never a conflict -- the CPU is not driving the
 // bus during a DMA cycle.
-wire        cpu_wr   = ram_wr && ram_sel && !vis_pl1;             // RAM is the only writeable thing
-wire        pl1_wr   = ram_wr && vis_pl1;                        // ...and the Visicom's second plane
+wire        cpu_wr   = ram_wr && ram_sel && !vis_pl1;             // native/Visicom main RAM
+wire        os2_cpu_wr = ram_wr && os2_ram_sel;                   // OpenStudio2 4 KiB CHIP-8 RAM
+wire        pl1_wr   = ram_wr && vis_pl1;                         // Visicom's second plane
 wire        col_wr   = ram_wr && col_sel;
 
 // ---- CDP1864 colour RAM ---------------------------------------------------
@@ -342,21 +355,24 @@ wire [7:0]  rom_q;
 wire [7:0]  cart_q;
 wire [7:0]  sram_q;
 wire [7:0]  pl1_q;
-reg         rom_sel_q, cart_sel_q, ram_sel_q, pl1_sel_q;
+wire [7:0]  os2_ram_q;
+reg         rom_sel_q, cart_sel_q, ram_sel_q, pl1_sel_q, os2_ram_sel_q;
 always @(posedge clk_sys) begin
-	rom_sel_q  <= rom_sel | rom_hi;
-	cart_sel_q <= cart_sel;
-	ram_sel_q  <= ram_sel;
-	pl1_sel_q  <= vis_pl1;
+	rom_sel_q     <= rom_sel | rom_hi;
+	cart_sel_q    <= cart_sel;
+	ram_sel_q     <= ram_sel;
+	pl1_sel_q     <= vis_pl1;
+	os2_ram_sel_q <= os2_ram_sel;
 end
 // Open bus reads back as $FF, matching MAME's unmap_value_high and the likely
 // floating-bus behaviour of the real machine (nothing drives the lines, and
 // the last DMA-driven byte was usually high). Cartridge data has priority over
 // firmware wherever the active machine's page mask says a cartridge is present.
-assign ram_q = pl1_sel_q  ? pl1_q
-             : ram_sel_q  ? sram_q
-             : cart_sel_q ? cart_q
-             : rom_sel_q  ? rom_q : 8'hFF;
+assign ram_q = os2_ram_sel_q ? os2_ram_q
+             : pl1_sel_q        ? pl1_q
+             : ram_sel_q        ? sram_q
+             : cart_sel_q       ? cart_q
+             : rom_sel_q        ? rom_q : 8'hFF;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////
 //
@@ -437,15 +453,23 @@ wire [11:0] cart_a    = st2_mode ? {st2_pg[3:0], ioctl_addr[7:0]}
 wire        raw_ok    = !machine_visicom || (ioctl_addr < 25'h800);
 wire        cart_we   = cart_dl && ioctl_wr && (st2_mode ? (st2_data && st2_pg_ok) : raw_ok);
 
-// Marcel van Tongeren's interpreter translates the two discontiguous Studio
-// ROM windows into CHIP-8 program space $0200-$0AFF. Ordinary .ch8 files begin
-// at virtual $0200, so file bytes $000-$4FF land at physical $0300-$07FF and
-// $500-$8FF land at $0C00-$0FFF. Larger programs are outside its model.
-wire [11:0] ch8_a = (ioctl_addr < 25'h500)
-	               ? (12'h300 + ioctl_addr[11:0])
-	               : (12'hC00 + (ioctl_addr[11:0] - 12'h500));
-wire        ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
-	                 !machine_visicom && (ioctl_addr < 25'h900);
+// Marcel van Tongeren's interpreter keeps its historical split program map.
+// OpenStudio2 instead receives the .ch8 payload in a dedicated 4 KiB RAM, with
+// file byte zero at logical $0200 / physical $1200. The cached interpreter
+// selects the loader path automatically: the historical Marcel image reaches
+// $02FF (768 bytes), while the current OpenStudio2 ROM reaches $07FF (2 KiB).
+wire [11:0] marcel_ch8_a = (ioctl_addr < 25'h500)
+	                      ? (12'h300 + ioctl_addr[11:0])
+	                      : (12'hC00 + (ioctl_addr[11:0] - 12'h500));
+wire        marcel_ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
+	                        !chip8_fw_os2 && !machine_visicom &&
+	                        (ioctl_addr < 25'h900);
+
+wire [11:0] os2_ch8_a = 12'h200 + ioctl_addr[11:0];
+wire        os2_ch8_we = ch8_dl && ioctl_wr && chip8_fw_loaded &&
+	                     chip8_fw_os2 && !machine_visicom &&
+	                     (ioctl_addr < 25'hE00);
+wire        ch8_we = marcel_ch8_we | os2_ch8_we;
 
 // Studio cartridges may claim $04-$07 and $0A-$0F; $08/$09 are RAM, and $0B
 // remains colour RAM on Studio III. Visicom cartridges use $08-$0F. Do not
@@ -500,7 +524,8 @@ end
 // user-supplied chip8.bin automatically from beside an F3 selection at
 // supplemental index $0103, or the user can cache it manually through F4 at
 // index $0004. That universal Studio-family interpreter goes into the fifth
-// firmware/program BRAM.
+// firmware BRAM. Marcel's .ch8 payload continues sharing that BRAM; OpenStudio2
+// gets the dedicated 4 KiB RAM instantiated below.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
 //   0 Studio II        → boot0.rom
@@ -518,14 +543,15 @@ end
 // the same machine slot and determines where that BRAM overlays firmware/RAM.
 
 wire [1:0]  bios_slot = fw_dl ? machine : ioctl_index[7:6];
-wire [11:0] chip8_dl_a = ch8_dl ? ch8_a : ioctl_addr[11:0];
+wire [11:0] chip8_rom_dl_a = (ch8_dl && !chip8_fw_os2)
+                           ? marcel_ch8_a : ioctl_addr[11:0];
 
 // BIOS write: only the matching firmware BRAM
 wire        bios_we0 = bios_dl && ioctl_wr && (bios_slot == 2'd0);
 wire        bios_we1 = bios_dl && ioctl_wr && (bios_slot == 2'd1);
 wire        bios_we2 = bios_dl && ioctl_wr && (bios_slot == 2'd2);
 wire        bios_we3 = bios_dl && ioctl_wr && (bios_slot == 2'd3);
-wire        bios_we4 = chip8_fw_dl && ioctl_wr && (ioctl_addr < 25'h300);
+wire        bios_we4 = chip8_fw_dl && ioctl_wr && (ioctl_addr < 25'h800);
 
 // Cart write: only into the cartridge BRAM that belongs to the active machine
 wire        cart_we0 = cart_we && (machine == 2'd0);
@@ -533,22 +559,33 @@ wire        cart_we1 = cart_we && (machine == 2'd1);
 wire        cart_we2 = cart_we && (machine == 2'd2);
 wire        cart_we3 = cart_we && (machine == 2'd3);
 
-wire        we4 = bios_we4 | ch8_we;
+wire        we4 = bios_we4 | marcel_ch8_we;
 
 wire [7:0]  rom0_q, rom1_q, rom2_q, rom3_q, rom4_q;
 wire [7:0]  cart0_q, cart1_q, cart2_q, cart3_q;
 
-// A truncated or absent cached interpreter must not accept a .ch8 file. A
-// valid interpreter is
-// 768 bytes, ending at $02FF; starting a replacement invalidates the old copy
-// until that final required byte arrives. Loading it never activates CHIP-8.
+// A truncated or absent cached interpreter must not accept a .ch8 file. Marcel
+// is the historical 768-byte image ending at $02FF. OpenStudio2 is the 2 KiB
+// image ending at $07FF. Reaching $02FF makes the cache usable as Marcel; if
+// the same transfer continues through $07FF it is reclassified as OpenStudio2.
+// Starting any replacement invalidates both the old cache and its type.
 initial chip8_fw_loaded = 1'b0;
 always @(posedge clk_sys) begin
 	if (!ioctl_download) chip8_fw_start_seen <= 1'b0;
 	else if (bios_we4 && (ioctl_addr == 25'd0)) chip8_fw_start_seen <= 1'b1;
 
-	if (chip8_fw_dl && !dl_d) chip8_fw_loaded <= 1'b0;
-	else if (bios_we4 && chip8_fw_start_seen && (ioctl_addr == 25'h2FF)) chip8_fw_loaded <= 1'b1;
+	if (chip8_fw_dl && !dl_d) begin
+		chip8_fw_loaded <= 1'b0;
+		chip8_fw_os2    <= 1'b0;
+	end
+	else begin
+		if (bios_we4 && chip8_fw_start_seen && (ioctl_addr == 25'h2FF))
+			chip8_fw_loaded <= 1'b1;
+		if (bios_we4 && chip8_fw_start_seen && (ioctl_addr == 25'h7FF)) begin
+			chip8_fw_loaded <= 1'b1;
+			chip8_fw_os2    <= 1'b1;
+		end
+	end
 
 	if (!ioctl_download) chip8_write_seen <= 1'b0;
 	else if (ch8_we)     chip8_write_seen <= 1'b1;
@@ -625,7 +662,7 @@ dpram #(8, 12) rom4
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),
-	.address_a((ch8_dl || chip8_fw_dl) ? chip8_dl_a : ram_a[11:0]),
+	.address_a((ch8_dl || chip8_fw_dl) ? chip8_rom_dl_a : ram_a[11:0]),
 	.wren_a(we4),
 	.data_a(ioctl_dout),
 	.q_a(rom4_q),
@@ -639,6 +676,30 @@ dpram #(8, 12) rom4
 // Four cartridge BRAMs are addressed independently from firmware. Old bytes
 // may remain physically present after replacement or unload, but are invisible
 // unless the corresponding active-machine cart_page bit is set.
+// OpenStudio2's MiSTer-native CHIP-8 memory. Logical CHIP-8 $000-$FFF maps
+// directly to CPU $1000-$1FFF. During an F3 download, file byte zero is written
+// at RAM offset $200, so the first fetched opcode appears at physical $1200.
+// Port B remains tied off so this retains the same single-write-port block-RAM
+// inference discipline as the core's other dpram instances.
+wire [11:0] os2_ram_addr = (ch8_dl && chip8_fw_os2) ? os2_ch8_a : ram_a[11:0];
+wire  [7:0] os2_ram_data = os2_ch8_we ? ioctl_dout : ram_d;
+wire        os2_ram_we   = os2_ch8_we | os2_cpu_wr;
+
+dpram #(8, 12) chip8_ram
+(
+	.clock(clk_sys),
+	.ram_cs(1'b1),
+	.address_a(os2_ram_addr),
+	.wren_a(os2_ram_we),
+	.data_a(os2_ram_data),
+	.q_a(os2_ram_q),
+	.ram_cs_b(1'b0),
+	.wren_b(1'b0),
+	.address_b(12'd0),
+	.data_b(),
+	.q_b()
+);
+
 dpram #(8, 12) cart0
 (
 	.clock(clk_sys),
