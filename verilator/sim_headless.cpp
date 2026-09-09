@@ -577,9 +577,9 @@ static void usage(const char* argv0) {
 "\n"
 "  Input\n"
 "    --joy-map N          OSD \"Joystick\" profile, and switch \"Mapping\" to Manual:\n"
-"                         0 none/keypad-only, 1 cross, 2 spacewar, 3 freeway,\n"
-"                         4 bowling, 5 baseball, 6 homebrew, 7 Visicom Art,\n"
-"                         8 8-way, 9 doodle, 10 2P homebrew, 11 Race,\n"
+"                         0 none/keypad-only, 1 4-way, 2 spacewar, 3 freeway,\n"
+"                         4 bowling, 5 baseball, 6 Robson, 7 Visicom Art,\n"
+"                         8 8-way, 9 Art, 10 Robson2P, 11 Race,\n"
 "                         12 Gunfighter/Tennis, 13 CHIP-8, 14 Climber/Outbreak,\n"
 "                         15 Space Explorer. Omit for auto-detection.\n"
 "    --joy MASK@F[:H]     drive joystick 0 with MASK (bit0 right, 1 left, 2 down,\n"
@@ -1396,7 +1396,7 @@ int main(int argc, char** argv) {
         }
 
         // Start generates the default A1 selection and must also arm Visicom's
-        // resident Doodle profile, as it already does for the Studio menus.
+        // resident Art profile, as it already does for the Studio menus.
         RS(builtin_sel) = 0;
         RS(builtin_profile) = 0;
         RS(builtin_start_key) = 1;
@@ -1405,7 +1405,7 @@ int main(int argc, char** argv) {
         top->joystick_0 = 0;
         top->eval();
         if (!RS(builtin_sel) || (unsigned)RS(auto_profile) != 7u) {
-            printf("FAIL Visicom Start did not select the resident Doodle profile\n");
+            printf("FAIL Visicom Start did not select the resident Art profile\n");
             failures++;
         }
         top->joystick_0 = 1u << 6;

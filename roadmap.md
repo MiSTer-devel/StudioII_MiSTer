@@ -74,9 +74,8 @@ Audit existing profiles and classify each verified game in this order:
 
 Record the concrete benefit over both simpler options for every custom profile.
 Account for keypad routing separately before creating a mapping variant, and
-consolidate games that need the same directions and button assignments. Evaluate
-renaming `Homebrew` to `Robson`: it represents Paul Robson's controls, not a
-generic homebrew layout; review `2P Homebrew` naming and coverage as well.
+consolidate games that need the same directions and button assignments. Review
+the `Robson` and `Robson2P` profile coverage across Paul Robson's games.
 
 - One-player Gunfighter is confirmed working. Complete the remaining
   Tennis/Squash and Gunfighter/Moonship coverage: two-player Gunfighter, both
