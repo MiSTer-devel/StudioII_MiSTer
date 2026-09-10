@@ -105,7 +105,7 @@ wire machine_visicom = (machine == MACHINE_VISICOM);
 reg  chip8_loaded = 1'b0;
 reg  chip8_write_seen = 1'b0;
 reg  chip8_fw_start_seen = 1'b0;
-reg  chip8_fw_os2 = 1'b0;
+reg  chip8_fw_os2 = 1'b1;
 wire chip8_active = chip8_loaded && !machine_visicom;
 wire chip8_os2_active = chip8_active && chip8_fw_os2;
 wire chip8_marcel_active = chip8_active && !chip8_fw_os2;
@@ -384,10 +384,9 @@ assign ram_q = os2_ram_sel_q ? os2_ram_q
 // Index 0 is bootN.rom autoload (slot in ioctl_index[7:6]); index 2 is the
 // OSD "Load Firmware" entry, whose upper bits carry the picked file's extension
 // index instead of a slot, so it routes to the selected machine's slot below.
-// F3's main .ch8 file uses index $0003. Its configured chip8.bin companion is
-// sent first at supplemental index $0103. The separate F4 OSD row sends a
-// manually selected interpreter at index $0004. Both fill the independent
-// fifth slot without activating it.
+// F3's .ch8 file uses index $0003; F4 explicitly overrides the bundled
+// interpreter at $0004. Legacy supplemental index $0103 remains accepted
+// by the loader, but is not requested by the OSD.
 wire        boot_dl = ioctl_download && (ioctl_index[15:8] == 8'd0) &&
 	             (ioctl_index[5:0] == 6'd0);
 wire        fw_dl   = ioctl_download && (ioctl_index[5:0] == 6'd2);
@@ -517,11 +516,9 @@ end
 // MiSTer auto-loads boot0.rom through boot3.rom with ioctl_index[5:0]==0 and
 // the slot in ioctl_index[7:6]. Each native firmware BRAM only accepts writes
 // for its own slot. Each machine also owns an independent cartridge BRAM, so
-// F1 can never overwrite resident firmware. MiSTer Main can send the
-// user-supplied chip8.bin automatically from beside an F3 selection at
-// supplemental index $0103, or the user can cache it manually through F4 at
-// index $0004. That universal Studio-family interpreter goes into the fifth
-// firmware BRAM. Marcel's .ch8 payload continues sharing that BRAM; OpenStudio2
+// F1 can never overwrite resident firmware. F4 overrides the bundled
+// OpenStudio2 image in the fifth firmware BRAM for this core session.
+// Marcel's .ch8 payload continues sharing that BRAM; OpenStudio2
 // gets the dedicated 4 KiB RAM instantiated below.
 //
 // Mapping matches the OSD Machine row (status[14:13] / `machine`):
@@ -566,7 +563,7 @@ wire [7:0]  cart0_q, cart1_q, cart2_q, cart3_q;
 // image ending at $07FF. Reaching $02FF makes the cache usable as Marcel; if
 // the same transfer continues through $07FF it is reclassified as OpenStudio2.
 // Starting any replacement invalidates both the old cache and its type.
-initial chip8_fw_loaded = 1'b0;
+initial chip8_fw_loaded = 1'b1;
 always @(posedge clk_sys) begin
 	if (!ioctl_download) chip8_fw_start_seen <= 1'b0;
 	else if (bios_we4 && (ioctl_addr == 25'd0)) chip8_fw_start_seen <= 1'b1;
@@ -655,7 +652,10 @@ dpram #(8, 12) rom3
 	.q_b()
 );
 
-dpram #(8, 12) rom4
+`ifndef OS2_INIT_FILE
+`define OS2_INIT_FILE "rom/openstudio2.hex"
+`endif
+dpram #(8, 12, `OS2_INIT_FILE) rom4
 (
 	.clock(clk_sys),
 	.ram_cs(1'b1),

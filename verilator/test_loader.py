@@ -21,7 +21,7 @@ def run_case(name: str, firmware_option: str, firmware: Path, program: Path,
         [
             str(SIM),
             "--bios", str(native_bios),
-            firmware_option, str(firmware),
+            *([firmware_option, str(firmware)] if firmware_option else []),
             "--ch8", str(program),
             "--loader-check",
             "--quiet",
@@ -47,7 +47,8 @@ def main() -> None:
         # deliberately oversized and must not wrap around to logical $000.
         program.write_bytes(pattern(0xE01, 0x33))
 
-        run_case("Marcel auto companion", "--chip8-fw", marcel, program,
+        run_case("Bundled OpenStudio2", "", os2, program, native_bios)
+        run_case("Marcel legacy companion", "--chip8-fw", marcel, program,
                  native_bios)
         run_case("OpenStudio2 manual interpreter", "--manual-chip8-fw", os2,
                  program, native_bios)

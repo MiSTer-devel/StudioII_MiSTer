@@ -207,8 +207,6 @@ assign BUTTONS = 0;
 localparam CONF_STR = {
 	"Studio-II;v11;",
 	"F1,ST2BIN,Load Cartridge;",
-	// Main sends chip8.bin from same dir as selected .ch8 before F3
-	"f,!chip8.bin;",
 	// CHIP-8 data can be preloaded regardless of the active machine.
 	"F3,CH8,Load CHIP-8;",
 	"-;",

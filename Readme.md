@@ -18,9 +18,9 @@ Supported hardware includes:
 
 Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
 
-Put the four native firmware files below in `/media/fat/games/Studio-II/`. For CHIP-8 support, put `chip8.bin` in the same directory as your CHIP-8 games, or load it manually. Firmware images are available in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
+Put the four native firmware files below in `/media/fat/games/Studio-II/`. OpenStudio2 is bundled for CHIP-8 support; select a `.ch8` game without supplying `chip8.bin`. Native firmware images are available in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
 
-**Load Firmware** temporarily replaces the active machine's native firmware; **Load CHIP-8 Interpreter** loads `chip8.bin` separately, where it is only used when a `.ch8` program is loaded.
+**Load Firmware** temporarily replaces the active machine's native firmware. **Load CHIP-8 Interpreter** explicitly overrides the bundled interpreter with a 768-byte Marcel image or a 2 KB OpenStudio2 development binary. No companion `chip8.bin` is loaded automatically. Reloading the core restores bundled OpenStudio2; ordinary reset retains the override.
 
 `Machine` selects `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, or `Visicom`. Changes take effect after **Apply and reset**.
 
@@ -30,7 +30,6 @@ Put the four native firmware files below in `/media/fat/games/Studio-II/`. For C
 | Studio III PAL | `boot1.rom` | `studio3_pal.bin` | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
 | Studio III NTSC | `boot2.rom` | `studio3_ntsc.bin` | 4 KB | `849A484AA4B2784ECE5C35C39D9D51A8` |
 | Visicom | `boot3.rom` | `visicom.rom` | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
-| CHIP-8 interpreter | `chip8.bin` | `chip8.bin` | 768 bytes | `9F037435B6721BE9EE91DC93293E52CE` |
 
 Other firmware images may work; those listed above were used during development and testing.
 
@@ -57,7 +56,7 @@ The keypads are mapped to the MiSTer keyboard like this:
 
 ## CHIP-8
 
-Marcel van Tongeren's [Studio II CHIP-8 interpreter](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin) is required for CHIP-8 support.
+The bundled OpenStudio2 interpreter uses separate 4 KB CHIP-8 RAM and accepts programs up to 3584 bytes. Its MIT notice, source revision, and checksums are recorded in [rom/openstudio2.md](rom/openstudio2.md). Marcel van Tongeren's [Studio II CHIP-8 interpreter](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin) remains an optional manual override (768 bytes; MD5 `9F037435B6721BE9EE91DC93293E52CE`).
 
 CHIP-8 uses the COSMAC VIP's 16-key hexadecimal keypad:
 
@@ -72,7 +71,7 @@ This layout doesn't cleanly map to the Studio II inputs. In Marcel's interpreter
 
 The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to `5/7/8/9`, Start to `1`, Fire to `F`, and Extra to `0`. There is probably a better mapping for Start, Fire, and Extra. Please create an issue if you have a suggestion for the default CHIP-8 profile.
 
-The Studio-family interpreter has some limitations on which CHIP-8 games are compatible. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details.
+The optional Marcel interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details. Bundled OpenStudio2 gameplay compatibility is still being verified.
 
     When unloading a running CHIP-8 program without resetting, the interpreter may produce garbage video or sound because execution continues after the program is unmapped. Use Unload Cartridge and Reset for a clean exit.
 

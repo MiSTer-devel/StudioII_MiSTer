@@ -861,11 +861,11 @@ int main(int argc, char** argv) {
     top->ps2_key = 0; top->inputs = 0;
     top->eval();
 
-    // Give the loader check a known background in every slot. It can then
+    // Preserve bundled rom4; give native slots a known background to
     // prove both positive routing and that rejected/unsupported bytes did not
     // modify any destination.
     if (loader_check) {
-        for (int slot = 0; slot < 5; slot++)
+        for (int slot = 0; slot < 4; slot++)
             for (int addr = 0; addr < 0x1000; addr++)
                 set_rom_byte(slot, addr, 0xA5);
         for (int slot = 0; slot < 4; slot++)
@@ -1099,8 +1099,25 @@ int main(int argc, char** argv) {
         if (!cart.empty()) expected_pages = apply_cart_image(expected_cart[machine], cart, machine);
         if (!swap_file.empty()) expected_pages = apply_cart_image(expected_cart[machine], swap_file, machine);
 
-        bool fw_valid = false;
-        bool fw_os2 = false;
+        // Verify the initialized bank against the same image used by the build.
+        expected[4].assign(0x1000, 0);
+        FILE* bundled = fopen(OS2_INIT_FILE, "r");
+        if (!bundled) {
+            fprintf(stderr, "error: cannot open bundled interpreter\n");
+            return 2;
+        }
+        unsigned byte;
+        size_t count = 0;
+        while (count < 0x1000 && fscanf(bundled, "%2x", &byte) == 1)
+            expected[4][count++] = static_cast<uint8_t>(byte);
+        const bool exact_image = count == 0x1000 && fscanf(bundled, "%x", &byte) == EOF;
+        fclose(bundled);
+        if (!exact_image) {
+            fprintf(stderr, "error: bundled interpreter bank must contain 4096 bytes\n");
+            return 2;
+        }
+        bool fw_valid = true;
+        bool fw_os2 = true;
         if (!chip8_fw.empty()) {
             const std::vector<uint8_t> fw_data = read_binary(chip8_fw);
             for (size_t i = 0; i < fw_data.size() && i < 0x800; i++) expected[4][i] = fw_data[i];

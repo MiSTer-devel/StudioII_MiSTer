@@ -49,10 +49,13 @@ run_case visicom     "$ROOT/rom/visicom.rom"      "$FW" || exit 1
 echo "CHIP-8 loader: manual interpreter cache"
 run_case studio2 "$ROOT/rom/studio2.rom" "$FW" manual || exit 1
 
-echo "CHIP-8 loader: missing chip8.bin companion"
-run_case studio2 "$ROOT/rom/studio2.rom" "" || exit 1
+echo "CHIP-8 loader: bundled OpenStudio2 without an override"
+run_case studio2     "$ROOT/rom/studio2.rom"     "" || exit 1
+run_case mpt02       "$ROOT/rom/studio3_pal.bin" "" || exit 1
+run_case studio3ntsc "$ROOT/rom/studio3_ntsc.bin" "" || exit 1
+run_case visicom     "$ROOT/rom/visicom.rom"     "" || exit 1
 
-echo "CHIP-8 loader: truncated chip8.bin companion"
-run_case studio2 "$ROOT/rom/studio2.rom" "$TMP/truncated.rom" || exit 1
+echo "CHIP-8 loader: truncated interpreter override"
+run_case studio2 "$ROOT/rom/studio2.rom" "$TMP/truncated.rom" manual || exit 1
 
 echo "CHIP-8 loader checks passed"
