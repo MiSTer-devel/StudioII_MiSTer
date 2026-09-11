@@ -16,24 +16,16 @@ Supported hardware includes:
 
 ## Install
 
-Copy the release `.rbf` to e.g. `/media/fat/_Console/` on MiSTer.
+Copy the release .rbf to e.g. /media/fat/_Console/ on MiSTer.
 
-Put the four native firmware files below in `/media/fat/games/Studio-II/`. OpenStudio2 is bundled for CHIP-8 support; select a `.ch8` game without supplying `chip8.bin`. Native firmware images are available in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
+Put the 4 BIOS files below in /media/fat/games/Studio-II/. OpenStudio2 is bundled for CHIP-8 support. BIOS images can be found in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
 
-**Load Firmware** temporarily replaces the active machine's native firmware. **Load CHIP-8 Interpreter** explicitly overrides the bundled interpreter with a 768-byte Marcel image or a 2 KB OpenStudio2 development binary. No companion `chip8.bin` is loaded automatically. Reloading the core restores bundled OpenStudio2; ordinary reset retains the override.
-
-`Machine` selects `Studio II`, `Studio III (PAL)`, `Studio III (NTSC)`, or `Visicom`. Changes take effect after **Apply and reset**.
-
-| Machine | Autoload filename | Tested firmware | Size | MD5 |
+| Machine | MiSTer filename | Common filename | Size | MD5 |
 |---|---|---|---:|---|
-| Studio II | `boot0.rom` | `studio2.rom` | 2 KB | `B37205BF19B197682F00619D05DA194B` |
-| Studio III PAL | `boot1.rom` | `studio3_pal.bin` | 4 KB | `A6B94E449BC9EC58A30E1F75D590C558` |
-| Studio III NTSC | `boot2.rom` | `studio3_ntsc.bin` | 4 KB | `849A484AA4B2784ECE5C35C39D9D51A8` |
-| Visicom | `boot3.rom` | `visicom.rom` | 2 KB | `AEEC6FE3934481E20EB7DB6D5FF56A54` |
-
-Other firmware images may work; those listed above were used during development and testing.
-
-The native firmware includes resident games. Using a resident game's start key causes the core to attempt to load an appropriate controller profile. Games often start on a black screen. Selection keys and play instructions are listed in [docs/how-to-play.md](docs/how-to-play.md).
+| Studio II | boot0.rom | studio2.rom | 2 KB | B37205BF19B197682F00619D05DA194B |
+| Studio III PAL | boot1.rom | studio3_pal.bin | 4 KB | A6B94E449BC9EC58A30E1F75D590C558 |
+| Studio III NTSC | boot2.rom | studio3_ntsc.bin | 4 KB | 849A484AA4B2784ECE5C35C39D9D51A8 |
+| Visicom | boot3.rom | visicom.rom | 2 KB | AEEC6FE3934481E20EB7DB6D5FF56A54 |
 
 ## Keypad and CLEAR
 
@@ -41,41 +33,40 @@ Keypad A and B are called "Keyboards" in RCA documentation. Keypad is used inste
 
 The keypads are mapped to the MiSTer keyboard like this:
 
-```text
+text
    Keypad A (left)        Keypad B (right)
     1  2  3                7  8  9
     Q  W  E                U  I  O
     A  S  D                J  K  L
        X                      ,
-```
+
 
 | Key | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Keypad A | `1` | `2` | `3` | `Q` | `W` | `E` | `A` | `S` | `D` | `X` |
-| Keypad B | `7` | `8` | `9` | `U` | `I` | `O` | `J` | `K` | `L` | `,` |
+| Keypad A | 1 | 2 | 3 | Q | W | E | A | S | D | X |
+| Keypad B | 7 | 8 | 9 | U | I | O | J | K | L | , |
 
 ## CHIP-8
 
-The bundled OpenStudio2 interpreter uses separate 4 KB CHIP-8 RAM and accepts programs up to 3584 bytes. Its MIT notice, source revision, and checksums are recorded in [rom/openstudio2.md](rom/openstudio2.md). Marcel van Tongeren's [Studio II CHIP-8 interpreter](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin) remains an optional manual override (768 bytes; MD5 `9F037435B6721BE9EE91DC93293E52CE`).
+The bundled OpenStudio2 CHIP-8 interpreter uses separate 4 KB CHIP-8 RAM. Marcel van Tongeren's [Studio II CHIP-8 interpreter](https://github.com/etxmato/emma_02/blob/master/data/StudioII/chip8.bin) can also be loaded (768 bytes; MD5 9F037435B6721BE9EE91DC93293E52CE).
 
-CHIP-8 uses the COSMAC VIP's 16-key hexadecimal keypad:
+CHIP-8 uses the COSMAC VIP keypad:
 
-```text
+text
     1  2  3  C
     4  5  6  D
     7  8  9  E
     A  0  B  F
-```
 
-This layout doesn't cleanly map to the Studio II inputs. In Marcel's interpreter, `0`–`9` map directly to the Studio II's keypad A and `A`–`F` to keypad B `1`–`6` (keyboard `7`, `8`, `9`, `U`, `I`, `O`).
 
-The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to `5/7/8/9`, Start to `1`, Fire to `F`, and Extra to `0`. There is probably a better mapping for Start, Fire, and Extra. Please create an issue if you have a suggestion for the default CHIP-8 profile.
+- 0–9 map to keypad A 0-9
+- A–F map to keypad B 1–6
 
-The optional Marcel interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details. Bundled OpenStudio2 gameplay compatibility is still being verified.
+The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to 5/7/8/9, Start to 1, Fire to F, and Extra to 0. There is probably a better mapping. Please create an issue if you have a suggestion.
 
-    When unloading a running CHIP-8 program without resetting, the interpreter may produce garbage video or sound because execution continues after the program is unmapped. Use Unload Cartridge and Reset for a clean exit.
+Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details.
 
-CHIP-8 is not supported on Visicom because there is no available interpreter for the platform.
+CHIP-8 works on Studio II and III, but not on Visicom.
 
 ## Options
 
@@ -83,7 +74,7 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 **CDP1863 pitch** only applies to Studio III NTSC. The PAL option applies the CDP1864 divide-by-four stage for PAL-equivalent pitch on NTSC.
 
-**Load Palette** allows setting a 2-color (Studio II, CHIP-8) or 4-color (Visicom) color palette. MiSTer Game Boy `.gbp` palettes are supported. Example palettes are in [`palettes`](palettes/).
+**Load Palette** allows setting a 2-color (Studio II, CHIP-8) or 4-color (Visicom) color palette. MiSTer Game Boy .gbp palettes are supported. Example palettes are in [palettes](palettes/).
 
 **Clear** initializes (resets) the game or firmware you have running. It's a physical button on the hardware.
 
@@ -93,14 +84,7 @@ CHIP-8 is not supported on Visicom because there is no available interpreter for
 
 ## Controller profiles
 
-**Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** allows direct profile selection.
-
-Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
-
-For `8-way`, **Players: Auto** uses the game's normal keypad (A for unknown
-images). **Players: 1** mirrors controller 1 onto both keypads; **Players: 2**
-assigns controllers 1 and 2 to A and B. Start and direct keypad bindings remain
-available independently.
+**Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** allows direct profile selection. Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Numstick (on-screen keypad)
 
@@ -112,6 +96,6 @@ Studio IV is not supported.
 
 ## Project information
 
-Original core by Jason Coombes, with MiSTer integration and early Pixie work by Flandango and later contributions by Alan Steremberg and Elle Ball. See [CREDITS.md](CREDITS.md) for detailed acknowledgements.
+Original core by Jason Coombes; MiSTer integration and Pixie work by Flandango; later contributions by Alan Steremberg and Elle Ball. See [CREDITS.md](CREDITS.md) for detailed acknowledgements.
 
 GPL-2.0-or-later; see file headers and [LICENSE](LICENSE).
