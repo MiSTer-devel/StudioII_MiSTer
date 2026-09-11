@@ -18,7 +18,7 @@ Supported hardware includes:
 
 Copy the release .rbf to e.g. /media/fat/_Console/ on MiSTer.
 
-Put the 4 BIOS files below in /media/fat/games/Studio-II/. OpenStudio2 is bundled for CHIP-8 support. BIOS images can be found in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
+Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https://github.com/meauxdal/OpenStudio2) is bundled for CHIP-8 support. BIOS images can be found in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
 
 | Machine | MiSTer filename | Common filename | Size | MD5 |
 |---|---|---|---:|---|
@@ -98,4 +98,4 @@ Studio IV is not supported.
 
 Original core by Jason Coombes; MiSTer integration and Pixie work by Flandango; later contributions by Alan Steremberg and Elle Ball. See [CREDITS.md](CREDITS.md) for detailed acknowledgements.
 
-GPL-2.0-or-later; see file headers and [LICENSE](LICENSE).
+GPL-2.0-or-later; see file headers and [LICENSE](LICENSE). OpenStudio2 is licensed under [MIT](/rom/openstudio2-LICENSE.txt).
