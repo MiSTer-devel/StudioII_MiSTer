@@ -33,13 +33,13 @@ Keypad A and B are called "Keyboards" in RCA documentation. Keypad is used inste
 
 The keypads are mapped to the MiSTer keyboard like this:
 
-text
+```text
    Keypad A (left)        Keypad B (right)
     1  2  3                7  8  9
     Q  W  E                U  I  O
     A  S  D                J  K  L
        X                      ,
-
+```
 
 | Key | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 0 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -52,12 +52,12 @@ The bundled OpenStudio2 CHIP-8 interpreter uses separate 4 KB CHIP-8 RAM. Marcel
 
 CHIP-8 uses the COSMAC VIP keypad:
 
-text
+```text
     1  2  3  C
     4  5  6  D
     7  8  9  E
     A  0  B  F
-
+```
 
 - 0–9 map to keypad A 0-9
 - A–F map to keypad B 1–6
