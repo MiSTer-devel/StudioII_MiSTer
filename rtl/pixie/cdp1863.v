@@ -13,31 +13,10 @@
 //
 //============================================================================
 //
-//  Sources:
-//
-//  * CDP1864 datasheet p1: "a programmable frequency generator designed to
-//    produce 256 tones that range from 107 Hz to 13672 Hz".
-//  * Datasheet p7 control-line truth table: op code 64 -> LOAD TONE GENERATOR
-//    LATCH; "AUD - AUDIO OUT: This is the output of the programmable frequency
-//    generator."
-//  * Datasheet p6: TPB "is used ... as the input to the tone generator", so the
-//    divider runs at the machine-cycle rate -- cpu_ce here.
-//  * Datasheet p5: AOE "allows the selected frequency to be generated at the
-//    AUDIO-OUT terminal. A low-level input holds AUDIO OUT low. AOE may be
-//    connected to Q output of the CDP1802."
-//  * Weisbecker's Studio III notes: "64 INSTRUCTION SETS SOUND FREQUENCY
-//    (INVERSE)" and "Q GATES SOUND OUTPUT".
-//
-//  The datasheet pins only the endpoints of the range, so the division chain is
-//  MAME's. The two parts differ by exactly one stage:
-//
-//      CDP1864 (integrated)  f = clock / 8 / 4 / (latch+1) / 2
-//      CDP1863 (standalone)  f = clock / 8     / (latch+1) / 2
-//
-//  clock/8 is the machine-cycle rate either way, so in cpu_ce ticks the output
-//  toggles every 4*(latch+1) on the 1864 and every (latch+1) on the 1863 -- the
-//  same latch giving four times the frequency on the standalone part. That is
-//  MAME's cdp1863.cpp driven from its clock2 input, which is where TPB goes.
+//  CDP1864 datasheet: TPB clocks tone (p6), OUT 4 loads the latch (p7),
+//  and AOE gates AUDIO OUT (p5). Divider stages follow MAME cdp1863:
+//      CDP1864: half-period = 4*(latch+1) TPB ticks
+//      CDP1863: half-period =   (latch+1) TPB ticks
 //
 //============================================================================
 

@@ -1,13 +1,8 @@
 # Development reference
 
-Architecture, verification scope, and build mechanics live here. `AGENTS.md` contains 
-permanent repository rules. Current RTL defines what is implemented; primary 
-documentation and measured hardware define the target.
-
-**Maintainer reminder:** enable branch protection on `main` if it is not already
-enabled. A mistaken doc-only push can trigger `mister-unstable-nightlies` even
-when the automated build has no new core behavior to test. Remove this reminder
-after protection is confirmed.
+Architecture, verification scope, and build mechanics here. `AGENTS.md` contains 
+permanent repository rules. RTL mostly speaks for itself; documentation and hardware 
+support it.
 
 Read the focused references when relevant:
 
@@ -398,4 +393,4 @@ The original core is by Jason Coombes, with MiSTer integration and early Pixie w
 
 Accuracy work also relies on Paul Robson, MAME contributors, Marcel van Tongeren, Andrew Modla, Eric Smith, dmadole, kanpapa, RCA documentation, and community hardware research. Special thanks to Kevin Bunch for reference captures and hardware insight, and to the Hagley Museum and Library for preservation work.
 
-The project is GPL-2.0-or-later. Reference-emulator sources under `tools/refemu/` are not compiled into the core.
+The project is GPL-2.0-or-later. OpenStudio2 is MIT. Reference-emulator sources under `tools/refemu/` are not compiled into the core.

@@ -12,13 +12,8 @@
 //
 //============================================================================
 //
-//  The 1861 latches colour with each DMA byte and shifts it with luminance. This
-//  module selects dot or background colour and supplies the BCKGND luminance
-//  qualifier described by the CDP1862 interface and MAME's cdp1862 device.
-//
-//  Colours are {R,G,B} on this bus. Note the colour RAM itself is in the 1864's
-//  pin order (bit 0 red, bit 1 blue, bit 2 green); rtl/rcastudioii.sv permutes
-//  it once, before either part sees it.
+//  DMA colour is {R,G,B}; rcastudioii.sv converts colour-RAM pin order.
+//  BCKGND qualifies background luminance (CDP1862 interface; MAME cdp1862).
 //
 //============================================================================
 
@@ -37,8 +32,6 @@ module cdp1862
     output            bckgnd        // show it at background luminance
 );
 
-//  Without an 1862 the machine is a plain monochrome Studio II: white dots on
-//  black, and no background luminance to qualify.
 assign video  = !enable   ? {3{luminance}}
               : !in_raster ? 3'b000
               : luminance  ? dot_colour
