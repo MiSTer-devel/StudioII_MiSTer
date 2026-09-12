@@ -35,13 +35,18 @@ interpreter found beside the selected program. You can instead use **Load
 CHIP-8 Interpreter** once per core session; the cached copy then serves `.ch8`
 programs in any directory. Loading the interpreter alone leaves the native
 machine active, and the next **Load CHIP-8** selection enters CHIP-8 mode.
-Virtual CHIP-8 keys `0`–`9` map to keypad A
-`0`–`9`; `A`–`F` map to keypad B `1`–`6`. Their keyboard equivalents are:
+While a CHIP-8 program is loaded, the MiSTer keyboard uses the standard CHIP-8
+QWERTY layout:
 
 ```text
-CHIP-8: 0 1 2 3 4 5 6 7 8 9  A B C D E F
-Key:    X 1 2 3 Q W E A S D  7 8 9 U I O
+Key:     1 2 3 4    CHIP-8:  1 2 3 C
+         Q W E R             4 5 6 D
+         A S D F             7 8 9 E
+         Z X C V             A 0 B F
 ```
+
+Direct keypad bindings and Numstick continue to map virtual CHIP-8 keys `0`–`9`
+to keypad A `0`–`9` and `A`–`F` to keypad B `1`–`6`.
 
 There is no universal gamepad layout for CHIP-8 software. Use the keyboard,
 direct A/B keypad bindings, Numstick, or select a manual profile appropriate to

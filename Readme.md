@@ -1,6 +1,6 @@
 # RCA Studio II for MiSTer
 
-MiSTer FPGA core for the RCA Studio II, Studio III/MPT-02 family, and Toshiba Visicom COM-100.
+MiSTer FPGA core for the RCA Studio II, RCA Studio III/Conic MPT-02 family, and Toshiba Visicom COM-100.
 
 Supported hardware includes:
 * RCA Studio II
@@ -26,6 +26,8 @@ Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https:/
 | Studio III PAL | boot1.rom | studio3_pal.bin | 4 KB | A6B94E449BC9EC58A30E1F75D590C558 |
 | Studio III NTSC | boot2.rom | studio3_ntsc.bin | 4 KB | 849A484AA4B2784ECE5C35C39D9D51A8 |
 | Visicom | boot3.rom | visicom.rom | 2 KB | AEEC6FE3934481E20EB7DB6D5FF56A54 |
+
+The above is not comprehensive; other firmwares are also compatible and can also be autoloaded by name as well as manually. Each machine remembers its own firmware during the session.
 
 ## Keypad and CLEAR
 
@@ -53,32 +55,22 @@ The bundled OpenStudio2 CHIP-8 interpreter uses separate 4 KB CHIP-8 RAM. Marcel
 CHIP-8 uses the COSMAC VIP keypad:
 
 ```text
-    1  2  3  C
-    4  5  6  D
-    7  8  9  E
-    A  0  B  F
+    MiSTer keyboard       CHIP-8
+       1 2 3 4            1 2 3 C
+       Q W E R            4 5 6 D
+       A S D F            7 8 9 E
+       Z X C V            A 0 B F
 ```
 
-- 0–9 map to keypad A 0-9
-- A–F map to keypad B 1–6
+This keyboard layout is active only while a CHIP-8 program is loaded. Direct
+keypad bindings and Numstick continue to use keypad A for `0`–`9` and keypad B
+`1`–`6` for `A`–`F`.
 
 The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to 5/7/8/9, Start to 1, Fire to F, and Extra to 0. There is probably a better mapping. Please create an issue if you have a suggestion.
 
 Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details.
 
-CHIP-8 works on Studio II and III, but not on Visicom.
-
-OpenStudio2's current `Fx0A` key wait is level-sensitive. A single physical press
-can therefore satisfy several consecutive waits before release; Clock Program's
-six-digit time entry is a confirmed affected case. A CHIP-8-only press/release
-latch matching Marcel's behavior is planned.
-
-Some original-era programs that call native VIP routines remain incompatible
-with OpenStudio2. See the [compatibility ledger](docs/os2-early-chip8.md) for
-reported results, known blockers, and the status of Marcel interpreter checks.
-The 1,536-byte `Snoopy Cosmac picture.ch8` is one such hybrid image, but it does
-not need native-call support: use the portable 296-byte
-`Snoopy picture [Marco Varesio, 2015].ch8` conversion instead.
+CHIP-8 cannot be used on Visicom due to the lack of a CHIP-8 interpreter.
 
 ## Options
 

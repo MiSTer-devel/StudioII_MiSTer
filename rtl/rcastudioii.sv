@@ -105,13 +105,21 @@ always @(posedge clk_sys) if(out2) keylatch <= cpu_dout[3:0];
 
 wire       pressed = ps2_key[9];
 wire [7:0] code    = ps2_key[7:0];
+reg  [9:0] playerA = 10'h0;
+reg  [9:0] playerB = 10'h0;
+reg        chip8_active_d = 1'b0;
 always @(posedge clk_sys) begin
 	reg old_state;
 	old_state <= ps2_key[10];
+	chip8_active_d <= chip8_active;
 
-	if(old_state != ps2_key[10]) begin
+	if(chip8_active_d != chip8_active) begin
+		playerA <= 10'd0;
+		playerB <= 10'd0;
+	end
+	else if(old_state != ps2_key[10]) begin
 		case(code)
-			// Keypad A
+			// Keypad A / CHIP-8 digits
 			'h16: playerA[1] <= pressed; // 1 → 1
 			'h1E: playerA[2] <= pressed; // 2 → 2
 			'h26: playerA[3] <= pressed; // 3 → 3
@@ -122,39 +130,42 @@ always @(posedge clk_sys) begin
 			'h1B: playerA[8] <= pressed; // S → 8
 			'h23: playerA[9] <= pressed; // D → 9
 			'h22: playerA[0] <= pressed; // X → 0
-		
+
+			// CHIP-8 hex keys
+			'h25: if(chip8_active) playerB[3] <= pressed; // 4 → C
+			'h2D: if(chip8_active) playerB[4] <= pressed; // R → D
+			'h2B: if(chip8_active) playerB[5] <= pressed; // F → E
+			'h1A: if(chip8_active) playerB[1] <= pressed; // Z → A
+			'h21: if(chip8_active) playerB[2] <= pressed; // C → B
+			'h2A: if(chip8_active) playerB[6] <= pressed; // V → F
+
 			// Keypad B
-			'h3D: playerB[1] <= pressed; // 7 → 1
-			'h3E: playerB[2] <= pressed; // 8 → 2
-			'h46: playerB[3] <= pressed; // 9 → 3
-			'h3C: playerB[4] <= pressed; // U → 4
-			'h43: playerB[5] <= pressed; // I → 5
-			'h44: playerB[6] <= pressed; // O → 6
-			'h3B: playerB[7] <= pressed; // J → 7
-			'h42: playerB[8] <= pressed; // K → 8
-			'h4B: playerB[9] <= pressed; // L → 9
-			'h41: playerB[0] <= pressed; // , → 0
+			'h3D: if(!chip8_active) playerB[1] <= pressed; // 7 → 1
+			'h3E: if(!chip8_active) playerB[2] <= pressed; // 8 → 2
+			'h46: if(!chip8_active) playerB[3] <= pressed; // 9 → 3
+			'h3C: if(!chip8_active) playerB[4] <= pressed; // U → 4
+			'h43: if(!chip8_active) playerB[5] <= pressed; // I → 5
+			'h44: if(!chip8_active) playerB[6] <= pressed; // O → 6
+			'h3B: if(!chip8_active) playerB[7] <= pressed; // J → 7
+			'h42: if(!chip8_active) playerB[8] <= pressed; // K → 8
+			'h4B: if(!chip8_active) playerB[9] <= pressed; // L → 9
+			'h41: if(!chip8_active) playerB[0] <= pressed; // , → 0
 		endcase
 	end
 end
-reg  [9:0] playerA = 10'h0;
-reg  [9:0] playerB = 10'h0;
 
 
 ////////////////// JOYSTICK -> KEYPAD ///////////////////////////////////////
 `include "studio2_input_mapping.svh"
+
 ////////////////// CPU //////////////////////////////////////////////////////////////////
 
-// EF4=B, EF3=A, EF2=unused (high), EF1=1861 display status.
-// The CD4515 outputs 10-15 have no keypad connection.
 wire  [3:0] EF;
 wire        key_valid = (keylatch < 4'd10);
 wire  [9:0] padA = playerA | joyA_active | osk_a;
 wire  [9:0] padB = playerB | joyB_active | osk_b;
 assign EF = {key_valid & padB[keylatch], key_valid & padA[keylatch], 1'b1, EFx};
 
-// The Studio II has no input port that returns data -- the keypads are read through EF3/EF4,
-// and INP 1 only toggles the display, discarding the byte. 
 wire [7:0] cpu_din = 8'h00;
 reg  [7:0] cpu_dout;
 wire       Q;
@@ -177,7 +188,7 @@ cdp1802 cdp1802 (
   .clk_enable   (cpu_ce),
   .CLEAR_N      (~reset),
 
-  .Q            (Q),            // O external pin Q Turns the sound off and on. When logic '1', the beeper is on.
+  .Q            (Q),            // O beeper, active high
   .EF           (EF),           // I 3:0 external flags EF1 to EF4
 
   .WAIT_N       (WAIT_N),       // I
@@ -198,7 +209,7 @@ cdp1802 cdp1802 (
   .ram_wr       (ram_wr),       // O MWR_N
   .ram_a        (ram_a),        // O RAM address
   .ram_q        (ram_q),        // I DI
-  .ram_d        (ram_d)        // O RAM write data
+  .ram_d        (ram_d)         // O RAM write data
 
 );
 
