@@ -90,5 +90,4 @@ This is a major maturity release following the 2026-08-30 build. The core is now
 - Studio IV is not supported.
 - CHIP-8 is unavailable in Visicom mode.
 - Marcel van Tongeren’s optional interpreter retains its original memory limitations; bundled OpenStudio2 is recommended for normal CHIP-8 use.
-- Programs using consecutive CHIP-8 `Fx0A` waits may still interpret one held key as more than one input.
 - Direct analog video remains separately unverified.
