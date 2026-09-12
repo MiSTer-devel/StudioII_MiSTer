@@ -68,6 +68,18 @@ Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. S
 
 CHIP-8 works on Studio II and III, but not on Visicom.
 
+OpenStudio2's current `Fx0A` key wait is level-sensitive. A single physical press
+can therefore satisfy several consecutive waits before release; Clock Program's
+six-digit time entry is a confirmed affected case. A CHIP-8-only press/release
+latch matching Marcel's behavior is planned.
+
+Some original-era programs that call native VIP routines remain incompatible
+with OpenStudio2. See the [compatibility ledger](docs/os2-early-chip8.md) for
+reported results, known blockers, and the status of Marcel interpreter checks.
+The 1,536-byte `Snoopy Cosmac picture.ch8` is one such hybrid image, but it does
+not need native-call support: use the portable 296-byte
+`Snoopy picture [Marco Varesio, 2015].ch8` conversion instead.
+
 ## Options
 
 **NE555 pitch** adjusts the Studio II and Visicom beeper tuning.
