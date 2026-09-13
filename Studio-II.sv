@@ -209,8 +209,8 @@ localparam CONF_STR = {
 	// CHIP-8 data can be preloaded regardless of the active machine
 	"F3,CH8,Load CHIP-8;",
 	"-;",
-	"F2,BINROM,Load Firmware;",
-	"F4,BINROM,Load CHIP-8 Interpreter;",
+	"F2,BINROM,Load Machine ROM;",
+	"F4,BINROM,Load CHIP-8 Core;",
 	"-;",	
 	// Machine held until Apply
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
