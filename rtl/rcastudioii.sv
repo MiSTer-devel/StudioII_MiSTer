@@ -293,18 +293,23 @@ wire [7:0]  cart_q;
 wire [7:0]  sram_q;
 wire [7:0]  pl1_q;
 wire [7:0]  os2_ram_q;
-reg         rom_sel_q, cart_sel_q, ram_sel_q, pl1_sel_q, os2_ram_sel_q;
+reg         rom_sel_q, cart_sel_q, ram_sel_q, pl1_sel_q, col_sel_q, os2_ram_sel_q;
+reg  [5:0]  col_addr_q;
 always @(posedge clk_sys) begin
 	rom_sel_q     <= rom_sel | rom_hi;
 	cart_sel_q    <= cart_sel;
 	ram_sel_q     <= ram_sel;
 	pl1_sel_q     <= vis_pl1;
+	col_sel_q     <= col_sel;
+	col_addr_q    <= ram_a[5:0];
 	os2_ram_sel_q <= os2_ram_sel;
 end
 assign ram_q = os2_ram_sel_q ? os2_ram_q
              : pl1_sel_q        ? pl1_q
              : ram_sel_q        ? sram_q
              : cart_sel_q       ? cart_q
+             // RCA defines CPU-visible colour bytes as $00-$07.
+             : col_sel_q        ? {5'b00000, colour_ram[col_addr_q]}
              : rom_sel_q        ? rom_q : 8'hFF;
 
 ////////////////// CARTRIDGE LOADER /////////////////////////////////////////

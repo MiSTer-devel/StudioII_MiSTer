@@ -172,7 +172,7 @@ Studio II / Studio III NTSC base behavior:
 - `$0E00-$0FFF`: cartridge window.
 - Undecoded reads return `$FF`.
 
-Studio III may use 4 KB firmware and has 64 mirrored 3-bit colour cells in `$0B00-$0BFF`. A DMA offset selects `{offset[7:5], offset[2:0]}`, so one cell covers eight pixels by four logical bitmap rows.
+Studio III may use 4 KB firmware and has 64 mirrored 3-bit colour cells in `$0B00-$0BFF`. CPU reads return the stored colour in bits 2:0 with bits 7:3 clear. The low six CPU address bits select the cell; a DMA offset instead selects `{offset[7:5], offset[2:0]}`, so one cell covers eight pixels by four logical bitmap rows. Readback follows RCA's [CDP1864 typical-colour-system diagram](https://www.cosmacelf.com/publications/data-sheets/cdp1864.pdf), which connects both MRD and MWR to colour-map RAM, the [Studio III programming manual](https://www.bitsavers.org/components/rca/cosmac/Programming_Manual_for_STUDIO_III_Sep77.pdf)'s `$00-$07` byte codes, and the readable mappings in [MAME](https://github.com/mamedev/mame/blob/master/src/mame/rca/studio2.cpp) and [Emma 02](https://github.com/etxmato/emma_02/tree/master/data/Xml/StudioIII).
 
 Visicom uses `$0000-$07FF` for resident ROM and `$0800-$0FFF` for the current cartridge, `$1000-$11FF` for 512-byte RAM and plane 0, `$1300-$13FF` for plane 1, and leaves `$1200-$12FF` empty. Cartridge pages omitted by the current image read as open bus (`$FF`), even if an earlier cartridge wrote those BRAM locations. Its two plane bits select one of four fixed colours.
 

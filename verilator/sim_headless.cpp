@@ -1226,6 +1226,8 @@ int main(int argc, char** argv) {
         const uint8_t saved_sram_0bc = SRAM[0x0BC];
         const uint8_t saved_os2_000 = CHIP8RAM[0x000];
         const uint8_t saved_os2_abc = CHIP8RAM[0xABC];
+        uint8_t saved_colour_row[8];
+        for (int i = 0; i < 8; i++) saved_colour_row[i] = COLRAM[i];
         ROM1[0xC00] = 0x31;
         ROM4[0xC00] = 0x4D;
         SRAM[0x000] = 0x58;
@@ -1291,12 +1293,39 @@ int main(int argc, char** argv) {
             failures++;
         }
 
+        // Paul's Printer reads each eight-cell colour row and rewrites it one
+        // position over. Exercise that failure class through the CPU bus on
+        // both Studio III variants, including all four low-six-bit mirrors.
+        const uint8_t colour_seed[8] = {1, 2, 3, 4, 5, 6, 7, 0};
+        const uint8_t colour_rotated[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+        for (int studio3 = 1; studio3 <= 2; studio3++) {
+            top->machine = studio3;
+            top->eval();
+            for (int i = 0; i < 8; i++) write_cpu_bus(0x0B00 + i, colour_seed[i]);
+            for (int mirror = 0; mirror < 4; mirror++) {
+                for (int i = 0; i < 8; i++)
+                    expect_bus((uint16_t)(0x0B00 + mirror * 0x40 + i), colour_seed[i],
+                               studio3 == 1 ? "Studio III PAL colour RAM" :
+                                              "Studio III NTSC colour RAM");
+            }
+
+            uint8_t carry = read_cpu_bus(0x0B07);
+            for (int i = 7; i > 0; i--)
+                write_cpu_bus((uint16_t)(0x0B00 + i),
+                              read_cpu_bus((uint16_t)(0x0B00 + i - 1)));
+            write_cpu_bus(0x0B00, carry);
+            for (int i = 0; i < 8; i++)
+                expect_bus((uint16_t)(0x0B00 + i), colour_rotated[i],
+                           "Paul's Printer colour-row rotation");
+        }
+
         ROM1[0xC00] = saved_rom1_c00;
         ROM4[0xC00] = saved_rom4_c00;
         SRAM[0x000] = saved_sram_000;
         SRAM[0x0BC] = saved_sram_0bc;
         CHIP8RAM[0x000] = saved_os2_000;
         CHIP8RAM[0xABC] = saved_os2_abc;
+        for (int i = 0; i < 8; i++) COLRAM[i] = saved_colour_row[i];
         RS(chip8_fw_loaded) = fw_valid;
         RS(chip8_fw_os2) = fw_os2;
         RS(chip8_loaded) = ch8_accepted;
