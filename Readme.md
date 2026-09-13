@@ -78,6 +78,8 @@ CHIP-8 cannot be used on Visicom due to the lack of a CHIP-8 interpreter.
 
 **CDP1863 pitch** only applies to Studio III NTSC. The PAL option applies the CDP1864 divide-by-four stage for PAL-equivalent pitch on NTSC.
 
+**Studio III colors** selects either the standard additive RGB output or a fixed palette approximating photographs of the lost Studio III demo. The photographic palette is a display-referred interpretation, not a measurement of the prototype's electrical output.
+
 **Load Palette** allows setting a 2-color (Studio II, CHIP-8) or 4-color (Visicom) color palette. MiSTer Game Boy .gbp palettes are supported. Example palettes are in [palettes](palettes/).
 
 **Clear** initializes (resets) the game or firmware you have running. It's a physical button on the hardware.

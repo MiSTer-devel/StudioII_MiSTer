@@ -8,8 +8,8 @@ lightest-to-darkest order, followed by four reserved zero bytes.
 
 Studio II
 
-Studio II uses the first and last values for white and the last entry for 
-black, respectively. The middle values are not used for Studio II. These
+Studio II uses the first value for white and the last entry for black.
+The middle values are not used for Studio II. These
 palettes apply to CHIP-8 as well.
 
 studio2-default.gbp
@@ -26,9 +26,9 @@ Visicom
 Visicom maps the four GBP entries to its hardware color indices in reverse
 order:
 
-GBP 0 -> index 3 -> Blue
+GBP 0 -> index 3 -> Red
 GBP 1 -> index 2 -> Yellow
-GBP 2 -> index 1 -> Red
+GBP 2 -> index 1 -> Blue
 GBP 3 -> index 0 -> Green  (border/background)
 
 Standard MiSTer Game Boy .gbp files may therefore be loaded directly.
@@ -52,7 +52,7 @@ Blue    #678CC6
 Sampled from Visicom box art (photo by Nicole Express), averaged against
 other sources.
 
-visicom-boxart-print.gbp
+fun/visicom-boxart-print.gbp
 
 Green   #4B7841
 Red     #D5A696
@@ -60,6 +60,26 @@ Yellow  #E7CA51
 Blue    #99C8C8
 
 Sampled from a screenshot in Visicom box art (photo by Nicole Express).
+
+visicom-manuals-adjusted.gbp
+
+Green   #1B3511
+Red     #C54A32
+Yellow  #B9B438
+Blue    #4D91B5
+
+Visicom manual print samples adjusted against the combined hardware capture
+evidence. The print green luminance is not retained.
+
+fun/visicom-manuals-print.gbp
+
+Green   #70981C
+Red     #C43818
+Yellow  #D1C313
+Blue    #078C9F
+
+Representative colors sampled from four printed Visicom manual screenshots.
+This preserves the manuals' reproduction and is not a hardware color reference.
 
 visicom-emma02.gbp
 

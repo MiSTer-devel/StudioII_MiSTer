@@ -225,6 +225,7 @@ localparam CONF_STR = {
 	"O[16],Sound,On,Off;",
 	"D4O[19:17],NE555 pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"D5O[20],CDP1863 pitch,Original,PAL;",
+	"D7O[29],Studio III colors,Standard,Demo Photos;",
 	"-;",
 	"O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"d6O[21],Vertical Crop,Disabled,216p (5x);",
@@ -534,7 +535,9 @@ assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                     (((machine_active == 2'd1) ||
 	                       (machine_active == 2'd2)) ? 16'h0010 : 16'h0000) |
 	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
-	                     (en216p ? 16'h0040 : 16'h0000);
+	                     (en216p ? 16'h0040 : 16'h0000) |
+	                     (((machine_active != 2'd1) &&
+	                       (machine_active != 2'd2)) ? 16'h0080 : 16'h0000);
 
 // resample 88 wide 4x to 352 for scaler
 assign CLK_VIDEO = clk_vid;
@@ -603,15 +606,36 @@ always @(*) begin
 	endcase
 end
 
+reg [23:0] studio3_demo_rgb;
+always @(*) begin
+	case (video)
+		3'b000:  studio3_demo_rgb = 24'h000000;
+		3'b001:  studio3_demo_rgb = 24'h123C62;
+		3'b010:  studio3_demo_rgb = 24'h126044;
+		3'b011:  studio3_demo_rgb = 24'h2A9DA2;
+		3'b100:  studio3_demo_rgb = 24'hD95718;
+		3'b101:  studio3_demo_rgb = 24'hB56B73;
+		3'b110:  studio3_demo_rgb = 24'hD6A328;
+		default: studio3_demo_rgb = 24'hD8D5B5;
+	endcase
+end
+
+wire [23:0] studio3_rgb = (status[29] && video_bg) ?
+	{1'b0, studio3_demo_rgb[23:17], 1'b0, studio3_demo_rgb[15:9],
+	 1'b0, studio3_demo_rgb[7:1]} : studio3_demo_rgb;
+
 wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] :
                    machine_studio2 ? studio_rgb[23:16] :
-                   (video[2] ? vid_lvl : 8'h00);
+	               status[29] ? studio3_rgb[23:16] :
+	               (video[2] ? vid_lvl : 8'h00);
 wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8] :
                    machine_studio2 ? studio_rgb[15:8] :
-                   (video[1] ? vid_lvl : 8'h00);
+	               status[29] ? studio3_rgb[15:8] :
+	               (video[1] ? vid_lvl : 8'h00);
 wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0] :
                    machine_studio2 ? studio_rgb[7:0] :
-                   (video[0] ? vid_lvl : 8'h00);
+	               status[29] ? studio3_rgb[7:0] :
+	               (video[0] ? vid_lvl : 8'h00);
 
 ////////////////// Numstick //////////////////
 
