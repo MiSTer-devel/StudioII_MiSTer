@@ -80,6 +80,7 @@ verilator/.vs/sim/v17/ipch/AutoPCH/181b54f0b0efa9df/SIM_MAIN.ipch
 verilator/bin/
 verilator/boot.rom
 verilator/obj_dir/
+verilator/obj_dir_cpu_load/
 verilator/obj_dir_headless/
 verilator/out/
 verilator/sim.vcd

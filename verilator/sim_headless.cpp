@@ -445,9 +445,10 @@ struct KeyEvent {
 static const char* state_name(int s) {
     switch (s) {
         case 0: return "RESET";  case 1: return "FETCH";     case 2: return "EXECUTE";
-        case 3: return "EXECUTE2"; case 4: return "BRANCH2"; case 5: return "BRANCH3";
+        case 3: return "LOAD";   case 5: return "BRANCH3";
         case 6: return "SKIP";   case 7: return "DMA_IN";    case 8: return "DMA_OUT";
-        case 9: return "INTERRUPT"; default: return "?";
+        case 9: return "INTERRUPT"; case 10: return "IDLE";  case 11: return "LSKIP";
+        default: return "?";
     }
 }
 static const char* sc_name(int s) {

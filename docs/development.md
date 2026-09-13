@@ -27,6 +27,10 @@ on-screen keypad, integer scaling, and sync-preserving same-standard resets are
 implemented. The loader intentionally models only 4 KB of cartridge address space; 
 high-page diagnostics such as ST3CTA Tester 3 remain unsupported.
 
+The CDP1802 implements all four CLEAR/WAIT operating modes. LOAD holds S1 idle,
+services DMA through R(0), and returns to LOAD after each transfer. Follow the
+hardware sequence through RESET before entering RUN so R(0) restarts at `$0000`.
+
 ## Module and clock map
 
 `Studio-II.sv` is the MiSTer `emu` top. `rtl/rcastudioii.sv` contains the CPU, 
@@ -267,7 +271,11 @@ on other machines. `tools/quartus-build.sh` is a separate, Docker-only workflow
 for the amd64 Quartus 17 container; its `--parallel=1` workaround is for Apple
 Silicon emulation. It is not the default local build command.
 
-Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, and `tools/verify-beeper.sh`. The old corpus runners (`score-21.sh`, `score-conic.sh`, `play-test.sh`, `probe-keys.sh`, `visicom-test.sh`, and `contact-sheet.py`) are disabled because they use obsolete dump paths. Use the game-start sweep below for game captures. Synthetic device/loader tests remain separate from game-start discovery.
+Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, and `tools/verify-beeper.sh`. The CPU-only `make -C verilator cpu-load-test` check covers LOAD-mode DMA-IN, DMA-OUT, interrupt suppression, R(0) advancement, and the RESET-to-RUN sequence. The old corpus runners (`score-21.sh`, `score-conic.sh`, `play-test.sh`, `probe-keys.sh`, `visicom-test.sh`, and `contact-sheet.py`) are disabled because they use obsolete dump paths. Use the game-start sweep below for game captures. Synthetic device/loader tests remain separate from game-start discovery.
+
+Run `tools/rtl-regression.sh` from any working directory to rebuild the headless
+and CPU-only models, run the LOAD check, and then run the headless smoke suite.
+Successful builds are quiet; a failed build prints its complete captured log.
 
 Run `bash tools/headless-smoke.sh` in the configured Verilator build shell for
 the existing loader/input, memory, CHIP-8, Visicom ownership, and tone checks.
