@@ -1625,6 +1625,15 @@ int main(int argc, char** argv) {
         RS(start_key) = saved_start_key;
 
         const unsigned saved_crc = RS(cart_crc);
+        const unsigned spacewar_crcs[] = {0x45b5, 0x977c, 0x8b09};
+        for (unsigned crc : spacewar_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0x21u) {
+                printf("FAIL CRC %04X Space War metadata\n", crc);
+                failures++;
+            }
+        }
         const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
                                        0xc8b4, 0xcec2, 0x8cde, 0xda69,
                                        0x2f1a, 0xf178, 0x5433, 0xb7a7};

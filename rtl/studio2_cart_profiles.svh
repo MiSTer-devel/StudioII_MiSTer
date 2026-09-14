@@ -4,8 +4,8 @@
 // studio2_input_mapping.svh. Cases assign profile p, Start s and optional
 // normal-keypad b (1 = B). Unknown cartridges fall back to A-side 8-way.
 
-// TV Arcade I - Space War
-16'h45B5, 16'h977C:
+// TV Arcade I - Space War; archival combined Space War 2 + 3
+16'h45B5, 16'h977C, 16'h8B09:
 	begin
 
 		p = MAP_SPACEWAR;

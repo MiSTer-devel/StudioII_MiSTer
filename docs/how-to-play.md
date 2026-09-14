@@ -267,6 +267,13 @@ Studio II-compatible cartridges above also run on several MPT-02-family machines
 - `A6` Addition: enter the displayed sum; quicker answers score more.
 - `A7` Freeway: `A5` starts/accelerates and `A4/A6` steer.
 
+### Space War 2 + 3 archival prototype
+
+The complete four-page archival object contains both related variants. Press
+`A1` for the Space War 2-style horizontal-intercept game or `A2` for the
+distinct two-player/vertical-intercept game. The surviving source notes do not
+document its play controls, so they remain unverified.
+
 ### A Cheap Graphics Computer
 
 Do not press CLEAR while changing modes; it destroys program data. Use `B0` to return to mode selection and save most CPU registers into RAM.
