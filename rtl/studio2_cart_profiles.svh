@@ -250,19 +250,37 @@
 	end
 
 // Gambler II: default to Slot Machine 1; play on B, selection on A.
-16'h2F1A, 16'hF178:
+16'h2F1A, 16'hF178, 16'hC106:
 	begin
 		p = MAP_8WAY;
 		s = 4'd5;
 		b = 1'b1;
 	end
 
-// Visicom Inspiration, Sansuu Drill,
-// Space Command, and Q-Sound Test: neutral automatic fallback
-16'h12E8, 16'h2BC5,
-16'h9BCF, 16'h9F6E, 16'hA7DF, 16'hBF97,
-16'hC106, 16'hC7C6, 16'hDCFA, 16'hE4C4,
-16'hEBF4:
+// Visicom Space Command: Horizontal Intercept, fire A2 and steer B4/B6.
+16'h12E8, 16'h2BC5, 16'hA7DF, 16'hBF97:
+	begin
+		p = MAP_SPACEWAR;
+		s = 4'd5;
+	end
+
+// Visicom Reikan: numbers on B; A5 selects Bagua and accepts each entry.
+16'hC7C6, 16'hE4C4:
+	begin
+		p = MAP_8WAY;
+		s = 4'd5;
+		b = 1'b1;
+	end
+
+// Visicom Sansuu Drill: setup and solo answers on A, starting with slow time.
+16'h9BCF, 16'hEBF4:
+	begin
+		p = MAP_8WAY;
+		s = 4'd1;
+	end
+
+// Q-Sound Test: neutral automatic fallback.
+16'h9F6E, 16'hDCFA:
 	begin
 
 		p = MAP_8WAY;

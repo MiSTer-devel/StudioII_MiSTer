@@ -1653,6 +1653,46 @@ int main(int argc, char** argv) {
             printf("FAIL unknown CRC must default to eight-way A\n");
             failures++;
         }
+        // Exact Visicom images must select a usable Auto layout and Start key.
+        const unsigned saved_pad_b_vis = RS(cart_pad_b_vis);
+        const unsigned visicom_profiles[][2] = {
+            {0x12e8, 0x025}, {0x2bc5, 0x025}, {0xa7df, 0x025}, {0xbf97, 0x025},
+            {0xc7c6, 0x185}, {0xe4c4, 0x185},
+            {0x9bcf, 0x081}, {0xebf4, 0x081},
+            {0x2f1a, 0x185}, {0xf178, 0x185}, {0xc106, 0x185},
+            {0x5433, 0x181}, {0xb7a7, 0x181}
+        };
+        top->machine = 3;
+        for (const auto& entry : visicom_profiles) {
+            RS(cart_crc) = entry[0];
+            top->eval();
+            const unsigned resolved = RS(resolved_cart_profile);
+            if (resolved != entry[1]) {
+                printf("FAIL CRC %04X Visicom metadata %03X, expected %03X\n",
+                       entry[0], resolved, entry[1]);
+                failures++;
+            }
+            RS(cart_pad_b_vis) = (resolved >> 8) & 1;
+            RS(start_key) = resolved & 15;
+            const unsigned prof = (resolved >> 4) & 15;
+            expect_profile_players(prof, 0, 1u << 6, 0,
+                                   1u << (entry[1] & 15), 0, "Visicom Auto Start");
+            if (entry[1] == 0x025) {
+                expect_profile_players(prof, 0, (1u << 4) | (1u << 1), 0,
+                                       1u << 2, 1u << 4, "Space Command fire and steer");
+            } else {
+                for (unsigned digit = 0; digit < 10; digit++) {
+                    const unsigned key = 1u << digit;
+                    const bool pad_b = (entry[1] & 0x100) != 0;
+                    expect_profile_players(prof, 0, tennis_inputs[digit], 0,
+                                           pad_b ? 0 : key, pad_b ? key : 0,
+                                           "Visicom Auto numeric input");
+                }
+            }
+        }
+        RS(cart_pad_b_vis) = saved_pad_b_vis;
+        RS(start_key) = saved_start_key;
+        top->machine = 0;
         RS(cart_crc) = saved_crc;
         for (unsigned mode : tennis_modes) {
             for (unsigned digit = 0; digit < 10; digit++) {
