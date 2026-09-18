@@ -180,7 +180,7 @@ Studio III may use 4 KB firmware and has 64 mirrored 3-bit colour cells in `$0B0
 
 Visicom uses `$0000-$07FF` for resident ROM and `$0800-$0FFF` for the current cartridge, `$1000-$11FF` for 512-byte RAM and plane 0, `$1300-$13FF` for plane 1, and leaves `$1200-$12FF` empty. Cartridge pages omitted by the current image read as open bus (`$FF`), even if an earlier cartridge wrote those BRAM locations. Its two plane bits select one of four fixed colours.
 
-Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Visicom. `.st2` is detected from `RCA2` magic and uses its header page table. Page ownership permits cartridge pages `$0C/$0D` to replace the normal RAM mirror. Studio II rejects system pages `$00-$03` and RAM pages `$08-$09`; Studio III also reserves colour page `$0B`; Visicom accepts only its cartridge pages `$08-$0F`, preserving resident pages `$00-$07`. Pages `$10+` are dropped.
+Raw `.bin`/`.rom` images load from `$0400` on Studio machines and `$0800` on Visicom. `.st2` is detected from `RCA2` magic and uses its header page table. On Studio II and Studio III, mapped pages `$00-$07` may overlay resident ROM without modifying the firmware BRAM, and cartridge pages `$0C/$0D` may replace the normal RAM mirror. Both Studio families reject RAM pages `$08-$09`; Studio III also reserves colour page `$0B`. Visicom accepts only its cartridge pages `$08-$0F`, preserving resident pages `$00-$07`. Pages `$10+` are dropped. Unloading clears page ownership and exposes the resident firmware again.
 
 With bundled OpenStudio2, F3 `.ch8` bytes `$000-$DFF` load at offsets
 `$200-$FFF` in separate 4 KB CHIP-8 RAM, mapped to CPU `$1000-$1FFF`.

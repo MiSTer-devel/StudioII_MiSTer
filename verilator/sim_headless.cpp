@@ -118,7 +118,7 @@ static uint16_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& p
                     bool valid = (page & 0xf0) == 0 &&
                         (machine == 3
                             ? (page & 0x08) != 0
-                            : page > 3 && page != 8 && page != 9 &&
+                            : page != 8 && page != 9 &&
                               !((machine == 1 || machine == 2) && page == 0x0b));
                     if (valid) {
                         addr = ((size_t)(page & 0x0f) << 8) | (i & 0xff);
@@ -135,7 +135,7 @@ static uint16_t apply_cart_image(std::vector<uint8_t>& rom, const std::string& p
         rom[addr] = data[i];
         unsigned page = addr >> 8;
         bool claim = machine == 3 ? page >= 8 :
-            page >= 4 && page != 8 && page != 9 &&
+            (st2 || page >= 4) && page != 8 && page != 9 &&
             !((machine == 1 || machine == 2) && page == 0x0b);
         bool format_known = st2 ? i >= 0x100 : i >= 3;
         if (claim && format_known) pages |= (uint16_t)(1u << page);
@@ -545,6 +545,7 @@ static void usage(const char* argv0) {
 "    --manual-chip8-fw FILE  same interpreter choices through the F4 OSD path, index 4\n"
 "    --ch8 FILE           CHIP-8 program, ioctl index 3\n"
 "    --loader-check       verify ROM loading, CHIP-8 mapping and firmware profiles\n"
+"    --cart-loader-check  verify cartridge loading, mapping and unload only\n"
 "\n"
 "  Run length\n"
 "    --frames N           stop after N video frames (default 300)\n"
@@ -637,6 +638,7 @@ int main(int argc, char** argv) {
     int  shot_every = 0, dump_every = 0;
     bool want_ppm = false, want_ascii = false, want_vram = false;
     bool loader_check = false;
+    bool cart_loader_only = false;
     bool shot_last = false, frame_log = false, quiet = false;
     long trace_cpu = 0, trace_from = 0;
     bool trace_r0 = false;
@@ -685,6 +687,10 @@ int main(int argc, char** argv) {
         }
         else if (a == "--ch8")        ch8 = next("--ch8");
         else if (a == "--loader-check") loader_check = true;
+        else if (a == "--cart-loader-check") {
+            loader_check = true;
+            cart_loader_only = true;
+        }
         else if (a == "--outdir")     outdir = next("--outdir");
         else if (a == "--prefix")     prefix = next("--prefix");
         else if (a == "--dump-file")  dumpfile = next("--dump-file");
@@ -1197,6 +1203,32 @@ int main(int argc, char** argv) {
                    (unsigned)RS(cart_page), (unsigned)expected_pages);
             failures++;
         }
+        const uint16_t protected_pages = machine == 3 ? 0 : (uint16_t)(0x0300u |
+            ((machine == 1 || machine == 2) ? 0x0800u : 0u));
+        if ((uint16_t)RS(cart_page) & protected_pages) {
+            printf("FAIL protected pages claimed in cart_page = %04X\n",
+                   (unsigned)RS(cart_page));
+            failures++;
+        }
+
+        // A paged Studio image may overlay resident ROM. Verify the CPU sees
+        // the cartridge while the firmware bytes remain intact in their own
+        // BRAM (checked above).
+        if (machine != 3) {
+            for (int page = 0; page < 8; page++) {
+                if (!(expected_pages & (1u << page))) continue;
+                for (int offset : {0x00, 0xff}) {
+                    int addr = (page << 8) | offset;
+                    uint8_t got = read_cpu_bus((uint16_t)addr);
+                    uint8_t want = expected_cart[machine][addr];
+                    if (got != want) {
+                        printf("FAIL Studio overlay bus[$%03X] = %02X, expected %02X\n",
+                               addr, got, want);
+                        failures++;
+                    }
+                }
+            }
+        }
 
         // Visicom's resident half is always visible. Its cartridge half is
         // visible page by page, and an omitted page must return $FF even though
@@ -1215,6 +1247,40 @@ int main(int argc, char** argv) {
                     }
                 }
             }
+        }
+
+        if (cart_loader_only) {
+            top->rootp->top__DOT__cart_unload = 1;
+            top->clk_48 = 0;
+            top->eval();
+            top->clk_48 = 1;
+            top->eval();
+            top->clk_48 = 0;
+            top->eval();
+            top->rootp->top__DOT__cart_unload = 0;
+            top->eval();
+            if ((uint16_t)RS(cart_page) != 0) {
+                printf("FAIL unload left cart_page = %04X\n", (unsigned)RS(cart_page));
+                failures++;
+            }
+            for (int page = 0; page < 8; page++) {
+                for (int offset : {0x00, 0xff}) {
+                    int addr = (page << 8) | offset;
+                    uint8_t got = read_cpu_bus((uint16_t)addr);
+                    uint8_t want = expected[machine][addr];
+                    if (got != want) {
+                        printf("FAIL resident bus after unload[$%03X] = %02X, expected %02X\n",
+                               addr, got, want);
+                        failures++;
+                    }
+                }
+            }
+            printf("Cartridge loader checks: %s (%d mismatch%s)\n",
+                   failures ? "FAIL" : "PASS", failures, failures == 1 ? "" : "es");
+            top->final();
+            if (df != stdout) fclose(df);
+            delete top;
+            return failures ? 1 : 0;
         }
 
         // Exercise all three CPU-visible memory maps regardless of which
@@ -1826,6 +1892,30 @@ int main(int argc, char** argv) {
             if ((bool)PIX(display_enabled) != (m != 0)) {
                 printf("FAIL OUT 1 display enable on machine %u\n", m);
                 failures++;
+            }
+        }
+
+        // Ejecting only clears ownership. The separately stored cartridge
+        // bytes may remain cached, but resident firmware must be visible again.
+        top->machine = machine;
+        top->rootp->top__DOT__cart_unload = 1;
+        clock_core();
+        top->rootp->top__DOT__cart_unload = 0;
+        top->eval();
+        if ((uint16_t)RS(cart_page) != 0) {
+            printf("FAIL unload left cart_page = %04X\n", (unsigned)RS(cart_page));
+            failures++;
+        }
+        for (int page = 0; page < 8; page++) {
+            for (int offset : {0x00, 0xff}) {
+                int addr = (page << 8) | offset;
+                uint8_t got = read_cpu_bus((uint16_t)addr);
+                uint8_t want = expected[machine][addr];
+                if (got != want) {
+                    printf("FAIL resident bus after unload[$%03X] = %02X, expected %02X\n",
+                           addr, got, want);
+                    failures++;
+                }
             }
         }
 

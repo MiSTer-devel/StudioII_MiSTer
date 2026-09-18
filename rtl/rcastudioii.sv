@@ -354,8 +354,7 @@ wire  [7:0] st2_pg    = st2_page[st2_blk];
 
 wire        st2_pg_ok = (st2_pg[7:4] == 4'h0) &&
 	                    (machine_visicom ? st2_pg[3]
-	                     : ((st2_pg[3:0] > 4'h3) &&
-	                        (st2_pg[3:0] != 4'h8) && (st2_pg[3:0] != 4'h9) &&
+	                     : ((st2_pg[3:0] != 4'h8) && (st2_pg[3:0] != 4'h9) &&
 	                        !(is_studio3 && (st2_pg[3:0] == 4'hB))));
 
 wire        st2_data  = ioctl_addr >= 16'd256;          // past the header
@@ -382,7 +381,7 @@ wire        ch8_we = marcel_ch8_we | os2_ch8_we;
 wire [3:0]  cart_pg = cart_a[11:8];
 wire        cart_claim = machine_visicom
                        ? cart_pg[3]
-                       : ((cart_pg >= 4'h4) &&
+                       : ((st2_mode || (cart_pg >= 4'h4)) &&
                           (cart_pg != 4'h8) && (cart_pg != 4'h9) &&
                           !(is_studio3 && (cart_pg == 4'hB)));
 wire        raw_known  = (ioctl_addr > 25'd3) ||
