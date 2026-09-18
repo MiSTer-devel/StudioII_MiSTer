@@ -234,10 +234,14 @@ localparam CONF_STR = {
 	"P1D4O[19:17],Beeper Pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"P1D5O[20],CDP1863 Pitch,Original,PAL (Lower);",
 	"P1-;",
-	"-;",
-	"F6,GBP,Load Studio II Palette;",
-	"D7O[29],Studio III Palette,Original,Prototype;",
-	"F5,GBP,Load Visicom Palette;",
+	"P2,Palettes;",
+	"P2-;",
+	"D8P2O[33:31],Studio II,Original,Amber,Green,Inverted,Custom;",
+	"HBP2F6,GBP,Load Custom Palette;",
+	"D7P2O[30:29],Studio III,Original,Prototype,Custom;",
+	"HAP2F7,PAL,Load Custom Palette;",
+	"D9P2O[36:34],Visicom,Balanced,Box Art Adjusted,Emma 02,FLiP,MAME,Manuals Adjusted,Nicole Express,Custom;",
+	"HCP2F5,GBP,Load Custom Palette;",
 	"-;",
 	"T[1],Clear;",
 	"R[28],Unload Cartridge;",
@@ -339,13 +343,18 @@ wire clear_request = status[1] | clear_key | joy_clear;
 // Preserve video timing on soft resets
 reg       vis_palette_latched = 1'b0;
 reg       studio_palette_latched = 1'b0;
+reg       studio3_palette_latched = 1'b0;
 wire      vis_palette_index = ioctl_index[5:0] == 6'd5;
 wire      studio_palette_index = ioctl_index[5:0] == 6'd6;
+wire      studio3_palette_index = ioctl_index[5:0] == 6'd7;
 wire      vis_palette_download = ioctl_download &&
 	                              (vis_palette_index || vis_palette_latched);
 wire      studio_palette_download = ioctl_download &&
 	                                 (studio_palette_index || studio_palette_latched);
-wire      palette_download = vis_palette_download || studio_palette_download;
+wire      studio3_palette_download = ioctl_download &&
+	                                  (studio3_palette_index || studio3_palette_latched);
+wire      palette_download = vis_palette_download || studio_palette_download ||
+	                         studio3_palette_download;
 wire      machine_download = ioctl_download && !palette_download;
 wire      user_download_now = (ioctl_index[5:0] == 6'd1) ||
 	                          (ioctl_index[5:0] == 6'd2) ||
@@ -362,10 +371,12 @@ always @(posedge clk_sys) begin
 	if (!ioctl_download) begin
 		vis_palette_latched <= 1'b0;
 		studio_palette_latched <= 1'b0;
+		studio3_palette_latched <= 1'b0;
 	end
-	else if (!vis_palette_latched && !studio_palette_latched) begin
+	else if (!vis_palette_latched && !studio_palette_latched && !studio3_palette_latched) begin
 		if (vis_palette_index)         vis_palette_latched <= 1'b1;
 		else if (studio_palette_index) studio_palette_latched <= 1'b1;
+		else if (studio3_palette_index) studio3_palette_latched <= 1'b1;
 	end
 end
 
@@ -540,7 +551,15 @@ assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                     ((machine_active != 2'd2) ? 16'h0020 : 16'h0000) |
 	                     (en216p ? 16'h0040 : 16'h0000) |
 	                     (((machine_active != 2'd1) &&
-	                       (machine_active != 2'd2)) ? 16'h0080 : 16'h0000);
+	                       (machine_active != 2'd2)) ? 16'h0080 : 16'h0000) |
+	                     ((machine_active != 2'd0) ? 16'h0100 : 16'h0000) |
+	                     ((machine_active != 2'd3) ? 16'h0200 : 16'h0000) |
+	                     ((((machine_active == 2'd1) || (machine_active == 2'd2)) &&
+	                       (status[30:29] == 2'd2)) ? 16'h0000 : 16'h0400) |
+	                     (((machine_active == 2'd0) &&
+	                       (status[33:31] == 3'd4)) ? 16'h0000 : 16'h0800) |
+	                     (((machine_active == 2'd3) &&
+	                       (status[36:34] == 3'd7)) ? 16'h0000 : 16'h1000);
 
 // resample 88 wide 4x to 352 for scaler
 assign CLK_VIDEO = clk_vid;
@@ -552,45 +571,39 @@ always @(posedge clk_vid) begin
 	ce_pix_vid <= (ce_vid_cnt == 3'd5);
 end
 
-// half scale 
-wire [7:0] vid_lvl = video_bg ? 8'h80 : 8'hFF;
+// Palette source files are 16-byte .gbp images: four RGB888 triples followed
+// by four unused bytes. Studio II uses entries 0 and 3; Visicom maps entries
+// 0..3 to internal color indices 3..0.
+localparam [127:0] STUDIO2_ORIGINAL = 128'hFFFFFFAAAAAA55555500000000000000;
+localparam [127:0] STUDIO2_AMBER    = 128'hFFBF5AD885186B390000000000000000;
+localparam [127:0] STUDIO2_GREEN    = 128'h8FFF6352C9391F681700000000000000;
+localparam [127:0] STUDIO2_INVERTED = 128'h000000555555AAAAAAFFFFFF00000000;
 
-// Visicom
-reg [23:0] vis_color0 = 24'h11320C;
-reg [23:0] vis_color1 = 24'h5A93D5;
-reg [23:0] vis_color2 = 24'hB9B43D;
-reg [23:0] vis_color3 = 24'hD14C38;
+localparam [127:0] VISICOM_BALANCED         = 128'hD14C38B9B43D5A93D511320C00000000;
+localparam [127:0] VISICOM_BOXART_ADJUSTED  = 128'hBC674AC4AD39678CC621391A00000000;
+localparam [127:0] VISICOM_EMMA02           = 128'hFF7070D0FF7070D0FF00400000000000;
+localparam [127:0] VISICOM_FLIP             = 128'hC74C32B5A443627FB61F361800000000;
+localparam [127:0] VISICOM_MAME             = 128'hEF454AB9C42FAFDFE400400000000000;
+localparam [127:0] VISICOM_MANUALS_ADJUSTED = 128'hC54A32B9B4384D91B51B351100000000;
+localparam [127:0] VISICOM_NICOLE_EXPRESS   = 128'hD52E18AFB72B2688F200260000000000;
 
-always @(posedge clk_sys) begin
-	if (vis_palette_download && ioctl_wr) begin
-		case (ioctl_addr)
-			// map gbp in reverse
-			25'd0:  vis_color3[23:16] <= ioctl_data;
-			25'd1:  vis_color3[15:8]  <= ioctl_data;
-			25'd2:  vis_color3[7:0]   <= ioctl_data;
-
-			25'd3:  vis_color2[23:16] <= ioctl_data;
-			25'd4:  vis_color2[15:8]  <= ioctl_data;
-			25'd5:  vis_color2[7:0]   <= ioctl_data;
-
-			25'd6:  vis_color1[23:16] <= ioctl_data;
-			25'd7:  vis_color1[15:8]  <= ioctl_data;
-			25'd8:  vis_color1[7:0]   <= ioctl_data;
-
-			25'd9:  vis_color0[23:16] <= ioctl_data;
-			25'd10: vis_color0[15:8]  <= ioctl_data;
-			25'd11: vis_color0[7:0]   <= ioctl_data;
-
-			default: ;
-		endcase
-	end
-end
-
-reg [127:0] studio_palette = 128'hFFFFFFAAAAAA55555500000000000000;
-
+// Studio II custom .gbp bank. Preserve the existing shift-register loader.
+reg [127:0] studio_custom_palette = STUDIO2_ORIGINAL;
 always @(posedge clk_sys) begin
 	if (studio_palette_download && ioctl_wr)
-		studio_palette <= {studio_palette[119:0], ioctl_data};
+		studio_custom_palette <= {studio_custom_palette[119:0], ioctl_data};
+end
+
+reg [127:0] studio_palette;
+always @(*) begin
+	case (status[33:31])
+		3'd0:    studio_palette = STUDIO2_ORIGINAL;
+		3'd1:    studio_palette = STUDIO2_AMBER;
+		3'd2:    studio_palette = STUDIO2_GREEN;
+		3'd3:    studio_palette = STUDIO2_INVERTED;
+		3'd4:    studio_palette = studio_custom_palette;
+		default: studio_palette = STUDIO2_ORIGINAL;
+	endcase
 end
 
 wire [23:0] studio_fg = studio_palette[127:104];
@@ -598,47 +611,142 @@ wire [23:0] studio_bg = studio_palette[55:32];
 wire [23:0] studio_rgb = video[2] ? studio_fg : studio_bg;
 wire machine_studio2 = (machine_active == 2'd0);
 
+// Visicom custom .gbp bank. Keep the existing reversed four-color mapping and
+// ignore the final four bytes exactly as before.
+reg [127:0] vis_custom_palette = VISICOM_BALANCED;
+always @(posedge clk_sys) begin
+	if (vis_palette_download && ioctl_wr) begin
+		case (ioctl_addr)
+			25'd0:  vis_custom_palette[127:120] <= ioctl_data;
+			25'd1:  vis_custom_palette[119:112] <= ioctl_data;
+			25'd2:  vis_custom_palette[111:104] <= ioctl_data;
+			25'd3:  vis_custom_palette[103:96]  <= ioctl_data;
+			25'd4:  vis_custom_palette[95:88]   <= ioctl_data;
+			25'd5:  vis_custom_palette[87:80]   <= ioctl_data;
+			25'd6:  vis_custom_palette[79:72]   <= ioctl_data;
+			25'd7:  vis_custom_palette[71:64]   <= ioctl_data;
+			25'd8:  vis_custom_palette[63:56]   <= ioctl_data;
+			25'd9:  vis_custom_palette[55:48]   <= ioctl_data;
+			25'd10: vis_custom_palette[47:40]   <= ioctl_data;
+			25'd11: vis_custom_palette[39:32]   <= ioctl_data;
+			default: ;
+		endcase
+	end
+end
+
+reg [127:0] vis_palette;
+always @(*) begin
+	case (status[36:34])
+		3'd0:    vis_palette = VISICOM_BALANCED;
+		3'd1:    vis_palette = VISICOM_BOXART_ADJUSTED;
+		3'd2:    vis_palette = VISICOM_EMMA02;
+		3'd3:    vis_palette = VISICOM_FLIP;
+		3'd4:    vis_palette = VISICOM_MAME;
+		3'd5:    vis_palette = VISICOM_MANUALS_ADJUSTED;
+		3'd6:    vis_palette = VISICOM_NICOLE_EXPRESS;
+		3'd7:    vis_palette = vis_custom_palette;
+		default: vis_palette = VISICOM_BALANCED;
+	endcase
+end
+
 wire machine_visicom = (machine_active == 2'd3);
 reg [23:0] vis_rgb;
 always @(*) begin
 	case (vis_index)
-		2'd0:    vis_rgb = vis_color0;
-		2'd1:    vis_rgb = vis_color1;
-		2'd2:    vis_rgb = vis_color2;
-		default: vis_rgb = vis_color3;
+		2'd0:    vis_rgb = vis_palette[55:32];
+		2'd1:    vis_rgb = vis_palette[79:56];
+		2'd2:    vis_rgb = vis_palette[103:80];
+		default: vis_rgb = vis_palette[127:104];
 	endcase
 end
 
-reg [23:0] studio3_demo_rgb;
+// Studio III palettes are eight RGB888 entries, packed with color 0 at the
+// least-significant end so the .pal loader can update each entry independently.
+localparam [191:0] STUDIO3_ORIGINAL = {
+	24'hFFFFFF, 24'hFFFF00, 24'hFF00FF, 24'hFF0000,
+	24'h00FFFF, 24'h00FF00, 24'h0000FF, 24'h000000
+};
+localparam [191:0] STUDIO3_PROTOTYPE = {
+	24'hD8D5B5, 24'hD6A328, 24'hB56B73, 24'hD95718,
+	24'h2A9DA2, 24'h126044, 24'h123C62, 24'h000000
+};
+
+// Custom .pal bank. Bytes 0..23 are eight sequential RGB888 triples. A color
+// is committed only when its third byte arrives; bytes 24+ are ignored.
+reg [191:0] studio3_custom_palette = STUDIO3_ORIGINAL;
+reg [15:0] studio3_pal_stage = 16'h0000;
+
+always @(posedge clk_sys) begin
+	if (studio3_palette_download && ioctl_wr) begin
+		case (ioctl_addr)
+			25'd0, 25'd3, 25'd6, 25'd9, 25'd12, 25'd15, 25'd18, 25'd21:
+				studio3_pal_stage[15:8] <= ioctl_data;
+			25'd1, 25'd4, 25'd7, 25'd10, 25'd13, 25'd16, 25'd19, 25'd22:
+				studio3_pal_stage[7:0] <= ioctl_data;
+			25'd2:  studio3_custom_palette[23:0]    <= {studio3_pal_stage, ioctl_data};
+			25'd5:  studio3_custom_palette[47:24]   <= {studio3_pal_stage, ioctl_data};
+			25'd8:  studio3_custom_palette[71:48]   <= {studio3_pal_stage, ioctl_data};
+			25'd11: studio3_custom_palette[95:72]   <= {studio3_pal_stage, ioctl_data};
+			25'd14: studio3_custom_palette[119:96]  <= {studio3_pal_stage, ioctl_data};
+			25'd17: studio3_custom_palette[143:120] <= {studio3_pal_stage, ioctl_data};
+			25'd20: studio3_custom_palette[167:144] <= {studio3_pal_stage, ioctl_data};
+			25'd23: studio3_custom_palette[191:168] <= {studio3_pal_stage, ioctl_data};
+			default: ;
+		endcase
+	end
+end
+
+function [23:0] studio3_lookup;
+	input [191:0] palette;
+	input [2:0] index;
+	begin
+		case (index)
+			3'd0:    studio3_lookup = palette[23:0];
+			3'd1:    studio3_lookup = palette[47:24];
+			3'd2:    studio3_lookup = palette[71:48];
+			3'd3:    studio3_lookup = palette[95:72];
+			3'd4:    studio3_lookup = palette[119:96];
+			3'd5:    studio3_lookup = palette[143:120];
+			3'd6:    studio3_lookup = palette[167:144];
+			default: studio3_lookup = palette[191:168];
+		endcase
+	end
+endfunction
+
+wire [23:0] studio3_original_rgb  = studio3_lookup(STUDIO3_ORIGINAL, video);
+wire [23:0] studio3_prototype_rgb = studio3_lookup(STUDIO3_PROTOTYPE, video);
+wire [23:0] studio3_custom_rgb    = studio3_lookup(studio3_custom_palette, video);
+reg  [23:0] studio3_palette_rgb;
 always @(*) begin
-	case (video)
-		3'b000:  studio3_demo_rgb = 24'h000000;
-		3'b001:  studio3_demo_rgb = 24'h123C62;
-		3'b010:  studio3_demo_rgb = 24'h126044;
-		3'b011:  studio3_demo_rgb = 24'h2A9DA2;
-		3'b100:  studio3_demo_rgb = 24'hD95718;
-		3'b101:  studio3_demo_rgb = 24'hB56B73;
-		3'b110:  studio3_demo_rgb = 24'hD6A328;
-		default: studio3_demo_rgb = 24'hD8D5B5;
+	case (status[30:29])
+		2'd0:    studio3_palette_rgb = studio3_original_rgb;
+		2'd1:    studio3_palette_rgb = studio3_prototype_rgb;
+		2'd2:    studio3_palette_rgb = studio3_custom_rgb;
+		default: studio3_palette_rgb = studio3_original_rgb;
 	endcase
 end
 
-wire [23:0] studio3_rgb = (status[29] && video_bg) ?
-	{1'b0, studio3_demo_rgb[23:17], 1'b0, studio3_demo_rgb[15:9],
-	 1'b0, studio3_demo_rgb[7:1]} : studio3_demo_rgb;
+// Preserve both existing background treatments in one shared stage: the
+// original digital palette used 0x80 for half of 0xFF, while Prototype used
+// a straight right shift for its RGB values.
+function [7:0] studio3_bg_half;
+	input [7:0] color;
+	begin
+		studio3_bg_half = (color == 8'hFF) ? 8'h80 : {1'b0, color[7:1]};
+	end
+endfunction
+
+wire [23:0] studio3_rgb = video_bg ?
+	{studio3_bg_half(studio3_palette_rgb[23:16]),
+	 studio3_bg_half(studio3_palette_rgb[15:8]),
+	 studio3_bg_half(studio3_palette_rgb[7:0])} : studio3_palette_rgb;
 
 wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] :
-                   machine_studio2 ? studio_rgb[23:16] :
-	               status[29] ? studio3_rgb[23:16] :
-	               (video[2] ? vid_lvl : 8'h00);
+                   machine_studio2 ? studio_rgb[23:16] : studio3_rgb[23:16];
 wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8] :
-                   machine_studio2 ? studio_rgb[15:8] :
-	               status[29] ? studio3_rgb[15:8] :
-	               (video[1] ? vid_lvl : 8'h00);
+                   machine_studio2 ? studio_rgb[15:8] : studio3_rgb[15:8];
 wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0] :
-                   machine_studio2 ? studio_rgb[7:0] :
-	               status[29] ? studio3_rgb[7:0] :
-	               (video[0] ? vid_lvl : 8'h00);
+                   machine_studio2 ? studio_rgb[7:0] : studio3_rgb[7:0];
 
 ////////////////// Numstick //////////////////
 
