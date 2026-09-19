@@ -1,6 +1,17 @@
 # Roadmap
 
-Developement is effectively done. Ideas for potential improvements are listed.
+Core features are implemented. Current integration and hardware-validation work
+is tracked here before the remaining longer-term ideas.
+
+## Active integration
+
+- Validate paged `.st2` overlays, Race Colour packages, firmware restoration on
+  unload, and controller profiles on physical MiSTer hardware.
+- Validate palette presets and custom `.gbp`/`.pal` loading over HDMI and direct
+  video. Verilator covers all preset mappings, both Studio III variants,
+  complete-file commits, and permissive Studio III trailing bytes.
+- Validate the implemented Controls and System OSD submenus on MiSTer. Existing
+  status fields are unchanged and ordinary software actions remain top-level.
 
 ## Keyboard and keypad ideas
 

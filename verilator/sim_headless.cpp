@@ -1700,9 +1700,21 @@ int main(int argc, char** argv) {
                 failures++;
             }
         }
+        const unsigned race_crcs[] = {0x1ca7, 0x47ea, 0x5374, 0x5638,
+                                      0x6664, 0x797c, 0xc713, 0xd6c0,
+                                      0xfcc8};
+        for (unsigned crc : race_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0xb2u) {
+                printf("FAIL CRC %04X Race metadata\n", crc);
+                failures++;
+            }
+        }
         const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
                                        0xc8b4, 0xcec2, 0x8cde, 0xda69,
-                                       0x2f1a, 0xf178, 0x5433, 0xb7a7};
+                                       0x2f1a, 0xf178, 0x5433, 0xb7a7,
+                                       0xda61};
         for (unsigned crc : b_side_crcs) {
             RS(cart_crc) = crc;
             top->eval();
@@ -1710,6 +1722,15 @@ int main(int argc, char** argv) {
                                  : crc == 0x2f1a || crc == 0xf178 ? 5 : 1;
             if ((unsigned)RS(resolved_cart_profile) != (0x180u | start)) {
                 printf("FAIL CRC %04X eight-way B metadata\n", crc);
+                failures++;
+            }
+        }
+        const unsigned neutral_crcs[] = {0x0ecc, 0x31ae, 0x937c, 0xac1e};
+        for (unsigned crc : neutral_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0x81u) {
+                printf("FAIL CRC %04X neutral keypad metadata\n", crc);
                 failures++;
             }
         }
@@ -1721,6 +1742,8 @@ int main(int argc, char** argv) {
         }
         // Exact Visicom images must select a usable Auto layout and Start key.
         const unsigned saved_pad_b_vis = RS(cart_pad_b_vis);
+        const unsigned saved_profile_valid_vis = RS(cart_profile_valid_vis);
+        const unsigned saved_map_profile = RS(map_profile);
         const unsigned visicom_profiles[][2] = {
             {0x12e8, 0x025}, {0x2bc5, 0x025}, {0xa7df, 0x025}, {0xbf97, 0x025},
             {0xc7c6, 0x185}, {0xe4c4, 0x185},
@@ -1741,22 +1764,50 @@ int main(int argc, char** argv) {
             RS(cart_pad_b_vis) = (resolved >> 8) & 1;
             RS(start_key) = resolved & 15;
             const unsigned prof = (resolved >> 4) & 15;
-            expect_profile_players(prof, 0, 1u << 6, 0,
-                                   1u << (entry[1] & 15), 0, "Visicom Auto Start");
+            RS(cart_profile_valid_vis) = 1;
+            RS(map_profile) = prof;
+            top->joy_manual = 0;
+            top->players = 0;
+            top->joystick_0 = 1u << 6;
+            top->joystick_1 = 0;
+            top->eval();
+            if ((unsigned)RS(joyA_active) != (1u << (entry[1] & 15)) ||
+                (unsigned)RS(joyB_active) != 0) {
+                printf("FAIL Visicom Auto Start mapped to A=$%03X B=$%03X, expected A=$%03X B=$000\n",
+                       (unsigned)RS(joyA_active), (unsigned)RS(joyB_active),
+                       1u << (entry[1] & 15));
+                failures++;
+            }
             if (entry[1] == 0x025) {
-                expect_profile_players(prof, 0, (1u << 4) | (1u << 1), 0,
-                                       1u << 2, 1u << 4, "Space Command fire and steer");
+                top->joystick_0 = (1u << 4) | (1u << 1);
+                top->eval();
+                if ((unsigned)RS(joyA_active) != (1u << 2) ||
+                    (unsigned)RS(joyB_active) != (1u << 4)) {
+                    printf("FAIL Space Command fire and steer mapped to A=$%03X B=$%03X, expected A=$004 B=$010\n",
+                           (unsigned)RS(joyA_active), (unsigned)RS(joyB_active));
+                    failures++;
+                }
             } else {
                 for (unsigned digit = 0; digit < 10; digit++) {
                     const unsigned key = 1u << digit;
                     const bool pad_b = (entry[1] & 0x100) != 0;
-                    expect_profile_players(prof, 0, tennis_inputs[digit], 0,
-                                           pad_b ? 0 : key, pad_b ? key : 0,
-                                           "Visicom Auto numeric input");
+                    top->joystick_0 = tennis_inputs[digit];
+                    top->eval();
+                    const unsigned expected_a = pad_b ? 0 : key;
+                    const unsigned expected_b = pad_b ? key : 0;
+                    if ((unsigned)RS(joyA_active) != expected_a ||
+                        (unsigned)RS(joyB_active) != expected_b) {
+                        printf("FAIL Visicom Auto numeric input mapped to A=$%03X B=$%03X, expected A=$%03X B=$%03X\n",
+                               (unsigned)RS(joyA_active), (unsigned)RS(joyB_active),
+                               expected_a, expected_b);
+                        failures++;
+                    }
                 }
             }
         }
         RS(cart_pad_b_vis) = saved_pad_b_vis;
+        RS(cart_profile_valid_vis) = saved_profile_valid_vis;
+        RS(map_profile) = saved_map_profile;
         RS(start_key) = saved_start_key;
         top->machine = 0;
         RS(cart_crc) = saved_crc;

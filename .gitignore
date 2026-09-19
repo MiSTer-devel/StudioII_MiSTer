@@ -82,6 +82,7 @@ verilator/boot.rom
 verilator/obj_dir/
 verilator/obj_dir_cpu_load/
 verilator/obj_dir_headless/
+verilator/obj_dir_palette/
 verilator/out/
 verilator/sim.vcd
 verilator/spacewar.bin

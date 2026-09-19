@@ -76,21 +76,25 @@ CHIP-8 cannot be used on Visicom due to the lack of a CHIP-8 interpreter.
 
 **NE555 pitch** adjusts the Studio II and Visicom beeper tuning.
 
-**CDP1863 pitch** only applies to Studio III NTSC. The PAL option applies the CDP1864 divide-by-four stage for PAL-equivalent pitch on NTSC.
+**CDP1863 pitch** only applies to Studio III NTSC. The PAL option applies the CDP1864 divide-by-four stage for PAL-equivalent pitch on NTSC. Sound and the applicable pitch control follow the video controls in the **Audio & Video** submenu.
 
-**Studio III colors** selects either the standard additive RGB output or a fixed palette approximating photographs of the lost Studio III demo. The photographic palette is a display-referred interpretation, not a measurement of the prototype's electrical output.
+The **Palettes** submenu provides built-in presets for Studio II, both Studio III variants, and Visicom. Studio II and Visicom custom palettes use 16-byte MiSTer Game Boy `.gbp` files. Studio III custom palettes use a headerless `.pal` file containing eight sequential RGB888 entries (24 bytes); trailing bytes are ignored. Loading a palette changes colour immediately without resetting the machine. The custom-file row is shown only while that machine's **Custom** preset is selected. Example `.gbp` and `.pal` palettes are in [palettes](palettes/).
 
-**Load Palette** allows setting a 2-color (Studio II, CHIP-8) or 4-color (Visicom) color palette. MiSTer Game Boy .gbp palettes are supported. Example palettes are in [palettes](palettes/).
+The Studio III **Prototype** preset approximates photographs of the lost Studio III demo. It is a display-referred interpretation, not a measurement of the prototype's electrical output. **Warm** and **Cool** are aesthetic alternatives for convenient comparison.
 
 **Clear** initializes (resets) the game or firmware you have running. It's a physical button on the hardware.
 
-**Unload Cartridge** ejects without resetting; video remains active and the previous firmware or resident-game mapping becomes visible again.
+**Load Software** accepts conventional cartridge images and paged `.st2` packages. **Load CHIP-8** remains a separate top-level action.
 
-**Unload Cartridge and Reset** ejects the active cartridge and resets the machine. 
+**Unload Software** ejects without resetting; video remains active and the previous firmware or resident-game mapping becomes visible again.
+
+**Unload Software and Reset** ejects the active cartridge or CHIP-8 program and resets the machine.
+
+**Machine** and **Apply and Reset** remain on the main menu so the full Studio II family is immediately visible. The **System** submenu contains only the less frequent Machine ROM and CHIP-8 Core replacement actions. Clear, Reset, loading ordinary software, and both unload actions also remain on the main menu.
 
 ## Controller profiles
 
-**Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** allows direct profile selection. Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
+The top-level Mapping, Joystick, Players, and Numstick controls stay immediately accessible. **Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** exposes direct Joystick profile selection. Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Numstick (on-screen keypad)
 

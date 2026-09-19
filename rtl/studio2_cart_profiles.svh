@@ -222,7 +222,8 @@
 	end
 
 // Blackjack, Gambler I and Fun with Numbers: one-player B, selection A1.
-16'h29B8, 16'hAF65, 16'hC8B4, 16'hCEC2, 16'h5433, 16'hB7A7:
+16'h29B8, 16'hAF65, 16'hC8B4, 16'hCEC2, 16'h5433, 16'hB7A7,
+16'hDA61:
 	begin
 		p = MAP_8WAY;
 		s = 4'd1;
@@ -238,7 +239,7 @@
 	end
 
 // Numeric/keypad-heavy software: neutral automatic fallback
-16'h0ECC, 16'h31AE, 16'h3731, 16'h7A43,
+16'h0ECC, 16'h31AE, 16'h3731, 16'h7A43, 16'h937C, 16'hAC1E,
 16'h7D85, 16'h9D0D, 16'hB2FF, 16'hBBC8,
 16'hBD53, 16'hEE76:
 	begin
@@ -310,8 +311,8 @@
 	end
 
 // Race / Race Colour v1/v2
-16'h47EA, 16'h5374, 16'h5638, 16'h797C,
-16'hD6C0, 16'hFCC8:
+16'h1CA7, 16'h47EA, 16'h5374, 16'h5638, 16'h6664,
+16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8:
 	begin
 
 		p = MAP_RACE;

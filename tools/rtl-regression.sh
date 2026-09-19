@@ -31,5 +31,9 @@ quiet_build "Headless model build" \
 quiet_build "CDP1802 LOAD test build" \
     make --no-print-directory -C "$ROOT/verilator" -B ./obj_dir_cpu_load/Vcdp1802
 
+quiet_build "Palette test build" \
+    make --no-print-directory -C "$ROOT/verilator" -B ./obj_dir_palette/Vstudio2_palette
+
 "$ROOT/verilator/obj_dir_cpu_load/Vcdp1802"
+"$ROOT/verilator/obj_dir_palette/Vstudio2_palette"
 bash "$ROOT/tools/headless-smoke.sh"

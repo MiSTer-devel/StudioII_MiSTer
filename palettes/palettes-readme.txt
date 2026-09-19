@@ -1,4 +1,4 @@
-Studio II and Visicom Color Palettes
+Studio II, Studio III, and Visicom Color Palettes
 
 .gbp files provide alternate two- and four-color palettes for Studio II and 
 Visicom.
@@ -20,6 +20,63 @@ Dark gray   #555555
 Black       #000000
 
 Default Studio II palette.
+
+Studio III
+
+Studio III custom palettes use a headerless .pal file containing eight RGB888
+triples in hardware-index order (indices 0 through 7), for 24 bytes total.
+Trailing bytes are ignored. The same custom palette applies to the PAL and NTSC
+Studio III variants, and loading it does not reset the machine.
+
+tools/studio3-palette.c creates these files with only a C99 compiler and the C
+standard library:
+
+    cc -std=c99 -Wall -Wextra -o studio3-palette tools/studio3-palette.c
+    ./studio3-palette custom.pal 000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+
+Arguments after the output name are the eight colours at hardware indices 0
+through 7. A leading # is accepted. For example, the Original palette is:
+
+    ./studio3-palette studio3-original.pal 000000 0000FF 00FF00 00FFFF FF0000 FF00FF FFFF00 FFFFFF
+
+The included examples are represented below directly in hardware-index order:
+
+studio3-warm.pal
+
+0 #080706  1 #325FA7  2 #52965B  3 #5BB7B1
+4 #C95A42  5 #B6779F  6 #D7B646  7 #E6DFC8
+
+Softened phosphors and warm white for ordinary play.
+
+studio3-cool.pal
+
+0 #05080C  1 #3B78C6  2 #3F9C83  3 #54BFC8
+4 #CF596E  5 #A479C2  6 #C9C65A  7 #DCE7F5
+
+Cooler blue/cyan emphasis with a pale blue-white.
+
+studio3-pastel.pal
+
+0 #171619  1 #7799C9  2 #86B991  3 #9FD6D1
+4 #CB8C89  5 #BA91B8  6 #D6C982  7 #F2EEE1
+
+Low-saturation colours for Doodle, Patterns, and other artwork.
+
+studio3-arcade-neon.pal
+
+0 #06030B  1 #2F4CFF  2 #2EEA74  3 #25E9F2
+4 #FF3B58  5 #E75CFF  6 #F6E94A  7 #FFFFFF
+
+Vivid modern colours for homebrew and demonstration use.
+
+studio3-greyscale.pal
+
+0 #000000  1 #1D1D1D  2 #969696  3 #B2B2B2
+4 #4C4C4C  5 #6A6A6A  6 #E2E2E2  7 #FFFFFF
+
+Luminance-weighted greys at the normal colour indices. Use this to check
+colour-RAM mapping and half-bright background selection; it is not intended as
+an aesthetic palette.
 
 Visicom
 

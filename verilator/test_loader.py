@@ -9,6 +9,9 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parent
 SIM = ROOT / "obj_dir_headless" / "Vtop"
+RACE_COLOUR_V2 = ROOT.parent / "homebrew" / (
+    "Race Colour v2 (2026.08.30) (azya52, Alan Steremberg).st2"
+)
 
 
 def pattern(size: int, seed: int) -> bytes:
@@ -95,6 +98,8 @@ def main() -> None:
             run_case("OpenStudio2 manual interpreter", "--manual-chip8-fw", os2,
                      program, native_bios)
         run_cart_case("Studio II bare-metal ST2", "studio2", cart_bios, paged)
+        run_cart_case("Race Colour v2 combined ST2", "studio2", cart_bios,
+                      RACE_COLOUR_V2)
         run_cart_case("Studio III PAL bare-metal ST2", "studio3", cart_bios, paged)
         run_cart_case("Studio III NTSC bare-metal ST2", "studio3ntsc", cart_bios, paged)
         run_cart_case("Studio II conventional BIN", "studio2", cart_bios, raw)

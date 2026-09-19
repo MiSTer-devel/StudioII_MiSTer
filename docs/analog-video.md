@@ -46,7 +46,7 @@ With Borders On, the area around the bitmap is active background video:
 - Studio III NTSC and PAL use the selected background once display and colour
   are enabled; before that, the border is black. The background steps through
   blue, black, green, and red. The top level uses `0x80` for asserted background
-  RGB channels and `0xFF` for foreground channels. The optional Demo Photos
+  RGB channels and `0xFF` for foreground channels. The optional Prototype
   setting instead maps the same three-bit colour output to a fixed RGB palette
   approximating the surviving Studio III demo photographs, with each background
   channel at half intensity. It does not alter colour selection or chip timing.

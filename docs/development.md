@@ -45,20 +45,44 @@ and six cumulative steps of the original reciprocal 31:32 frequency ratio.
 Tuning scales the latched full oscillator period before its 11:6 phase split,
 leaving the accepted state trajectory and all time-domain envelope behavior
 unchanged.
-The OSD exposes the selector for Studio II and Visicom and hides it for both
-Studio III variants.
+The OSD exposes the selector in Audio & Video for Studio II and Visicom and
+hides it for both Studio III variants.
 
 The Studio III NTSC tone-pitch selector occupies `status[20]`. Zero keeps the
 standalone CDP1863's native pitch; one selects the CDP1864 divide-by-four stage
-and matches PAL pitch. The OSD enables the field only when the active machine is
-Studio III NTSC. It changes only the divider-stage input to the shared generator,
-so the latch, counter, output phase, and reset behavior remain a single live state.
+and matches PAL pitch. The OSD exposes the field in Audio & Video only when the
+active machine is Studio III NTSC. It changes only the divider-stage input to
+the shared generator, so the latch, counter, output phase, and reset behavior
+remain a single live state.
 
 Video crop enable occupies `status[21]`, crop offset `status[25:22]`, and border
 hiding `status[26]`. The crop follows the common NES/SNES MiSTer convention: it
 is enabled only for an un-doubled 1920x1080 scaler output and supplies a 216-line
 window to `video_freak`. Border hiding selects bitmap-window blanking while
 leaving device counters and HS/VS unchanged.
+
+Palette selection uses `status[39:37]` for Studio III, `status[33:31]` for
+Studio II, and `status[36:34]` for Visicom. These fields extend the saved status
+without moving any existing control. `status_menumask` hides inactive-machine
+selectors and exposes each custom-loader row only when that machine's Custom
+preset is selected. `rtl/studio2_palette.sv` owns preset lookup, complete-file
+custom-palette commits, and the final machine RGB selection.
+
+Mapping (`status[6]`), Joystick profile (`status[5:2]`), Players
+(`status[8:7]`), and Numstick (`status[10:9]`) remain at the top level without
+changing their fields or defaults. The Joystick row retains its existing
+`status_menumask[2]` dependency and appears only for Manual mapping.
+
+The staged Machine field (`status[14:13]`) and Apply and Reset (`status[15]`)
+remain at the top level beneath the software loaders. Audio & Video lists the
+video controls first, followed by Sound and the machine-applicable pitch field.
+The System submenu contains only F2 Machine ROM loading and F4 CHIP-8 Core
+loading. F1 is labelled Load Software because it accepts conventional
+cartridges and paged `.st2` packages, including low-page overlays. F1 Load
+Software, F3 Load CHIP-8, Clear, Reset, Unload Software, and Unload Software and
+Reset also remain at the top level. This changes only menu placement and
+wording; download indices, status fields, and the shared unload/reset paths are
+unchanged.
 
 Live video modules:
 
@@ -135,10 +159,11 @@ CPU/machine reset and raster reset are separate. `reset` restarts machine state;
 | Event | Class | Raster behavior |
 |---|---|---|
 | Core load, MiSTer reset, unknown download | hard | restarts |
-| Cartridge load (F1) | sync-preserving | remains live |
+| Software load (F1) | sync-preserving | remains live |
 | CHIP-8 load (F3) | sync-preserving | remains live |
 | Manual firmware load (F2) | sync-preserving | remains live |
 | Manual CHIP-8 interpreter load (F4) | sync-preserving | remains live |
+| Custom palette load (F5/F6/F7) | no reset | remains live |
 | Same-standard Apply and reset | sync-preserving | remains live |
 | PAL/NTSC Apply and reset | hard | restarts |
 | CLEAR | sync-preserving | remains live |
@@ -161,9 +186,29 @@ The fifth BRAM (`rom4`) starts with bundled OpenStudio2 via the optional `dpram.
 
 F3 selects a `.ch8` at `$0003` without requesting a companion file. F4 explicitly replaces the shared interpreter bank with a selected binary at `$0004`: 768 bytes selects Marcel; 2 KB selects OpenStudio2. The legacy supplemental `$0103` loader route remains accepted for existing simulation coverage, but the OSD no longer requests it. Starting an override invalidates the cached interpreter and exits the current game. Loading an interpreter does not itself activate CHIP-8. Ordinary resets, unloads, and machine switching retain the override; reloading the core restores the bundled image. F3 is disabled on Visicom.
 
+The low six bits of `ioctl_index` select the user download route:
+
+| Index | OSD action | Format | Reset behavior |
+|---:|---|---|---|
+| `0` | boot firmware/autoload | ROM; machine in `ioctl_index[7:6]` | hard during core boot |
+| `1` | Load Software | `.st2`, `.bin`, `.rom` | sync-preserving soft reset |
+| `2` | Load Machine ROM | `.bin`, `.rom` | sync-preserving soft reset |
+| `3` | Load CHIP-8 | `.ch8` | sync-preserving soft reset |
+| `4` | Load CHIP-8 Core | `.bin`, `.rom` | sync-preserving soft reset |
+| `5` | Visicom custom palette | `.gbp` | none |
+| `6` | Studio II custom palette | `.gbp` | none |
+| `7` | Studio III custom palette | `.pal` | none |
+
+Palette route selection is latched for the duration of the transfer because
+MiSTer may change `ioctl_index` before the final download edge. Studio II and
+Visicom commit only after all 16 GBP bytes arrive. Studio III commits after its
+24th RGB byte and ignores trailing data, so ordinary headerless RGB888 `.pal`
+files remain permissive without allowing an incomplete transfer to replace the
+last valid custom palette.
+
 Quartus resolves the repository-relative image path with `files.qip` including the ROM search directory. The Verilator Makefile supplies an absolute path to the same bundled file for both GUI and headless models, so runtime working directory does not affect lookup. Both model targets depend on the image, so changing it invalidates the build. No neighboring OpenStudio2 checkout is required.
 
-Embedding verification remains pending: build with `make -C verilator headless`, then run `bash tools/chip8-loader-test.sh`. The loader check preserves and compares the initialized bank, including its unused half, and covers no-override loads on all machine selections and explicit overrides. Follow with successive game loads, CLEAR/reset/unload, machine switching, and Marcel/development override gameplay checks. A user-run Quartus 17.0.x GUI build must confirm block RAM inference and timing, followed by a MiSTer cold start without `chip8.bin` (also check that an old companion file is ignored).
+Embedding verification uses `make -C verilator headless`, followed by `bash tools/chip8-loader-test.sh`. The loader check preserves and compares the initialized bank, including its unused half, and covers no-override loads on all machine selections and explicit overrides. `make -C verilator palette-test` exhaustively checks preset lookup, both Studio III variants, complete-file custom commits, reversed Visicom ordering, and permissive trailing `.pal` bytes. Follow with successive game loads, CLEAR/reset/unload, machine switching, and Marcel/development override gameplay checks. A user-run Quartus 17.0.x GUI build must confirm block RAM inference and timing, followed by a MiSTer cold start without `chip8.bin` (also check that an old companion file is ignored).
 
 ## Memory and cartridge model
 

@@ -64,6 +64,7 @@ V_SRC = \
 	sim.v \
 	$(RTL)/rcastudioii.sv \
 	$(RTL)/audio/studio2_beeper.sv \
+	$(RTL)/studio2_palette.sv \
 	$(RTL)/cdp1802.v \
 	$(RTL)/dpram.sv \
 	$(RTL)/pixie/cdp1861.v \
@@ -95,6 +96,9 @@ CPU_LOAD_EXE = ./$(CPU_LOAD_DIR)/Vcdp1802
 CPU_LOAD_SRC = cdp1802_load_test.cpp
 CPU_LOAD_VOPT = -O1 --x-assign fast --x-initial fast \
 	-Wno-fatal -Wno-WIDTH -Wno-UNOPTFLAT
+PALETTE_DIR = obj_dir_palette
+PALETTE_EXE = ./$(PALETTE_DIR)/Vstudio2_palette
+PALETTE_SRC = studio2_palette_test.cpp
 
 all: $(EXE)
 
@@ -105,6 +109,14 @@ loader-regression:
 
 cpu-load-test: $(CPU_LOAD_EXE)
 	$(CPU_LOAD_EXE)
+
+palette-test: $(PALETTE_EXE)
+	$(PALETTE_EXE)
+
+$(PALETTE_EXE): $(RTL)/studio2_palette.sv $(PALETTE_SRC) Makefile
+	$V -cc $(CPU_LOAD_VOPT) --exe --Mdir ./$(PALETTE_DIR) --top-module studio2_palette \
+		$(RTL)/studio2_palette.sv $(PALETTE_SRC)
+	$(MAKE) -C $(PALETTE_DIR) -f Vstudio2_palette.mk
 
 $(CPU_LOAD_EXE): $(RTL)/cdp1802.v $(CPU_LOAD_SRC) Makefile
 	$V -cc $(CPU_LOAD_VOPT) --exe --Mdir ./$(CPU_LOAD_DIR) --top-module cdp1802 \
@@ -130,6 +142,6 @@ lint:
 	$V --lint-only -Wall -Wno-DECLFILENAME -Wno-fatal $(V_INC) $(TOP) $(V_SRC)
 
 clean:
-	rm -rf obj_dir $(HL_DIR) $(CPU_LOAD_DIR)
+	rm -rf obj_dir $(HL_DIR) $(CPU_LOAD_DIR) $(PALETTE_DIR)
 
-.PHONY: all headless loader-regression cpu-load-test lint fast clean
+.PHONY: all headless loader-regression cpu-load-test palette-test lint fast clean

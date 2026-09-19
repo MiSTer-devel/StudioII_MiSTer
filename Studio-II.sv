@@ -205,13 +205,10 @@ assign BUTTONS = 0;
 `include "build_id.v"
 localparam CONF_STR = {
 	"Studio-II;v11;",
-	"F1,ST2BIN,Load Cartridge;",
+	"F1,ST2BIN,Load Software;",
 	// CHIP-8 data can be preloaded regardless of the active machine
 	"F3,CH8,Load CHIP-8;",
 	"-;",
-	"F2,BINROM,Load Machine ROM;",
-	"F4,BINROM,Load CHIP-8 Core;",
-	"-;",	
 	// Machine held until Apply
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"R[15],Apply and Reset;",
@@ -225,28 +222,33 @@ localparam CONF_STR = {
 	"P1,Audio & Video;",
 	"P1-;",
 	"P1O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
-	"P1d6O[21],Vertical Crop,Disabled,216p (5x);",
-	"P1d6O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
+	// Menu-mask prefixes must precede the page selector.
+	"d6P1O[21],Vertical Crop,Disabled,216p (5x);",
+	"d6P1O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"P1O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"P1O[26],Borders,Show,Hide;",
 	"P1-;",
 	"P1O[16],Sound,On,Off;",
-	"P1D4O[19:17],Beeper Pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
-	"P1D5O[20],CDP1863 Pitch,Original,PAL (Lower);",
+	"D4P1O[19:17],Beeper Pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
+	"D5P1O[20],CDP1863 Pitch,Original,PAL (Lower);",
 	"P1-;",
 	"P2,Palettes;",
 	"P2-;",
 	"D8P2O[33:31],Studio II,Original,Amber,Green,Inverted,Custom;",
 	"HBP2F6,GBP,Load Custom Palette;",
-	"D7P2O[30:29],Studio III,Original,Prototype,Custom;",
+	"D7P2O[39:37],Studio III,Original,Prototype,Warm,Cool,Custom;",
 	"HAP2F7,PAL,Load Custom Palette;",
-	"D9P2O[36:34],Visicom,Balanced,Box Art Adjusted,Emma 02,FLiP,MAME,Manuals Adjusted,Nicole Express,Custom;",
+	"D9P2O[36:34],Visicom,Balanced,Box Art,Emma 02,FLiP,MAME,Manuals,Nicole Express,Custom;",
 	"HCP2F5,GBP,Load Custom Palette;",
+	"P3,System;",
+	"P3-;",
+	"P3F2,BINROM,Load Machine ROM;",
+	"P3F4,BINROM,Load CHIP-8 Core;",
 	"-;",
 	"T[1],Clear;",
-	"R[28],Unload Cartridge;",
+	"R[28],Unload Software;",
 	"T[0],Reset;",
-	"R[27],Unload Cartridge and Reset;",
+	"R[27],Unload Software and Reset;",
 	// Virtual mapping, not menu items
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
 	// jn is default virtual mapping
@@ -265,8 +267,7 @@ wire  [31:0] joystick_0, joystick_1;
 wire  [15:0] joystick_l_analog_0, joystick_r_analog_0;
 wire  [15:0] joystick_l_analog_1, joystick_r_analog_1;
 
-// Sound On/Off switch only gates audio. Tone
-// generators continue running.
+// Tone generators continue running.
 wire signed [15:0] audio_out = status[16] ? 16'sd0 : audio;
 assign AUDIO_L = audio_out;
 assign AUDIO_R = audio_out;
@@ -555,7 +556,7 @@ assign status_menumask = ((!status[6]) ? 16'h0004 : 16'h0000) |
 	                     ((machine_active != 2'd0) ? 16'h0100 : 16'h0000) |
 	                     ((machine_active != 2'd3) ? 16'h0200 : 16'h0000) |
 	                     ((((machine_active == 2'd1) || (machine_active == 2'd2)) &&
-	                       (status[30:29] == 2'd2)) ? 16'h0000 : 16'h0400) |
+	                       (status[39:37] == 3'd4)) ? 16'h0000 : 16'h0400) |
 	                     (((machine_active == 2'd0) &&
 	                       (status[33:31] == 3'd4)) ? 16'h0000 : 16'h0800) |
 	                     (((machine_active == 2'd3) &&
@@ -571,182 +572,29 @@ always @(posedge clk_vid) begin
 	ce_pix_vid <= (ce_vid_cnt == 3'd5);
 end
 
-// Palette source files are 16-byte .gbp images: four RGB888 triples followed
-// by four unused bytes. Studio II uses entries 0 and 3; Visicom maps entries
-// 0..3 to internal color indices 3..0.
-localparam [127:0] STUDIO2_ORIGINAL = 128'hFFFFFFAAAAAA55555500000000000000;
-localparam [127:0] STUDIO2_AMBER    = 128'hFFBF5AD885186B390000000000000000;
-localparam [127:0] STUDIO2_GREEN    = 128'h8FFF6352C9391F681700000000000000;
-localparam [127:0] STUDIO2_INVERTED = 128'h000000555555AAAAAAFFFFFF00000000;
+wire [23:0] palette_rgb;
+studio2_palette palette
+(
+	.clk_sys(clk_sys),
+	.machine(machine_active),
+	.video(video),
+	.video_bg(video_bg),
+	.vis_index(vis_index),
+	.studio2_select(status[33:31]),
+	.studio3_select(status[39:37]),
+	.visicom_select(status[36:34]),
+	.studio2_download(studio_palette_download),
+	.studio3_download(studio3_palette_download),
+	.visicom_download(vis_palette_download),
+	.ioctl_wr(ioctl_wr),
+	.ioctl_addr(ioctl_addr),
+	.ioctl_data(ioctl_data),
+	.rgb(palette_rgb)
+);
 
-localparam [127:0] VISICOM_BALANCED         = 128'hD14C38B9B43D5A93D511320C00000000;
-localparam [127:0] VISICOM_BOXART_ADJUSTED  = 128'hBC674AC4AD39678CC621391A00000000;
-localparam [127:0] VISICOM_EMMA02           = 128'hFF7070D0FF7070D0FF00400000000000;
-localparam [127:0] VISICOM_FLIP             = 128'hC74C32B5A443627FB61F361800000000;
-localparam [127:0] VISICOM_MAME             = 128'hEF454AB9C42FAFDFE400400000000000;
-localparam [127:0] VISICOM_MANUALS_ADJUSTED = 128'hC54A32B9B4384D91B51B351100000000;
-localparam [127:0] VISICOM_NICOLE_EXPRESS   = 128'hD52E18AFB72B2688F200260000000000;
-
-// Studio II custom .gbp bank. Preserve the existing shift-register loader.
-reg [127:0] studio_custom_palette = STUDIO2_ORIGINAL;
-always @(posedge clk_sys) begin
-	if (studio_palette_download && ioctl_wr)
-		studio_custom_palette <= {studio_custom_palette[119:0], ioctl_data};
-end
-
-reg [127:0] studio_palette;
-always @(*) begin
-	case (status[33:31])
-		3'd0:    studio_palette = STUDIO2_ORIGINAL;
-		3'd1:    studio_palette = STUDIO2_AMBER;
-		3'd2:    studio_palette = STUDIO2_GREEN;
-		3'd3:    studio_palette = STUDIO2_INVERTED;
-		3'd4:    studio_palette = studio_custom_palette;
-		default: studio_palette = STUDIO2_ORIGINAL;
-	endcase
-end
-
-wire [23:0] studio_fg = studio_palette[127:104];
-wire [23:0] studio_bg = studio_palette[55:32];
-wire [23:0] studio_rgb = video[2] ? studio_fg : studio_bg;
-wire machine_studio2 = (machine_active == 2'd0);
-
-// Visicom custom .gbp bank. Keep the existing reversed four-color mapping and
-// ignore the final four bytes exactly as before.
-reg [127:0] vis_custom_palette = VISICOM_BALANCED;
-always @(posedge clk_sys) begin
-	if (vis_palette_download && ioctl_wr) begin
-		case (ioctl_addr)
-			25'd0:  vis_custom_palette[127:120] <= ioctl_data;
-			25'd1:  vis_custom_palette[119:112] <= ioctl_data;
-			25'd2:  vis_custom_palette[111:104] <= ioctl_data;
-			25'd3:  vis_custom_palette[103:96]  <= ioctl_data;
-			25'd4:  vis_custom_palette[95:88]   <= ioctl_data;
-			25'd5:  vis_custom_palette[87:80]   <= ioctl_data;
-			25'd6:  vis_custom_palette[79:72]   <= ioctl_data;
-			25'd7:  vis_custom_palette[71:64]   <= ioctl_data;
-			25'd8:  vis_custom_palette[63:56]   <= ioctl_data;
-			25'd9:  vis_custom_palette[55:48]   <= ioctl_data;
-			25'd10: vis_custom_palette[47:40]   <= ioctl_data;
-			25'd11: vis_custom_palette[39:32]   <= ioctl_data;
-			default: ;
-		endcase
-	end
-end
-
-reg [127:0] vis_palette;
-always @(*) begin
-	case (status[36:34])
-		3'd0:    vis_palette = VISICOM_BALANCED;
-		3'd1:    vis_palette = VISICOM_BOXART_ADJUSTED;
-		3'd2:    vis_palette = VISICOM_EMMA02;
-		3'd3:    vis_palette = VISICOM_FLIP;
-		3'd4:    vis_palette = VISICOM_MAME;
-		3'd5:    vis_palette = VISICOM_MANUALS_ADJUSTED;
-		3'd6:    vis_palette = VISICOM_NICOLE_EXPRESS;
-		3'd7:    vis_palette = vis_custom_palette;
-		default: vis_palette = VISICOM_BALANCED;
-	endcase
-end
-
-wire machine_visicom = (machine_active == 2'd3);
-reg [23:0] vis_rgb;
-always @(*) begin
-	case (vis_index)
-		2'd0:    vis_rgb = vis_palette[55:32];
-		2'd1:    vis_rgb = vis_palette[79:56];
-		2'd2:    vis_rgb = vis_palette[103:80];
-		default: vis_rgb = vis_palette[127:104];
-	endcase
-end
-
-// Studio III palettes are eight RGB888 entries, packed with color 0 at the
-// least-significant end so the .pal loader can update each entry independently.
-localparam [191:0] STUDIO3_ORIGINAL = {
-	24'hFFFFFF, 24'hFFFF00, 24'hFF00FF, 24'hFF0000,
-	24'h00FFFF, 24'h00FF00, 24'h0000FF, 24'h000000
-};
-localparam [191:0] STUDIO3_PROTOTYPE = {
-	24'hD8D5B5, 24'hD6A328, 24'hB56B73, 24'hD95718,
-	24'h2A9DA2, 24'h126044, 24'h123C62, 24'h000000
-};
-
-// Custom .pal bank. Bytes 0..23 are eight sequential RGB888 triples. A color
-// is committed only when its third byte arrives; bytes 24+ are ignored.
-reg [191:0] studio3_custom_palette = STUDIO3_ORIGINAL;
-reg [15:0] studio3_pal_stage = 16'h0000;
-
-always @(posedge clk_sys) begin
-	if (studio3_palette_download && ioctl_wr) begin
-		case (ioctl_addr)
-			25'd0, 25'd3, 25'd6, 25'd9, 25'd12, 25'd15, 25'd18, 25'd21:
-				studio3_pal_stage[15:8] <= ioctl_data;
-			25'd1, 25'd4, 25'd7, 25'd10, 25'd13, 25'd16, 25'd19, 25'd22:
-				studio3_pal_stage[7:0] <= ioctl_data;
-			25'd2:  studio3_custom_palette[23:0]    <= {studio3_pal_stage, ioctl_data};
-			25'd5:  studio3_custom_palette[47:24]   <= {studio3_pal_stage, ioctl_data};
-			25'd8:  studio3_custom_palette[71:48]   <= {studio3_pal_stage, ioctl_data};
-			25'd11: studio3_custom_palette[95:72]   <= {studio3_pal_stage, ioctl_data};
-			25'd14: studio3_custom_palette[119:96]  <= {studio3_pal_stage, ioctl_data};
-			25'd17: studio3_custom_palette[143:120] <= {studio3_pal_stage, ioctl_data};
-			25'd20: studio3_custom_palette[167:144] <= {studio3_pal_stage, ioctl_data};
-			25'd23: studio3_custom_palette[191:168] <= {studio3_pal_stage, ioctl_data};
-			default: ;
-		endcase
-	end
-end
-
-function [23:0] studio3_lookup;
-	input [191:0] palette;
-	input [2:0] index;
-	begin
-		case (index)
-			3'd0:    studio3_lookup = palette[23:0];
-			3'd1:    studio3_lookup = palette[47:24];
-			3'd2:    studio3_lookup = palette[71:48];
-			3'd3:    studio3_lookup = palette[95:72];
-			3'd4:    studio3_lookup = palette[119:96];
-			3'd5:    studio3_lookup = palette[143:120];
-			3'd6:    studio3_lookup = palette[167:144];
-			default: studio3_lookup = palette[191:168];
-		endcase
-	end
-endfunction
-
-wire [23:0] studio3_original_rgb  = studio3_lookup(STUDIO3_ORIGINAL, video);
-wire [23:0] studio3_prototype_rgb = studio3_lookup(STUDIO3_PROTOTYPE, video);
-wire [23:0] studio3_custom_rgb    = studio3_lookup(studio3_custom_palette, video);
-reg  [23:0] studio3_palette_rgb;
-always @(*) begin
-	case (status[30:29])
-		2'd0:    studio3_palette_rgb = studio3_original_rgb;
-		2'd1:    studio3_palette_rgb = studio3_prototype_rgb;
-		2'd2:    studio3_palette_rgb = studio3_custom_rgb;
-		default: studio3_palette_rgb = studio3_original_rgb;
-	endcase
-end
-
-// Preserve both existing background treatments in one shared stage: the
-// original digital palette used 0x80 for half of 0xFF, while Prototype used
-// a straight right shift for its RGB values.
-function [7:0] studio3_bg_half;
-	input [7:0] color;
-	begin
-		studio3_bg_half = (color == 8'hFF) ? 8'h80 : {1'b0, color[7:1]};
-	end
-endfunction
-
-wire [23:0] studio3_rgb = video_bg ?
-	{studio3_bg_half(studio3_palette_rgb[23:16]),
-	 studio3_bg_half(studio3_palette_rgb[15:8]),
-	 studio3_bg_half(studio3_palette_rgb[7:0])} : studio3_palette_rgb;
-
-wire [7:0] vid_r = machine_visicom ? vis_rgb[23:16] :
-                   machine_studio2 ? studio_rgb[23:16] : studio3_rgb[23:16];
-wire [7:0] vid_g = machine_visicom ? vis_rgb[15:8] :
-                   machine_studio2 ? studio_rgb[15:8] : studio3_rgb[15:8];
-wire [7:0] vid_b = machine_visicom ? vis_rgb[7:0] :
-                   machine_studio2 ? studio_rgb[7:0] : studio3_rgb[7:0];
+wire [7:0] vid_r = palette_rgb[23:16];
+wire [7:0] vid_g = palette_rgb[15:8];
+wire [7:0] vid_b = palette_rgb[7:0];
 
 ////////////////// Numstick //////////////////
 
