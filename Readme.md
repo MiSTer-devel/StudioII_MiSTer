@@ -18,11 +18,11 @@ Supported hardware includes:
 
 Copy the release .rbf to e.g. /media/fat/_Console/ on MiSTer.
 
-Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https://github.com/meauxdal/OpenStudio2) is bundled for CHIP-8 support. BIOS images can be found in the Emma 02 GitHub repository, e.g. [Studio II](https://github.com/etxmato/emma_02/blob/master/data/StudioII/studio2.rom).
+Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https://github.com/meauxdal/OpenStudio2) is bundled for CHIP-8 support. BIOS images are not included.
 
 | Machine | MiSTer filename | Common filename | Size | MD5 |
 |---|---|---|---:|---|
-| Studio II | boot0.rom | studio2.rom | 2 KB | B37205BF19B197682F00619D05DA194B |
+| Studio II | boot0.rom | [BIOS] RCA Studio II (USA).bin | 2 KB | B37205BF19B197682F00619D05DA194B |
 | Studio III PAL | boot1.rom | studio3_pal.bin | 4 KB | A6B94E449BC9EC58A30E1F75D590C558 |
 | Studio III NTSC | boot2.rom | studio3_ntsc.bin | 4 KB | 849A484AA4B2784ECE5C35C39D9D51A8 |
 | Visicom | boot3.rom | visicom.rom | 2 KB | AEEC6FE3934481E20EB7DB6D5FF56A54 |

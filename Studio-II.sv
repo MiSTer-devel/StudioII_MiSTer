@@ -709,8 +709,13 @@ always @(posedge CLK_VIDEO) begin
 end
 
 wire scale_active = |status[12:11];
-wire [11:0] arx_val = (scale_active || ar == 2'd0) ? 12'd4 : {10'd0, ar - 1'd1};
-wire [11:0] ary_val = (scale_active || ar == 2'd0) ? 12'd3  : 12'd0;
+// Preserve raster pixel proportions when cropping 88x242/292 to 64x128/192.
+wire [11:0] original_arx = !status[26] ? 12'd4 :
+                           (machine_active == 2'd1) ? 12'd146 : 12'd11;
+wire [11:0] original_ary = !status[26] ? 12'd3 :
+                           (machine_active == 2'd1) ? 12'd99 : 12'd6;
+wire [11:0] arx_val = (scale_active || ar == 2'd0) ? original_arx : {10'd0, ar - 1'd1};
+wire [11:0] ary_val = (scale_active || ar == 2'd0) ? original_ary : 12'd0;
 
 video_freak video_freak
 (

@@ -108,6 +108,11 @@ it is 256 samples (64 x 4). `LINE_LENGTH=352` accommodates the full raster.
 
 Borders Off selects bitmap HBlank/VBlank before the mixer. It changes the
 presented active area without changing device HS, VS, or line/frame totals.
+Original aspect ratio and integer scaling preserve the bitmap's proportions
+from the 4:3 full raster: `(4/3) * (64/88) * (242/128) = 11/6` for NTSC,
+and `(4/3) * (64/88) * (292/192) = 146/99` for PAL. These ratios follow the
+implemented raster dimensions above, not a new hardware geometry measurement.
+Full Screen and custom aspect selections retain their existing behavior.
 The optional 216-line crop is enabled only when the framework reports 1920x1080
 and forced scandoubling is off. Direct Video reports zero scaler dimensions,
 so crop is disabled there. Crop changes DE, not sync; check its effect on a
