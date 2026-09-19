@@ -18,7 +18,7 @@ Supported hardware includes:
 
 Copy the release .rbf to e.g. /media/fat/_Console/ on MiSTer.
 
-Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https://github.com/meauxdal/OpenStudio2) is bundled for CHIP-8 support. BIOS images are not included.
+Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https://github.com/meauxdal/OpenStudio2) is bundled for CHIP-8 support.
 
 | Machine | MiSTer filename | Common filename | Size | MD5 |
 |---|---|---|---:|---|
@@ -27,7 +27,7 @@ Put the 4 BIOS files below in /media/fat/games/Studio-II/. [OpenStudio2](https:/
 | Studio III NTSC | boot2.rom | studio3_ntsc.bin | 4 KB | 849A484AA4B2784ECE5C35C39D9D51A8 |
 | Visicom | boot3.rom | visicom.rom | 2 KB | AEEC6FE3934481E20EB7DB6D5FF56A54 |
 
-The above is not comprehensive; other firmwares are also compatible and can also be autoloaded by name as well as manually. Each machine remembers its own firmware during the session.
+Other firmware images may also work.
 
 ## Keypad and CLEAR
 
@@ -63,42 +63,30 @@ CHIP-8 uses the COSMAC VIP keypad:
 ```
 
 This keyboard layout is active only while a CHIP-8 program is loaded. Direct
-keypad bindings and Numstick continue to use keypad A for `0`–`9` and keypad B
-`1`–`6` for `A`–`F`.
+keypad bindings and Numstick continue to use keypad A for 0–9 and keypad B
+1–6 for A–F.
 
-The **CHIP-8** gamepad profile maps D-pad Up/Left/Down/Right to 5/7/8/9, Start to 1, Fire to F, and Extra to 0. There is probably a better mapping. Please create an issue if you have a suggestion.
+The CHIP-8 gamepad profile maps D-pad Up/Left/Down/Right to 5/7/8/9, Start to 1, Fire to F, and Extra to 0. There is probably a better mapping. Please create an issue if you have a suggestion.
 
-Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more details.
+Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more info.
 
-CHIP-8 cannot be used on Visicom due to the lack of a CHIP-8 interpreter.
+CHIP-8 cannot be used on Visicom (no CHIP-8 interpreter).
 
 ## Options
 
-**NE555 pitch** adjusts the Studio II and Visicom beeper tuning.
-
-**CDP1863 pitch** only applies to Studio III NTSC. The PAL option applies the CDP1864 divide-by-four stage for PAL-equivalent pitch on NTSC. Sound and the applicable pitch control follow the video controls in the **Audio & Video** submenu.
-
-The **Palettes** submenu provides built-in presets for Studio II, both Studio III variants, and Visicom. Studio II and Visicom custom palettes use 16-byte MiSTer Game Boy `.gbp` files. Studio III custom palettes use a headerless `.pal` file containing eight sequential RGB888 entries (24 bytes); trailing bytes are ignored. Loading a palette changes colour immediately without resetting the machine. The custom-file row is shown only while that machine's **Custom** preset is selected. Example `.gbp` and `.pal` palettes are in [palettes](palettes/).
-
-The Studio III **Prototype** preset approximates photographs of the lost Studio III demo. It is a display-referred interpretation, not a measurement of the prototype's electrical output. **Warm** and **Cool** are aesthetic alternatives for convenient comparison.
-
-**Clear** initializes (resets) the game or firmware you have running. It's a physical button on the hardware.
-
-**Load Software** accepts conventional cartridge images and paged `.st2` packages. **Load CHIP-8** remains a separate top-level action.
-
-**Unload Software** ejects without resetting; video remains active and the previous firmware or resident-game mapping becomes visible again.
-
-**Unload Software and Reset** ejects the active cartridge or CHIP-8 program and resets the machine.
-
-**Machine** and **Apply and Reset** remain on the main menu so the full Studio II family is immediately visible. The **System** submenu contains only the less frequent Machine ROM and CHIP-8 Core replacement actions. Clear, Reset, loading ordinary software, and both unload actions also remain on the main menu.
+* Beeper pitch adjusts the Studio II and Visicom beeper tuning. 
+* CDP1863 pitch toggles Studio III NTSC's original pitch and the (less piercing) Studio III PAL pitch.
+* Studio II and Visicom custom palettes use 16-byte MiSTer Game Boy .gbp files. Studio II uses first and last .gbp colors for white/black respectively. Also works with CHIP-8.
+* Studio III custom palettes use a headerless .pal file. Eight sequential RGB888 entries (24 bytes); trailing bytes are ignored.
+* Clear initializes (resets) the game or firmware you have running. It's a physical button on the hardware.
 
 ## Controller profiles
 
-The top-level Mapping, Joystick, Players, and Numstick controls stay immediately accessible. **Mapping: Auto** selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. **Manual** exposes direct Joystick profile selection. Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
+Mapping: Auto selects a controller profile from the cartridge CRC, falling back to 8-way for unknown games. Resident games can also select their profiles automatically. Manual exposes direct Joystick profile selection. Game-specific controls are listed in [docs/how-to-play.md](docs/how-to-play.md).
 
 ## Numstick (on-screen keypad)
 
-**Numstick** assigns the overlay to keypad A or B. The right stick selects 1–9 and the left stick selects 0. Hold a direction for about half a second to register it; nudge and release the right stick for 5.
+Numstick assigns an onscreen number pad overlay to keypad A or B. Hold the right stick in one of 8 directions to input corresponding number. Nudge and release stick to select center option.
 
 ## Studio IV
 
