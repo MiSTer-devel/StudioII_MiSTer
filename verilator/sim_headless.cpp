@@ -1701,7 +1701,7 @@ int main(int argc, char** argv) {
             }
         }
         const unsigned race_crcs[] = {0x1ca7, 0x47ea, 0x5374, 0x5638,
-                                      0x6664, 0x797c, 0xc713, 0xd6c0,
+                                      0x56c3, 0x6664, 0x797c, 0xc713, 0xd6c0,
                                       0xfcc8};
         for (unsigned crc : race_crcs) {
             RS(cart_crc) = crc;
