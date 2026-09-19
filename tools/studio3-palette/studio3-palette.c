@@ -1,6 +1,8 @@
 /*
  * Write a Studio III RGB888 palette from eight hardware-indexed colours.
- * Build: cc -std=c99 -Wall -Wextra -o studio3-palette tools/studio3-palette.c
+ * Build from the repository root:
+ * cc -std=c99 -Wall -Wextra -o tools/studio3-palette/studio3-palette
+ *    tools/studio3-palette/studio3-palette.c
  * 0=black, 1=blue, 2=green, 3=cyan, 4=red, 5=magenta, 6=yellow, 7=white
  */
 #include <stdio.h>

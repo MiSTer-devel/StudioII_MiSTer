@@ -182,7 +182,7 @@ The Machine OSD field is staged until **Apply and reset**, except for the short 
 
 Studio II firmware is normally 2 KB; each resident BRAM is 4 KB so Studio III firmware fits. F2 writes the active machine's slot. MiSTer Main autoloads `boot0.rom` through `boot3.rom`, using index `[7:6]` for those four slots.
 
-The fifth BRAM (`rom4`) starts with bundled OpenStudio2 via the optional `dpram.init_file_g` parameter and `$readmemh`. `rom/openstudio2.hex` defines all 4096 bytes: the 2 KB interpreter followed by 2 KB of `FF`. Its MIT notice, source revision, and checksums are in `rom/openstudio2.md`. Both interpreter-available and OS2-type flags start true. Ports and synchronous read timing are unchanged.
+The fifth BRAM (`rom4`) starts with bundled OpenStudio2 via the optional `dpram.init_file_g` parameter and `$readmemh`. `rom/openstudio2.hex` defines all 4096 bytes: the 2 KB interpreter followed by 2 KB of `FF`. Its MIT notice is retained in `rom/openstudio2-LICENSE.txt`. Both interpreter-available and OS2-type flags start true. Ports and synchronous read timing are unchanged.
 
 F3 selects a `.ch8` at `$0003` without requesting a companion file. F4 explicitly replaces the shared interpreter bank with a selected binary at `$0004`: 768 bytes selects Marcel; 2 KB selects OpenStudio2. The legacy supplemental `$0103` loader route remains accepted for existing simulation coverage, but the OSD no longer requests it. Starting an override invalidates the cached interpreter and exits the current game. Loading an interpreter does not itself activate CHIP-8. Ordinary resets, unloads, and machine switching retain the override; reloading the core restores the bundled image. F3 is disabled on Visicom.
 
@@ -316,7 +316,7 @@ on other machines. `tools/quartus-build.sh` is a separate, Docker-only workflow
 for the amd64 Quartus 17 container; its `--parallel=1` workaround is for Apple
 Silicon emulation. It is not the default local build command.
 
-Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, and `tools/verify-beeper.sh`. The CPU-only `make -C verilator cpu-load-test` check covers LOAD-mode DMA-IN, DMA-OUT, interrupt suppression, R(0) advancement, and the RESET-to-RUN sequence. The old corpus runners (`score-21.sh`, `score-conic.sh`, `play-test.sh`, `probe-keys.sh`, `visicom-test.sh`, and `contact-sheet.py`) are disabled because they use obsolete dump paths. Use the game-start sweep below for game captures. Synthetic device/loader tests remain separate from game-start discovery.
+Directed checks include `tools/memdecode-test.sh`, `tools/chip8-loader-test.sh`, `tools/visicom-loader-test.sh`, `tools/tone-test.sh`, and `tools/verify-beeper.sh`. The CPU-only `make -C verilator cpu-load-test` check covers LOAD-mode DMA-IN, DMA-OUT, interrupt suppression, R(0) advancement, and the RESET-to-RUN sequence. Use the game-start sweep below for game captures. Synthetic device/loader tests remain separate from game-start discovery.
 
 Run `tools/rtl-regression.sh` from any working directory to rebuild the headless
 and CPU-only models, run the LOAD check, and then run the headless smoke suite.

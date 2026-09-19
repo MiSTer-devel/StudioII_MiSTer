@@ -55,14 +55,13 @@ banking design.
 
 ### Original-era CHIP-8 compatibility
 
-Maintain the [early CHIP-8 compatibility ledger](docs/os2-early-chip8.md), including
-the owner's hardware results, blocking instructions,
-and Marcel interpreter comparisons. Before redesigning OpenStudio2, account for
-native 1802 calls, original memory/register and display/interrupt conventions,
-and historical decoder behavior. Keep deliberate gaps documented. A future VIP
-core should treat these original programs as first-class compatibility cases,
-using their intended interpreter and exact images. Complete the native-call
-inventories and retest Dot-Dash on hardware with OS2's comparison decoder fix.
+Before redesigning OpenStudio2, account for native 1802 calls, original
+memory/register and display/interrupt conventions, historical decoder behavior,
+the owner's hardware results, blocking instructions, and Marcel interpreter
+comparisons. Keep deliberate gaps documented. A future VIP core should treat
+these original programs as first-class compatibility cases, using their intended
+interpreter and exact images. Complete the native-call inventories and retest
+Dot-Dash on hardware with OS2's comparison decoder fix.
 Do not count picture-only hybrids as interpreter blockers when a standard
 CHIP-8 conversion already exists. `Snoopy Cosmac picture.ch8` is covered by the
 portable 296-byte `Snoopy picture [Marco Varesio, 2015].ch8` and needs no

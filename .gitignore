@@ -58,7 +58,6 @@ PLLJ_PLLSPE_INFO.txt
 rom/*
 !rom/openstudio2.hex
 !rom/openstudio2-LICENSE.txt
-!rom/openstudio2.md
 rbf_archive/
 audio_refs/
 refs/
@@ -97,5 +96,6 @@ screenshots/
 untracked_docs/
 tools/vispalette/vispalette.exe
 tools/vispalette/vispalette
+tools/studio3-palette/studio3-palette
 Studio-II.dse
 /tmp
