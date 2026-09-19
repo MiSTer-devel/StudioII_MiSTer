@@ -311,16 +311,17 @@
 
 	end
 
-// Race / Race Colour (thru v5)
+// Race / Race Colour / Race DX (thru v1.03)
 16'h1CA7, 16'h47EA, 16'h5374, 16'h5638, 16'h56C3, 16'h6664,
-16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8, 16'h4DB8, 16'hE962:
+16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8, 16'h4DB8, 16'hE962,
+16'h9E23, 16'h7B00, 16'h55C5, 16'h8907, 16'h400A, 16'h9CC8:
 	begin
 
 		p = MAP_RACE;
 
 		s = 4'd2;
 
-	end
+	end 
 
 // Studio II Point of Sale Demonstration Cartridge
 16'hB334, 16'h3EAF:
