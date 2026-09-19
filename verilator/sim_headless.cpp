@@ -1711,6 +1711,33 @@ int main(int argc, char** argv) {
                 failures++;
             }
         }
+        const unsigned invaders_colour_v2_crcs[] = {0x45db, 0x4a95};
+        for (unsigned crc : invaders_colour_v2_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0x60u) {
+                printf("FAIL CRC %04X Invaders Colour v2 metadata\n", crc);
+                failures++;
+            }
+        }
+        const unsigned pacman_visicom_v2_crcs[] = {0x85ee, 0x5ec6};
+        for (unsigned crc : pacman_visicom_v2_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0x60u) {
+                printf("FAIL CRC %04X Pacman Visicom v2 metadata\n", crc);
+                failures++;
+            }
+        }
+        const unsigned hockey_visicom_v3_crcs[] = {0x0f35, 0x6c9a};
+        for (unsigned crc : hockey_visicom_v3_crcs) {
+            RS(cart_crc) = crc;
+            top->eval();
+            if ((unsigned)RS(resolved_cart_profile) != 0xa1u) {
+                printf("FAIL CRC %04X Hockey Visicom v3 metadata\n", crc);
+                failures++;
+            }
+        }
         const unsigned b_side_crcs[] = {0x92ba, 0xd3e2, 0x29b8, 0xaf65,
                                        0xc8b4, 0xcec2, 0x8cde, 0xda69,
                                        0x2f1a, 0xf178, 0x5433, 0xb7a7,

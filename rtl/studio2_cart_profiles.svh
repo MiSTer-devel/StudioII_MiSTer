@@ -126,9 +126,9 @@
 
 	end
 
-// Invaders v1/v2/v3 / Invaders Color
+// Invaders v1/v2/v3 / Invaders Colour v1/v2
 16'h6F69, 16'h7A5E, 16'hADAB, 16'h0D1D, 16'h69AA, 16'h2D86, 16'h5AC5,
-16'h937A, 16'hA9DA, 16'hFB00:
+16'h937A, 16'hA9DA, 16'hFB00, 16'h45DB, 16'h4A95:
 	begin
 
 		p = MAP_ROBSON;
@@ -147,8 +147,9 @@
 
 	end
 
-// Pacman / Pacman Visicom
-16'hC556, 16'h5359, 16'hF4A1, 16'hE00A, 16'h9AF1, 16'h62B4, 16'hB99C:
+// Pacman / Pacman Visicom v1/v2
+16'hC556, 16'h5359, 16'hF4A1, 16'hE00A, 16'h9AF1, 16'h62B4, 16'hB99C,
+16'h85EE, 16'h5EC6:
 	begin
 
 		p = MAP_ROBSON;
@@ -179,10 +180,10 @@
 
 	end
 
-// Hockey v1/v2/v3 / Hockey Visicom v1/v2
+// Hockey v1/v2/v3 / Hockey Visicom v1/v2/v3
 16'h114A, 16'h4F55, 16'hD5DE,
 16'h554B, 16'h1154, 16'hDE71, 16'hD753,
-16'h0D17, 16'hE320, 16'h63E5, 16'h8DD2, 16'hB075:
+16'h0D17, 16'hE320, 16'h63E5, 16'h8DD2, 16'hB075, 16'h0F35, 16'h6C9A:
 	begin
 
 		p = MAP_ROBSON2P;
@@ -310,7 +311,7 @@
 
 	end
 
-// Race / Race Colour v1/v2
+// Race / Race Colour v1/v2/v3
 16'h1CA7, 16'h47EA, 16'h5374, 16'h5638, 16'h6664,
 16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8:
 	begin
