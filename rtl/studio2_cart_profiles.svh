@@ -311,9 +311,9 @@
 
 	end
 
-// Race / Race Colour v1/v2/v3/v4
+// Race / Race Colour (thru v5)
 16'h1CA7, 16'h47EA, 16'h5374, 16'h5638, 16'h56C3, 16'h6664,
-16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8:
+16'h797C, 16'hC713, 16'hD6C0, 16'hFCC8, 16'h4DB8, 16'hE962:
 	begin
 
 		p = MAP_RACE;
