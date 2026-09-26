@@ -119,4 +119,4 @@ Studio IV is not supported.
 
 Original core by Jason Coombes; MiSTer integration and Pixie work by Flandango; later contributions by Alan Steremberg and Elle Ball. See [CREDITS.md](CREDITS.md) for detailed acknowledgements.
 
-GPL-2.0-or-later; see file headers and [LICENSE](LICENSE). OpenStudio2 is licensed under [MIT](/rom/openstudio2-LICENSE.txt).
+GPL-2.0-or-later; see file headers and [LICENSE](LICENSE). OpenStudio2 is licensed under [MIT](rom/openstudio2-LICENSE.txt).
