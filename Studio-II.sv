@@ -225,7 +225,7 @@ localparam CONF_STR = {
 	"P1,Audio & Video;",
 	"P1-;",
 	"P1O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
-	// Menu-mask prefixes must precede the page selector.
+	// Menu-mask prefixes must precede page selector
 	"d6P1O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6P1O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"P1O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
@@ -244,8 +244,8 @@ localparam CONF_STR = {
 
 	"P3,System;",
 	"P3-;",
-	"P3F2,BINROM,Load Machine ROM;",
-	"P3F4,BINROM,Load CHIP-8 Core;",
+	"P3F2,BINROM,Load Firmware/ROM;",
+	"P3F4,BINROM,Load CHIP-8 Interp.;",
 	"P3-;",
 	"P3T[1],Clear;",
 	"P3T[0],Reset;",
@@ -256,9 +256,9 @@ localparam CONF_STR = {
 
 	"R[0],Reset and Close OSD;",
 
-	// Virtual mapping, not menu items
+	// Virtual mappings
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
-	// jn is default virtual mapping
+	// Default virtual mapping
 	"jn,A,B,Start,Select;",
 	"V,v",`BUILD_DATE
 };
