@@ -52,26 +52,25 @@ assign BUTTONS = 0;
 `include "build_id.v"
 localparam CONF_STR = {
 	"Studio-II;;",
+	// === LOAD ===
 	"F1,ST2BIN,Load Software;",
 	"D3F3,CH8,Load CHIP-8;",
 	"-;",
-
-	// Machine held until Apply
+	// === MACHINE ===
 	"O[14:13],Machine,Studio II,Studio III PAL,Studio III NTSC,Visicom;",
 	"R[15],Apply and Reset;",
 	"-;",
-
-	"O[6],Mapping,Auto,Manual;",
-	// Order must match localparams in rtl/rcastudioii.sv
-	"D2O[5:2],Joystick,None,4-way,Space War,Freeway,Bowling,Baseball,Robson,Visicom Art,8-way,Art,Robson2P,Race,Gunfighter/Tennis,CHIP-8,Climber/Outbreak,Space Explorer;",
-	"O[8:7],Players,Auto,1,2;",
-	"O[10:9],Numstick,Off,Pad A,Pad B;",
-	"-;",
-
+	// === INPUT ===
+	"P3,Input;",
+	"P3-;",
+	"P3O[6],Mapping,Auto,Manual;",
+	"D2P3O[5:2],Joystick profile,None,4-way,Space War,Freeway,Bowling,Baseball,Robson,Visicom Art,8-way,Art,Robson2P,Race,Gunfighter/Tennis,CHIP-8,Climber/Outbreak,Space Explorer;",
+	"P3O[8:7],Players,Auto,1,2;",
+	"P3O[10:9],Numstick,Off,Pad A,Pad B;",
+	// === AUDIO & VIDEO ===
 	"P1,Audio & Video;",
 	"P1-;",
 	"P1O[122:121],Aspect Ratio,Original,Full Screen,[ARC1],[ARC2];",
-	// Menu-mask prefixes must precede page selector
 	"d6P1O[21],Vertical Crop,Disabled,216p (5x);",
 	"d6P1O[25:22],Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
 	"P1O[12:11],Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
@@ -87,24 +86,23 @@ localparam CONF_STR = {
 	"P1O[16],Sound,On,Off;",
 	"D4P1O[19:17],Beeper Pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"D5P1O[20],CDP1863 Pitch,Original,PAL (Lower);",
-
-	"P3,System;",
-	"P3-;",
-	"P3F2,BINROM,Load Firmware/ROM;",
-	"P3F4,BINROM,CHIP-8 Interpreter;",
-	"P3-;",
-	"P3T[1],Clear;",
-	"P3T[0],Reset;",
-	"P3-;",
-	"P3R[28],Unload Software;",
-	"P3R[27],Unload Software and Reset;",
+	// === SYSTEM ===
+	"P4,System;",
+	"P4-;",
+	"P4F2,BINROM,Load Firmware/ROM;",
+	"P4F4,BINROM,CHIP-8 Interpreter;",
+	"P4-;",	
+	"P4O[40],Info Messages,On,Off;",
+	"P4-;",
+	"P4R[28],Unload Software;",
+	"P4T[1],Clear (Soft Reset);",
 	"-;",
-
-	"R[0],Reset and Close OSD;",
-
-	// Virtual mappings
+	"R[0],Reset;",
+	// === INFO MESSAGES ===
+	"I,Joystick: None,Joystick: 4-way,Joystick: Space War,Joystick: Freeway,Joystick: Bowling,Joystick: Baseball,Joystick: Robson,Joystick: Visicom Art,Joystick: 8-way,Joystick: Art,Joystick: Robson2P,Joystick: Race,Joystick: Gunfighter/Tennis,Joystick: CHIP-8,Joystick: Climber/Outbreak,Joystick: Space Explorer;",
+	// === VIRTUAL MAPPINGS ===
 	"J1,Fire,Extra,Start,Clear,A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,B0,B1,B2,B3,B4,B5,B6,B7,B8,B9;",
-	// Default virtual mapping
+	// === DEFAULT VIRTUAL MAPPING ===
 	"jn,A,B,Start,Select;",
 	"v,0;",
 	"V,v",`BUILD_DATE
@@ -163,6 +161,8 @@ hps_io #(.CONF_STR(CONF_STR), .CONF_STR_BRAM(1)) hps_io
 	.status_in(status_in),
 	.status_set(status_set),
 	.status_menumask(status_menumask),
+	.info_req(info_req),
+	.info(info),
 
 	.ps2_key(ps2_key),
 	.joystick_0(joystick_0),
@@ -235,9 +235,8 @@ always @(posedge clk_sys) begin
 	end
 end
 
-// Cartridge eject actions share the same core-side unload path. Bit 27 also
-// hard-resets the machine; bit 28 deliberately leaves CPU and video running.
-wire cart_unload = status[27] | status[28];
+// Cartridge eject leaves CPU and video running.
+wire cart_unload = status[28];
 
 // RESET / Reset-and-close-OSD
 reg [7:0] hard_reset_cnt = 8'd0;
@@ -251,7 +250,7 @@ always @(posedge CLK_50M) begin
 	end
 	else if (download_reset_cnt != 0) download_reset_cnt <= download_reset_cnt - 8'd1;
 
-	if (RESET || status[0] || status[27] || buttons[1])
+	if (RESET || status[0] || buttons[1])
 	hard_reset_cnt <= 8'd255;
 	else if (hard_reset_cnt != 0) hard_reset_cnt <= hard_reset_cnt - 8'd1;
 
@@ -308,7 +307,7 @@ wire apply_soft_reset = apply_reset && !apply_hard_reset;
 // Hard reset win if sources overlap
 wire chip8_active;
 // CHIP-8 runs from its own interpreter ROM without a machine BIOS.
-wire hard_reset = RESET | status[0] | status[27] | buttons[1] | hard_reset_hold | (!rom_loaded && !chip8_active) | mach_reset |
+wire hard_reset = RESET | status[0] | buttons[1] | hard_reset_hold | (!rom_loaded && !chip8_active) | mach_reset |
                   (download_reset && !download_soft) | apply_hard_reset;
 wire soft_reset = clear_request | (download_reset && download_soft) | apply_soft_reset;
 wire reset       = hard_reset | soft_reset;
@@ -400,6 +399,31 @@ always @(posedge clk_sys) begin
 		push_pending <= 1'b0;
 		status_in    <= {status[127:6], auto_profile, status[1:0]};
 		status_set   <= 1'b1;
+	end
+end
+
+wire [3:0] active_profile = status[6] ? status[5:2] : auto_profile;
+reg  [3:0] profile_d = 4'd0;
+reg [21:0] info_dly = 22'd0;
+reg        info_pending = 1'b1;
+reg        info_req = 1'b0;
+reg  [7:0] info = 8'd0;
+
+always @(posedge clk_sys) begin
+	info_req <= 1'b0;
+	profile_d <= active_profile;
+	// Wait for boot settings, downloads and profile detection to settle.
+	if (boot_follow || machine_download || active_profile != profile_d) begin
+		info_dly <= 22'd2000000;
+		info_pending <= 1'b1;
+	end
+	else if (|info_dly) info_dly <= info_dly - 1'b1;
+	else if (info_pending) begin
+		info_pending <= 1'b0;
+		if (!status[40]) begin
+			info <= {4'd0, active_profile} + 8'd1;
+			info_req <= 1'b1;
+		end
 	end
 end
 

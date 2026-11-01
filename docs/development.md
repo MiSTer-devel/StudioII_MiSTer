@@ -73,16 +73,19 @@ Relevant status fields:
 | `status[33:31]` | Studio II palette |
 | `status[36:34]` | Visicom palette |
 | `status[39:37]` | Studio III palette |
+| `status[40]` | info messages disabled |
 
 `status_menumask` controls option availability, including disabling Load CHIP-8 on Visicom. Custom palette loader rows appear only when the corresponding machine is active and its palette selector is set to Custom.
 
-The System submenu contains Load Firmware/ROM, CHIP-8 Interpreter, Clear, Reset, Unload Software, and Unload Software and Reset. Load Software, Load CHIP-8, Machine, Apply and Reset, controller options, and Reset and Close OSD remain at the top level.
+The top level contains Load Software, Load CHIP-8, Machine, Apply and Reset, Input, Audio & Video, System, and Reset. Mapping and controller options remain in Input. System contains firmware/interpreter loading, Info Messages (On by default), Clear, and Unload Software. Joystick profiles are announced through HPS info popups after boot, software loading, or a profile change settles. Reset resets the core and closes the OSD.
 
 ## Audio
 
 The Studio II/Visicom NE555 pitch selector provides Original, High, Higher, Highest, Lowest, Lower, and Low. Tuning scales the latched full oscillator period before the 11:6 phase split; it does not replace or restart the generator state.
 
 The Studio III NTSC CDP1863 pitch selector provides native pitch or the CDP1864 divide-by-four stage for PAL-equivalent pitch. The same live generator state is retained when the divider selection changes.
+
+Studio III audio uses an approximately 435 Hz low-pass response fitted to FLiP's direct PAL CDP1864 recordings. Its use for NTSC CDP1863 audio is provisional pending hardware recordings. See `docs/mpt02-audio.md` for the measurements.
 
 Muting gates the final audio output. Tone generators continue running while muted.
 

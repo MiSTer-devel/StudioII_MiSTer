@@ -23,6 +23,8 @@ module hps_io #(parameter CONF_STR = "", CONF_STR_BRAM = 0) (
     input [127:0] status_in,
     input status_set,
     input [15:0] status_menumask,
+    input info_req,
+    input [7:0] info,
     output reg [10:0] ps2_key = 0,
     output reg [31:0] joystick_0 = 0, joystick_1 = 0,
     output reg [15:0] joystick_l_analog_0 = 0, joystick_r_analog_0 = 0,

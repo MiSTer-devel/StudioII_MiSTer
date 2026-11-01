@@ -85,7 +85,7 @@ keypad bindings and Numstick continue to use keypad A for 0–9 and keypad B
 
 The CHIP-8 gamepad profile maps D-pad Up/Left/Down/Right to 5/7/8/9, Start to 1, Fire to F, and Extra to 0. There are probably better mappings. Please create an issue if you have a suggestion.
 
-Marcel van Tongeren's chip8.bin interpreter has additional memory limitations. See Marcel van Tongeren's [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more info.
+Marcel's chip8.bin interpreter has additional memory limitations. See his [informational page](https://emma02.hobby-site.com/studio_chip8.html) for more info.
 
 CHIP-8 cannot be used on Visicom (no CHIP-8 interpreter).
 
@@ -93,14 +93,14 @@ CHIP-8 cannot be used on Visicom (no CHIP-8 interpreter).
 
 * Beeper pitch adjusts the Studio II and Visicom beeper tuning. 
 * CDP1863 pitch toggles Studio III NTSC's original pitch and the (less piercing) Studio III PAL pitch.
-* Studio II and Visicom custom palettes use 16-byte MiSTer Game Boy .gbp files. Studio II uses first and last .gbp colors for white/black respectively. Also works with CHIP-8.
+* Studio II and Visicom custom palettes use 16-byte MiSTer Game Boy .gbp files. Studio II uses first and last .gbp colors for white/black, respectively. Also works with CHIP-8.
 * Studio III custom palettes use a headerless .pal file. Eight sequential RGB888 entries (24 bytes); trailing bytes are ignored.
 
 ## System Options
 
 * Load Firmware/ROM allows you to load a custom BIOS or bare-metal image.
-* CHIP-8 Interpreter allows you to load a different CHIP-8 interpreter. The override remains until the core is reloaded. Load a .ch8 program afterward to enter CHIP-8 mode
-* Clear, Reset, Unload Software, and Unload Software and Reset are also in System. Reset and Close OSD is available at the top level
+* CHIP-8 Interpreter allows you to load a different CHIP-8 interpreter. The override remains until the core is reloaded. Load a .ch8 program afterward to enter CHIP-8 mode.
+* Joystick profile changes appear as OSD popups. System > Info Messages optionally allows toggling them off.
 
 ## Controller profiles
 

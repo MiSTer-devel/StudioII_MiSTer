@@ -844,6 +844,16 @@ always @(*) begin
 end
 
 ////////////////// SOUND ////////////////////////////////////////////////////
+wire signed [15:0] mpt02_sample;
+mpt02_audio mpt02_audio
+(
+	.clk    (clk_sys),
+	.reset  (video_reset),
+	.cpu_ce (cpu_ce),
+	.tone   (aud_tone),
+	.audio  (mpt02_sample)
+);
+
 `include "studio2_beeper_inline.svh"
 
 endmodule

@@ -64,6 +64,7 @@ V_SRC = \
 	sim.v \
 	$(RTL)/rcastudioii.sv \
 	$(RTL)/audio/studio2_beeper.sv \
+	$(RTL)/audio/mpt02_audio.sv \
 	$(RTL)/studio2_palette.sv \
 	$(RTL)/cdp1802.v \
 	$(RTL)/dpram.sv \
@@ -118,6 +119,11 @@ cpu-load-test: $(CPU_LOAD_EXE)
 palette-test: $(PALETTE_EXE)
 	$(PALETTE_EXE)
 
+mpt02-audio-test:
+	$V -cc --exe --build --Mdir ./obj_dir_mpt02_audio --top-module mpt02_audio \
+		$(RTL)/audio/mpt02_audio.sv mpt02_audio_test.cpp
+	./obj_dir_mpt02_audio/Vmpt02_audio
+
 emu-reset-test: $(EMU_RESET_EXE)
 	$(EMU_RESET_EXE)
 
@@ -154,6 +160,6 @@ lint:
 	$V --lint-only -Wall -Wno-DECLFILENAME -Wno-fatal $(V_INC) $(TOP) $(V_SRC)
 
 clean:
-	rm -rf obj_dir $(HL_DIR) $(CPU_LOAD_DIR) $(PALETTE_DIR) $(EMU_RESET_DIR)
+	rm -rf obj_dir $(HL_DIR) $(CPU_LOAD_DIR) $(PALETTE_DIR) $(EMU_RESET_DIR) obj_dir_mpt02_audio
 
-.PHONY: all headless loader-regression cpu-load-test palette-test emu-reset-test lint fast clean
+.PHONY: all headless loader-regression cpu-load-test palette-test mpt02-audio-test emu-reset-test lint fast clean
