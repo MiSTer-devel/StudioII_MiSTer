@@ -26,7 +26,9 @@ is tracked here before the remaining longer-term ideas.
 
 ## Hardware and presentation
 
-- Acquire reference audio for Studio III to verify accuracy
+- Acquire NTSC Studio III hardware audio; PAL CDP1864 captures support the
+  current approximately 435 Hz filter. Pitch-write and latch-reset behavior
+  still need targeted hardware evidence. See `docs/mpt02-audio.md`.
 - Verify direct video
 - Make Studio III homebrew that exercises tone generator
 
