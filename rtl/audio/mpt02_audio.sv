@@ -7,7 +7,7 @@ module mpt02_audio
 	output signed [15:0] audio
 );
 
-// Approximate 435 Hz low-pass fitted to FLiP's direct CDP1864 captures.
+// Approximate 435 Hz low-pass fitted to FliP's direct CDP1864 captures.
 // At 220029 machine cycles/s, alpha = 101/8192 gives a 434.4 Hz pole.
 reg signed [31:0] level;
 wire signed [31:0] target = tone ? 32'sd393216000 : -32'sd393216000;

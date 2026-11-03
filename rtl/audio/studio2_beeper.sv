@@ -9,7 +9,7 @@ module studio2_beeper
 );
 
 // Behavioral model NE555, fitted to reference recordings
-// from FLiP's Q sound test ROM
+// from FliP's Q sound test ROM
 localparam [15:0] SND_HALF_TOP    = 16'd1400;
 localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
 localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms

@@ -85,7 +85,7 @@ The Studio II/Visicom NE555 pitch selector provides Original, High, Higher, High
 
 The Studio III NTSC CDP1863 pitch selector provides native pitch or the CDP1864 divide-by-four stage for PAL-equivalent pitch. The same live generator state is retained when the divider selection changes.
 
-Studio III audio uses an approximately 435 Hz low-pass response fitted to FLiP's direct PAL CDP1864 recordings. Its use for NTSC CDP1863 audio is provisional pending hardware recordings. See `docs/mpt02-audio.md` for the measurements.
+Studio III audio uses an approximately 435 Hz low-pass response fitted to FliP's direct PAL CDP1864 recordings. Its use for NTSC CDP1863 audio is provisional pending hardware recordings. See `docs/mpt02-audio.md` for the measurements.
 
 Muting gates the final audio output. Tone generators continue running while muted.
 
@@ -99,7 +99,7 @@ Built-in selections are owned by `rtl/studio2_palette.sv`:
 
 - Studio II: Original, Amber, Green, Inverted, Custom.
 - Studio III: Original, Prototype, Warm, Cool, Custom.
-- Visicom: Balanced, Box Art, Emma 02, FLiP, MAME, Manuals, Nicole Express, Custom.
+- Visicom: Balanced, Box Art, Emma 02, FliP, MAME, Manuals, Nicole Express, Custom.
 
 ## Video behavior
 

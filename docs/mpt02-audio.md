@@ -2,12 +2,12 @@
 
 ## Evidence
 
-FLiP supplied nine recordings and `tunebox.bin` in `refs/mpt-02-audio/`.
+FliP supplied nine recordings and `tunebox.bin` in `refs/mpt-02-audio/`.
 The accompanying `mpt-02-audio.txt` identifies a PAL MPT-02 with a CDP1864.
 Audio was captured directly from the chip, before RF mixing; this machine
 has no internal speaker. Treat this as one console's chip output reference.
 It does not establish the standalone CDP1863's behavior or the RF audio path.
-FLiP's recording 7 has an audible overlay; treat its measurements with caution.
+FliP's recording 7 has an audible overlay; treat its measurements with caution.
 
 Source: https://forums.atariage.com/topic/209519-rca-studio-ii-gold-mine-an-interview-with-the-studio-2-production-manager/?do=findComment&comment=5913450
 

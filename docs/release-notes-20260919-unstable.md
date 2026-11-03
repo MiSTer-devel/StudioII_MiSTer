@@ -19,7 +19,7 @@ This build follows the September 12 release and focuses on palette handling, sof
 - Added built-in palette selection for Studio II, Studio III, and Visicom.
 - Studio II presets: Original, Amber, Green, Inverted, and Custom.
 - Studio III presets: Original, Prototype, Warm, Cool, and Custom.
-- Visicom presets: Balanced, Box Art, Emma 02, FLiP, MAME, Manuals, Nicole Express, and Custom.
+- Visicom presets: Balanced, Box Art, Emma 02, FliP, MAME, Manuals, Nicole Express, and Custom.
 - Added Studio III custom palette loading using headerless 24-byte RGB888 `.pal` files.
 - Studio II and Visicom custom palettes continue to use MiSTer Game Boy `.gbp` files.
 - Custom palette loaders appear only when the corresponding machine is active and **Custom** is selected.

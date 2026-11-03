@@ -47,7 +47,7 @@ Original reference files stay local and immutable under `refs/Visicom video/`.
 They are evidence, not build inputs. The print images have stable IDs and
 SHA-256 hashes in `refs/Visicom video/palette-references/README.md`.
 
-### FLiP hardware videos
+### FliP hardware videos
 
 - `visicom-bowling.mov`: H.264, 1280x720, 60 frames/s, approximately 75.4 s;
   colour metadata is absent.
@@ -96,15 +96,15 @@ of the Visicom's electrical or display-referred RGB output.
 
 | Observed source | `0` | `1` | `2` | `3` |
 |---|---:|---:|---:|---:|
-| FLiP videos, combined | `#2B4624` | `#555E96` | `#838435` | `#943603` |
-| FLiP Bowling | `#2C4624` | `#555E95` | `#838435` | `#953604` |
-| FLiP Race | `#223E19` | `#505B9C` | `#869241` | `#8F3200` |
+| FliP videos, combined | `#2B4624` | `#555E96` | `#838435` | `#943603` |
+| FliP Bowling | `#2C4624` | `#555E95` | `#838435` | `#953604` |
+| FliP Race | `#223E19` | `#505B9C` | `#869241` | `#8F3200` |
 | Flyer print | `#4B7841` | `#99C8C8` | `#E7CA51` | `#D5A696` |
 | User-manual print | `#70B331` | `#08B3C7` | `#F2D91D` | `#C03847` |
 | Nicole Express clean screen, preferred source look | `#3C8E61` | `#6AC0D9` | `#FDFF8D` | `#F59AB2` |
 | Nicole Express running video, severely underexposed | `#000F00` | `#08355B` | `#4E4C0B` | `#5E0609` |
 
-The FLiP combined row samples 49 frames across the two videos. The print rows
+The FliP combined row samples 49 frames across the two videos. The print rows
 sample clean screen regions. Family masks separate the four nominal colours,
 then robust channel estimates reduce compression, halftone, dirt, and isolated
 highlight influence. No matrix, transfer, black-level, gain, gamma, chroma
@@ -138,7 +138,7 @@ hardware calibration.
 ## Comparison
 
 - The raw observed medians lean toward MAME overall. Mean uncorrected Lab
-  distances for FLiP, flyer, and manual were respectively 36.8, 27.4, and 30.5
+  distances for FliP, flyer, and manual were respectively 36.8, 27.4, and 30.5
   from MAME versus 39.1, 32.0, and 32.6 from Emma 02.
 - Normalizing away much of each source's global brightness and saturation shift
   makes the palette geometry effectively a tie. The corresponding pairwise
@@ -158,10 +158,10 @@ hardware calibration.
   red. It is not a small exposure change from the damaged flyer; every colour
   family is cleaner and the red is substantially less attenuated.
 - The Nicole Express running video is too dark for level fitting, but its cyan
-  is blue-cyan rather than FLiP's violet-blue and its red is near red rather
-  than FLiP's orange-red. It independently reinforces the conclusion that the
-  FLiP capture has a significant chroma-phase rotation.
-- FLiP renders index 1 as violet-blue and index 3 as orange-red while lowering
+  is blue-cyan rather than FliP's violet-blue and its red is near red rather
+  than FliP's orange-red. It independently reinforces the conclusion that the
+  FliP capture has a significant chroma-phase rotation.
+- FliP renders index 1 as violet-blue and index 3 as orange-red while lowering
   the whole palette. That coordinated hue rotation is consistent with an
   unresolved analog/capture matrix or chroma-phase effect; its encoded RGB
   values must not be copied into the core as hardware truth.
@@ -267,10 +267,10 @@ colour ordering and broad hue relationships than for literal RGB, absolute
 luminance, or saturation. It should not be “corrected” with one global phase,
 gamma, or saturation value.
 
-### FLiP chroma-phase test
+### FliP chroma-phase test
 
-An encoded YIQ test rotated the FLiP chroma vector while leaving luma and chroma
-amplitude unchanged. Positive rotation moves FLiP's violet-blue toward cyan and
+An encoded YIQ test rotated the FliP chroma vector while leaving luma and chroma
+amplitude unchanged. Positive rotation moves FliP's violet-blue toward cyan and
 its orange-red toward red/magenta. The flyer comparison consistently prefers
 that positive direction:
 
@@ -278,7 +278,7 @@ that positive direction:
 - including all four colours gives approximately `+15°`;
 - Bowling alone gives approximately `+16°`, and Race approximately `+22°`.
 
-At `+16°`, the unscaled FLiP medians become `#2F451D`, `#4D638E`, `#8D7D3C`,
+At `+16°`, the unscaled FliP medians become `#2F451D`, `#4D638E`, `#8D7D3C`,
 and `#9D2A29`. This improves the yellow and red hue relationship, but the cyan
 remains substantially too blue compared with the flyer.
 
@@ -290,7 +290,7 @@ Fitting each colour separately exposes the limit of a single phase correction:
 
 Rotating far enough to align index 1 (`+53°`) turns index 2 brownish-red and
 index 3 magenta. A global phase error is therefore present in the useful
-direction, but cannot by itself transform FLiP into the flyer. The remaining
+direction, but cannot by itself transform FliP into the flyer. The remaining
 difference requires some combination of colour-dependent capture response,
 chroma amplitude, transfer, print attenuation, and possibly source sampling
 error. A future fit should start near `+15°` to `+20°`, then solve the other
@@ -308,7 +308,7 @@ The implemented Visicom design has three layers:
    better evidence updates one palette definition, not the machine model.
 2. Named alternatives in [`palettes/palettes-readme.txt`](../palettes/palettes-readme.txt):
    MAME, Emma 02, balanced, box-art print and adjusted, Nicole Express, and
-   FLiP. Any palette derived from a capture or printed source must be labelled
+   FliP. Any palette derived from a capture or printed source must be labelled
    as that source's *look*, never as hardware truth.
 3. A user-supplied four-entry, 24-bit RGB palette loaded without editing HDL or
    running Quartus. This is the immediate path for applying new measurements or
@@ -348,7 +348,7 @@ The following invariants describe the route and its acceptance requirements:
   same final RGB path.
 
 The Nicole Express values above are the first explicitly preferred source-look
-preset candidate. Raw flyer, manual, and FLiP observation rows may seed further
+preset candidate. Raw flyer, manual, and FliP observation rows may seed further
 optional source-look presets, but they are not approved preset constants yet.
 Freeze every such preset only with its provenance and transformation caveats
 attached.

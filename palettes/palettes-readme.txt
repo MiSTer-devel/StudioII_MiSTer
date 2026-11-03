@@ -163,7 +163,7 @@ Red     #C74C32
 Yellow  #B5A443
 Blue    #627FB6
 
-Sampled and adjusted from FLiP captures.
+Sampled and adjusted from FliP captures.
 
 visicom-mame.gbp
 

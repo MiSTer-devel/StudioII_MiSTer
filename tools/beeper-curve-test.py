@@ -476,7 +476,7 @@ check(
     f"+{trough_interval:.1f} cents from first trough",
 )
 
-# FLiP's Q-Sound Test drives the same long note followed by selectable low gaps.
+# FliP's Q-Sound Test drives the same long note followed by selectable low gaps.
 # The effective gaps come from the recorded pulse periods. Targets are the
 # steady retrigger crests, normalized to the 628.4Hz fresh pitch in each file.
 q_test_hardware = {

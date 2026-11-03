@@ -1,4 +1,4 @@
-// model of NE555. based on FLiP's Q Sound Test recordings
+// model of NE555. based on FliP's Q Sound Test recordings
 localparam [15:0] SND_HALF_TOP    = 16'd1400;
 localparam [15:0] SND_HALF_BOTTOM = 16'd1741;
 localparam [15:0] SND_HOLD_TICKS  = 16'd35205; // ~20ms

@@ -80,7 +80,7 @@ localparam CONF_STR = {
 	"HBP1F6,GBP,Load Custom Palette;",
 	"D7P1O[39:37],Studio III Palette,Original,Prototype,Warm,Cool,Custom;",
 	"HAP1F7,PAL,Load Custom Palette;",
-	"D9P1O[36:34],Visicom Palette,Balanced,Box Art,Emma 02,FLiP,MAME,Manuals,Nicole Express,Custom;",
+	"D9P1O[36:34],Visicom Palette,Balanced,Box Art,Emma 02,FliP,MAME,Manuals,Nicole Express,Custom;",
 	"HCP1F5,GBP,Load Custom Palette;",
 	"P1-;",
 	"P1O[16],Sound,On,Off;",

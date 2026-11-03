@@ -19,7 +19,7 @@ boundary. Release chronology belongs in release notes and Git.
   while an RC-like amplitude envelope fades over roughly 96 ms.
 - Pitch and amplitude remain continuous across close Q transitions. Retriggers
   recover according to the low-gap duration and do not stack independent notes.
-- FLiP's controlled Q-Sound Test gives steady retrigger crests at about 94.9%,
+- FliP's controlled Q-Sound Test gives steady retrigger crests at about 94.9%,
   97.0%, 98.7%, and 99.3% of fresh pitch for its 30, 50, 80, and 100 delay
   settings. The corresponding recorded low gaps are approximately 60.2, 105.5,
   160.7, and 205.9 ms. The supplied `S2-100-*` series, with the 50 and 100
@@ -90,7 +90,7 @@ pitch, phase, or envelope state.
 ## Evidence and verification
 
 The model is constrained by labeled retail-console recordings, the RCA
-demonstration archive, FLiP's configurable Q-Sound Test ROM and recordings,
+demonstration archive, FliP's configurable Q-Sound Test ROM and recordings,
 ROM/simulator Q cadence, and MiSTer listening. Acoustic analysis uses cycle
 periods, narrow-band phase, spectral ridges, and harmonics; recordings do not
 provide direct electrical Q or control-voltage timing. Controlled Q-Sound Test

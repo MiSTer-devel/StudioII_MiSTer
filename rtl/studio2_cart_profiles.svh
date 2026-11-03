@@ -291,6 +291,13 @@
 
 	end
 
+// Tunebox
+16'h13F7, 16'h67A1:
+	begin
+		p = MAP_8WAY;
+		s = 4'd1;
+	end
+
 // RCA Studio II Resident Games
 16'hB5BF:
 	begin
