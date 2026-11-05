@@ -216,7 +216,7 @@ Marcel's interpreter has a virtual program ceiling of `$0AFF` and only a small t
 - Studio II is NTSC-only and uses an adjusted RC oscillator; the approximately 1.760 MHz core clock is a practical hardware-derived model, not an exact crystal constant.
 - CDP1861/CDP1864 EF timing deliberately leads nominal line boundaries. Interrupt and DMA requests are accepted at instruction boundaries, and DMA remains asserted until serviced.
 - `CON` is captured with each luminance DMA byte.
-- Studio III NTSC is a CDP1861 + CDP1862 + CDP1863 machine, not a retimed CDP1864 implementation.
+- The Studio III NTSC mode models CDP1861 + CDP1862 + CDP1863, following Emma 02. The existence of a retail machine with this combination and the NTSC ROM provenance remain unconfirmed.
 - In the CPU Cx row, `C4` is NOP and `C5-C7`/`CC-CF` are long skips.
 
 ## Verification

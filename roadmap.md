@@ -26,9 +26,11 @@ is tracked here before the remaining longer-term ideas.
 
 ## Hardware and presentation
 
-- Acquire NTSC Studio III hardware audio; PAL CDP1864 captures support the
-  current approximately 435 Hz filter. Pitch-write and latch-reset behavior
-  still need targeted hardware evidence. See `docs/mpt02-audio.md`.
+- Confirm with Marcel the origin of Emma 02's Studio III NTSC configuration
+  and ROM, and whether corresponding hardware existed. FliP reports no known
+  retail NTSC successor; hardware audio may not be available. PAL CDP1864
+  captures support the current approximately 435 Hz filter. Pitch-write and
+  latch-reset behavior still need targeted evidence. See `docs/mpt02-audio.md`.
 - Verify direct video
 - Make Studio III homebrew that exercises tone generator
 
