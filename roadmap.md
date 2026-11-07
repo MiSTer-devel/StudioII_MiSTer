@@ -26,11 +26,8 @@ is tracked here before the remaining longer-term ideas.
 
 ## Hardware and presentation
 
-- Confirm with Marcel the origin of Emma 02's Studio III NTSC configuration
-  and ROM, and whether corresponding hardware existed. FliP reports no known
-  retail NTSC successor; hardware audio may not be available. PAL CDP1864
-  captures support the current approximately 435 Hz filter. Pitch-write and
-  latch-reset behavior still need targeted evidence. See `docs/mpt02-audio.md`.
+- Confirm with Marcel the origin of Emma 02's Studio III NTSC configuration and ROM, and whether corresponding hardware existed. FliP reports no known retail NTSC successor; hardware audio may not be available. Pitch-write and latch-reset behavior still need targeted evidence. See `docs/mpt02-audio.md`.
+- Resolve the PAL filter disagreement: FliP's MPT-02 captures fit a 435 Hz pole, TLD1985's Apollo 80 footage a 2.6 kHz pole. Both are OSD settings; find out where each recording was tapped before changing the default.
 - Verify direct video
 - Make Studio III homebrew that exercises tone generator
 

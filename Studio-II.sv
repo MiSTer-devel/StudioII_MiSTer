@@ -86,6 +86,7 @@ localparam CONF_STR = {
 	"P1O[16],Sound,On,Off;",
 	"D4P1O[19:17],Beeper Pitch,Original,High,Higher,Highest,Lowest,Lower,Low;",
 	"D5P1O[20],CDP1863 Pitch,Original,PAL (Lower);",
+	"D7P1O[30:29],Studio III Filter,MPT-02,Apollo 80,Off;",
 	// === SYSTEM ===
 	"P4,System;",
 	"P4-;",
@@ -362,6 +363,7 @@ rcastudioii rcastudio
 	.players(status[8:7]),
 	.beeper_tune(status[19:17]),
 	.ntsc_pal_pitch(status[20]),
+	.studio3_filter(status[30:29]),
 	.osk_a(osk_a),
 	.osk_b(osk_b),
 	.clear_key(clear_request),

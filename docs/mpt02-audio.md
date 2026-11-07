@@ -110,13 +110,15 @@ Local results and reproduction script are beside the captures:
 
 ## Implemented estimate
 
-`rtl/audio/mpt02_audio.sv` applies this response to Studio III audio using
-`alpha = 101/8192` at the CPU machine-cycle enable (about 220029 Hz).
-The resulting pole is approximately 434.4 Hz. The filter uses shifts and adds
-with 16 fractional bits, retaining the existing +/-6000 input levels.
-Its state continues through Q transitions, CLEAR, pitch writes, and mute;
-video reset restores the silent input level. Studio II and Visicom retain
-their existing paths.
+`rtl/audio/mpt02_audio.sv` applies a one-pole low-pass to Studio III audio at the CPU machine-cycle enable (about 220029 Hz). The OSD option Audio & Video > Studio III Filter (`status[30:29]`) selects the response:
+
+| Setting | alpha | Pole | Source |
+| --- | ---: | ---: | --- |
+| MPT-02 (default) | 101/8192 | 434.4 Hz | FliP's direct CDP1864 captures |
+| Apollo 80 | 581/8192 | 2576 Hz | TLD1985's Academy Apollo 80 footage |
+| Off | - | - | raw square wave |
+
+The filter uses shifts and adds with 16 fractional bits, retaining the existing +/-6000 input levels. Its state continues through Q transitions, CLEAR, pitch writes, and mute; video reset restores the silent input level. Off follows the tone directly. Studio II and Visicom retain their existing paths. The headless simulator takes `--studio3-filter mpt02|apollo80|off`.
 
 The NTSC CDP1863 path uses the same filter provisionally for listening tests.
 TODO: validate the NTSC response against hardware recordings.
@@ -125,8 +127,7 @@ This is the best estimate from the supplied recordings. Pitch-generator
 semantics remain unchanged. Pitch-write and latch-reset behavior still need
 targeted hardware evidence.
 
-Run `make -C verilator mpt02-audio-test` to check step/release behavior,
-clock-enable hold, reset, output bounds, and harmonics against the captures.
+Run `make -C verilator mpt02-audio-test` to check step/release behavior, clock-enable hold, reset, output bounds, and harmonics against both captures and the unfiltered square wave.
 
 ## Q Sound Test captures
 
@@ -180,3 +181,15 @@ node tools/analyze-q-sound.cjs refs/mpt-02-audio/q-sound-core-100-100.log refs/m
 The analysis uses a separate 300-800 Hz band and 5 ms RMS window
 to locate bursts, then fits the original decoded waveform. Thresholded
 burst widths include filter delay; the table uses onset-to-onset periods.
+
+## Academy Apollo 80 footage (TLD1985)
+
+`refs/mpt-02-audio/TLD1985/` holds two YouTube downloads from TLD1985: `Academy Apollo 80 test footage [kG9BFg_rviA].mkv` (1135 s) and `Biorythm Test Footage [7RonvuuTPAw].mkv` (137 s). Both are 640x480 at 25 fps with Opus audio at 48000 Hz; the two audio channels are identical. The capture point is unknown. Silent passages carry a 50 Hz buzz and its harmonics, which suggests an RF or TV audio path rather than a direct chip tap. This is a second console from the same family, not a second MPT-02.
+
+Pitch: 23 distinct steady tones between 258 and 2278 Hz all fit `f_clk / (64 * (latch + 1))` within 0.02%, using latch values from 0x0B to 0x69. The default tone measures 506.32 Hz, which implies a 1.74984 MHz clock with latch 0x35. FliP's MPT-02 default tone implies 1.75026 MHz. This independently confirms the divider model and default latch on a second PAL console.
+
+Timbre: the Apollo audio is much brighter than the MPT-02 captures. Median odd-harmonic levels for the default tone are H3 -10.7 dB, H5 -17.0 dB, H7 -21.2 dB, and H9 -24.5 dB. A square wave through one pole near 2.6 kHz fits all tones with a median absolute error of 0.61 dB. The 435 Hz pole errs by 8.0 dB, and an unfiltered square wave by 4.3 dB. A 2.6 kHz pole is close to the 3.18 kHz corner of PAL 50 us FM de-emphasis, so the TV or capture path may explain most of it. Even harmonics sit at -17 to -22 dB below 500 Hz and fall with frequency; their source is unclear.
+
+Implication: these two sources disagree about the PAL low-pass. The MPT-02 tap may include an on-board RC network, or the Apollo path may lack one. Both responses are available as OSD settings (see Implemented estimate); MPT-02 stays the default until the capture points are known. Ask FliP where on the MPT-02 the audio was tapped, and ask TLD1985 how the Apollo audio was captured.
+
+The video shows several Studio III games and the Biorhythm cartridge, which may help with PAL colour and layout comparisons. Local results and scripts: `refs/mpt-02-audio/tld1985-analysis.txt` and `tld-tones.py`, `tld-refine.py`, `tld-fit.py`.

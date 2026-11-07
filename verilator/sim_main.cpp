@@ -276,6 +276,7 @@ int main(int argc, char** argv, char** env) {
 	top = new Vtop();
 	top->beeper_tune = 0; // Medium/reference; GUI tuning control is not exposed.
 	top->ntsc_pal_pitch = 0; // Original NTSC pitch; GUI control is not exposed.
+	top->studio3_filter = 0; // MPT-02 filter; GUI control is not exposed.
 	Verilated::commandArgs(argc, argv);
 
 	//Prepare for Dump Signals

@@ -592,6 +592,8 @@ static void usage(const char* argv0) {
 "    --beeper-tune NAME   Studio II tuning: medium (default), high, higher,\n"
 "                         highest, low, lower, or lowest\n"
 "    --ntsc-tone-pitch P  Studio III NTSC pitch: original (default) or pal\n"
+"    --studio3-filter F   Studio III tone filter: mpt02 (default), apollo80\n"
+"                         or off\n"
 "    --swap FILE@FRAME    download another cartridge at frame F, like an OSD\n"
 "                         load while the machine is running\n"
 "    --press KEY@F[:H]    press KEY at frame F, hold H frames (default 4).\n"
@@ -657,6 +659,7 @@ int main(int argc, char** argv) {
     uint8_t  machine = 0;   // 0 studio2, 1 studio3 PAL, 2 studio3 NTSC, 3 Visicom
     uint8_t  beeper_tune = 0; // 0 medium/reference; remaining values follow the OSD
     bool     ntsc_pal_pitch = false;
+    uint8_t  studio3_filter = 0; // 0 MPT-02, 1 Apollo 80, 2 off
     bool     ce_div4 = false;  // run the hardware's /4 pixel enable (4x slower)
     uint32_t ram_junk_seed = 0;  // pre-fill RAM with junk (0 = boot with zeroed RAM)
     long     press_phase = 0;    // delay key events N clks past their frame boundary
@@ -788,6 +791,13 @@ int main(int argc, char** argv) {
             else if (t == "pal")      ntsc_pal_pitch = true;
             else { fprintf(stderr, "error: --ntsc-tone-pitch must be original or pal\n"); return 1; }
         }
+        else if (a == "--studio3-filter") {
+            std::string t = next("--studio3-filter");
+            if      (t == "mpt02")    studio3_filter = 0;
+            else if (t == "apollo80") studio3_filter = 1;
+            else if (t == "off")      studio3_filter = 2;
+            else { fprintf(stderr, "error: --studio3-filter must be mpt02, apollo80 or off\n"); return 1; }
+        }
         else if (a == "--joy-map") { joy_override = (uint8_t)atoi(next("--joy-map")); joy_manual = true; }
         else if (a == "--trace-q")    trace_q = true;
         else if (a == "--frame-log")  frame_log = true;
@@ -847,6 +857,7 @@ int main(int argc, char** argv) {
     top->machine = machine;
     top->beeper_tune = beeper_tune;
     top->ntsc_pal_pitch = ntsc_pal_pitch;
+    top->studio3_filter = studio3_filter;
     top->ce_div4 = ce_div4 ? 1 : 0;
     top->players = players_mode;
 
