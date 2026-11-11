@@ -56,6 +56,14 @@ module rcastudioii
 	//    3  Visicom
 	input        [1:0] machine,
 
+	// FujiNet cartridge link (fujinet/fujinet_cart.sv)
+	input              fujinet_en,
+	input              fn_rx_strobe,
+	input        [7:0] fn_rx_byte,
+	output             fn_tx_valid,
+	output       [7:0] fn_tx_byte,
+	input              fn_tx_ready,
+
 	output reg         HBlank,
 	output reg         HSync,
 	output reg         VBlank,
@@ -184,10 +192,11 @@ always @(posedge clk_sys) begin
 	else if (ce_pix) cpu_div <= cpu_div + 3'd1;
 end
 reg dma_in_req  = 1'b0;
+wire fn_active, fn_hold;     // FujiNet cart: owns the decode / holds CLEAR
 cdp1802 cdp1802 (
   .CLOCK        (clk_sys),
   .clk_enable   (cpu_ce),
-  .CLEAR_N      (~reset),
+  .CLEAR_N      (~(reset | fn_hold)),
 
   .Q            (Q),            // O beeper, active high
   .EF           (EF),           // I 3:0 external flags EF1 to EF4
@@ -249,7 +258,7 @@ wire        rom_hi   = (((is_studio3 && !chip8_os2_active) || chip8_marcel_activ
 wire        col_sel  = is_studio3 && bank0 && (ram_a[11:8] == 4'hB);
 // Cartridge ownership is not part of firmware storage
 wire        cart_sel = bank0 && cart_page[ram_a[11:8]] &&
-	                   !col_sel && !chip8_active;
+	                   !col_sel && !chip8_active && !fn_active;
 
 // ---- Toshiba Visicom COM-100 ----------------------------------------------
 //
@@ -305,7 +314,38 @@ always @(posedge clk_sys) begin
 	col_addr_q    <= ram_a[5:0];
 	os2_ram_sel_q <= os2_ram_sel;
 end
-assign ram_q = os2_ram_sel_q ? os2_ram_q
+// FujiNet: the cart claims pages anywhere; what it leaves is the console's
+// BIOS, its RAM mirrors, else open bus (ROM DISABLE removes the built-in games).
+reg         fn_bios_q;
+always @(posedge clk_sys) fn_bios_q <= (ram_a[15:10] == 6'd0);
+wire [7:0]  fn_q;
+wire        fn_drive;
+wire [7:0]  fn_ram_q = fn_drive  ? fn_q
+                     : fn_bios_q ? rom_q
+                     : ram_sel_q ? sram_q : 8'hFF;
+
+fujinet_cart fujinet_cart
+(
+	.clk       (clk_sys),
+	.reset     (reset | fn_hold),
+	.enable    (fujinet_en && machine == MACHINE_STUDIO2),
+	.cpu_ce    (cpu_ce),
+	.ram_rd    (ram_rd),
+	.ram_a     (ram_a),
+	.active    (fn_active),
+	.hold      (fn_hold),
+	.drive     (fn_drive),
+	.q         (fn_q),
+	.rx_strobe (fn_rx_strobe),
+	.rx_byte   (fn_rx_byte),
+	.tx_valid  (fn_tx_valid),
+	.tx_byte   (fn_tx_byte),
+	.tx_ready  (fn_tx_ready)
+);
+
+
+assign ram_q = fn_active ? fn_ram_q
+             : os2_ram_sel_q ? os2_ram_q
              : pl1_sel_q        ? pl1_q
              : ram_sel_q        ? sram_q
              : cart_sel_q       ? cart_q

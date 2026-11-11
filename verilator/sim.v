@@ -44,7 +44,15 @@ module top(
    // cpu_ce and the pixie's counters is a real degree of freedom on hardware
    // that ce_pix=1 cannot exercise. Use this for phase-sensitive behavior such
    // as the Visicom display-base rotation. 4x slower.
-   input ce_div4/*verilator public_flat*/
+   input ce_div4/*verilator public_flat*/,
+
+   // FujiNet cartridge link bytes (the MiSTer top puts a UART here)
+   input        fujinet_en/*verilator public_flat*/,
+   input        fn_rx_strobe,
+   input  [7:0] fn_rx_byte,
+   output       fn_tx_valid,
+   output [7:0] fn_tx_byte,
+   input        fn_tx_ready
 );
    
    // Core inputs/outputs
@@ -151,6 +159,12 @@ rcastudioii rcastudio
 	.beeper_tune(beeper_tune),
 	.ntsc_pal_pitch(ntsc_pal_pitch),
 	.machine(machine),
+	.fujinet_en(fujinet_en),
+	.fn_rx_strobe(fn_rx_strobe),
+	.fn_rx_byte(fn_rx_byte),
+	.fn_tx_valid(fn_tx_valid),
+	.fn_tx_byte(fn_tx_byte),
+	.fn_tx_ready(fn_tx_ready),
 	.osk_a(10'd0),
 	.osk_b(10'd0),
 	.clear_key(clear_key)

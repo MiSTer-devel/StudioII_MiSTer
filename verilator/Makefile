@@ -72,7 +72,8 @@ V_SRC = \
 	$(RTL)/pixie/cdp1864.v \
 	$(RTL)/pixie/cdp1863.v \
 	$(RTL)/pixie/cdp1862.v \
-	$(RTL)/pixie/pixie_video.v
+	$(RTL)/pixie/pixie_video.v \
+	$(RTL)/fujinet/fujinet_cart.sv
 
 C_SRC = \
 	sim_main.cpp \
