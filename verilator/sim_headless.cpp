@@ -17,6 +17,8 @@
 #include "Vtop___024root.h"
 
 #include <zlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -647,6 +649,8 @@ int main(int argc, char** argv) {
     bool trace_vwr = false;
     unsigned long long trace_cyc_from = 0, trace_cyc_to = 0;
     bool trace_q = false;
+    bool fujinet = false;
+    std::string fujinet_pty_file;
     uint32_t joy_mask = 0; long joy_from = -1, joy_to = -1;
     uint32_t joy2_mask = 0; long joy2_from = -1, joy2_to = -1;
     std::string swap_file; long swap_frame = -1; bool swap_done = false;
@@ -800,6 +804,8 @@ int main(int argc, char** argv) {
         }
         else if (a == "--joy-map") { joy_override = (uint8_t)atoi(next("--joy-map")); joy_manual = true; }
         else if (a == "--trace-q")    trace_q = true;
+        else if (a == "--fujinet")    fujinet = true;
+        else if (a == "--fujinet-pty") { fujinet = true; fujinet_pty_file = next("--fujinet-pty"); }
         else if (a == "--frame-log")  frame_log = true;
         else if (a == "--quiet")      quiet = true;
         else if (a == "--press") {
@@ -872,6 +878,29 @@ int main(int argc, char** argv) {
     if (!ch8.empty()) io.add(ch8, 3);
 
     FrameGrabber fg;
+
+    // FujiNet cart link: the core's link bytes on a pty, paced like the UART
+    // (one byte per 12 clocks, ~1.5 Mbaud at the 1.76 MHz pixel clock).
+    int fn_pty = -1;
+    std::vector<uint8_t> fn_rxq;
+    size_t fn_rxpos = 0;
+    long fn_pace = 0;
+    long fn_rx_total = 0, fn_tx_total = 0;
+    if (fujinet) {
+        fn_pty = posix_openpt(O_RDWR | O_NOCTTY);
+        if (fn_pty < 0 || grantpt(fn_pty) || unlockpt(fn_pty)) { perror("pty"); return 1; }
+        fcntl(fn_pty, F_SETFL, fcntl(fn_pty, F_GETFL) | O_NONBLOCK);
+        const char* slave = ptsname(fn_pty);
+        // keep the slave open so the master never sees a hangup between shims
+        int keep = open(slave, O_RDWR | O_NOCTTY);
+        (void)keep;
+        fprintf(stderr, "[fujinet] link pty %s\n", slave);
+        if (!fujinet_pty_file.empty()) {
+            FILE* pf = fopen(fujinet_pty_file.c_str(), "w");
+            if (pf) { fprintf(pf, "%s\n", slave); fclose(pf); }
+        }
+        top->fujinet_en = 1;
+    }
 
     top->clk_48 = 0; top->clk_24 = 0;
     top->ioctl_download = 0; top->ioctl_upload = 0; top->ioctl_wr = 0;
@@ -950,6 +979,30 @@ int main(int argc, char** argv) {
                         fg.frame, it->second.second ? "press" : "release", it->second.first);
             it = key_sched.erase(it);
             break;   // one event per clock so each toggle is seen
+        }
+
+        if (fn_pty >= 0) {
+            bool slot = (++fn_pace % 12) == 0;
+            top->fn_rx_strobe = 0;
+            if (slot) {
+                if (fn_rxpos == fn_rxq.size()) {
+                    uint8_t b[512];
+                    ssize_t n = read(fn_pty, b, sizeof b);
+                    fn_rxq.assign(b, b + (n > 0 ? n : 0));
+                    if (n > 0) fn_rx_total += n;
+                    fn_rxpos = 0;
+                }
+                if (fn_rxpos < fn_rxq.size()) {
+                    top->fn_rx_strobe = 1;
+                    top->fn_rx_byte = fn_rxq[fn_rxpos++];
+                }
+            }
+            top->fn_tx_ready = slot;
+            if (slot && top->fn_tx_valid) {    // taken on this edge
+                uint8_t b = top->fn_tx_byte;
+                if (write(fn_pty, &b, 1) != 1) fprintf(stderr, "[fujinet] pty write lost\n");
+                fn_tx_total++;
+            }
         }
 
         top->clk_48 = 1;
@@ -2019,6 +2072,14 @@ int main(int argc, char** argv) {
     printf("\n");
     printf("audio: %ld output edges, %ld Q edges\n", a_edges, q_edges);
     printf("done: %ld frames in %ld cycles\n", fg.frame, cycles);
+    if (fujinet) {
+#define FN(sig) (top->rootp->top__DOT__rcastudio__DOT__fujinet_cart__DOT__##sig)
+        printf("fujinet: pty rx %ld tx %ld bytes\n", fn_rx_total, fn_tx_total);
+        printf("fujinet: ready=%d hold=%d live=%d armed=%d mbx=%d ev_wp=%d ev_rp=%d lost=%d rx_n=%d regsel=%02X bank=%d r_line=%d front=%d\n",
+               (int)FN(c_ready), (int)FN(c_hold), (int)FN(live), (int)FN(armed), (int)FN(mbx),
+               (int)FN(ev_wp), (int)FN(ev_rp), (int)FN(ev_lost), (int)FN(rx_n), (int)FN(regsel),
+               (int)FN(bank), (int)FN(r_line), (int)FN(front));
+    }
     printf("      last frame %dx%d, hash %08X, %s\n",
            fg.last_width, fg.last_height, fg.hash(),
            fg.blank() ? "BLANK (nothing was drawn)" : "has content");

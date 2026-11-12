@@ -13,3 +13,5 @@ set_global_assignment -name VERILOG_FILE rtl/pixie/cdp1864.v
 set_global_assignment -name VERILOG_FILE rtl/pixie/cdp1863.v
 set_global_assignment -name VERILOG_FILE rtl/pixie/cdp1862.v
 set_global_assignment -name VERILOG_FILE rtl/pixie/pixie_video.v
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/fujinet/fujinet_cart.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/fujinet/fn_uart.sv
