@@ -124,10 +124,8 @@ always @(posedge clk) begin
 end
 
 // ---------------------------------------------------------------------------
-// Display enable: INP 1 turns it on, OUT 1 off. With the display off the part
-// drives neither DMA nor the interrupt. EF1 (DISP STATUS) keeps pulsing every
-// frame regardless: VP-700 Tiny BASIC turns the display off and then waits on
-// EF1 before INP 1, so a gated EF1 hangs it on a black screen (MAME agrees).
+// Display enable: INP 1 on, OUT 1 off. Gates DMA and INT only; EF1 always
+// runs (datasheet, DISP ON/OFF).
 // ---------------------------------------------------------------------------
 reg display_enabled;
 always @(posedge clk) begin
@@ -297,8 +295,7 @@ always @(posedge clk) begin
                 ((vcount >= INT_START) && (vcount < DISPLAY_START) &&
                  !((vcount == DISPLAY_START - 1) && (hcount >= 112 - INT_LEAD))));
         // EFx leads for the same AVI1861 line-counter reason. The BIOS waits on
-        // this edge to align its display loop with the first DMA burst. Not
-        // gated on display_enabled; see the display enable block above.
+        // this edge to align its display loop with the first DMA burst.
         EFx <= ((((vcount == EFX_TOP_START - 1) && (hcount >= 112 - EFX_LEAD)) ||
                  ((vcount >= EFX_TOP_START) && (vcount < DISPLAY_START) &&
                   !((vcount == DISPLAY_START - 1) && (hcount >= 112 - EFX_LEAD)))) ||
