@@ -70,6 +70,10 @@ set_global_assignment -name VERILOG_MACRO "MISTER_DIRECT_VIDEO=1"
 #use only 1MB per frame for scaler to free ~21MB DDR3 RAM
 #set_global_assignment -name VERILOG_MACRO "MISTER_SMALL_VBUF=1"
 
+# FujiNet cartridge (experimental). Needs the FujiNet-enabled MiSTer Main and
+# s2cartd on the HPS side; leave off for release builds until those are stock.
+#set_global_assignment -name VERILOG_MACRO "FUJINET=1"
+
 # Generates build_id.v (`BUILD_DATE), which Studio-II.sv includes for the OSD version string.
 # Without this hook Analysis & Synthesis fails with "can't open Verilog Design File build_id.v".
 

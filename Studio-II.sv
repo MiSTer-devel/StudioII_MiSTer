@@ -25,7 +25,14 @@ module emu
 
 assign ADC_BUS  = 'Z;
 assign USER_OUT = '1;
+// FujiNet cartridge support is built only with the FUJINET macro (see
+// Studio-II.qsf). It needs the FujiNet-enabled MiSTer Main and s2cartd, which
+// are not in the stock MiSTer release yet, so release builds leave it out.
+`ifdef FUJINET
 assign {UART_RTS, UART_DTR} = 0;
+`else
+assign {UART_RTS, UART_TXD, UART_DTR} = 0;
+`endif
 assign {SD_SCK, SD_MOSI, SD_CS} = 'Z;
 assign {SDRAM_DQ, SDRAM_A, SDRAM_BA, SDRAM_CLK, SDRAM_CKE, SDRAM_DQML, SDRAM_DQMH, SDRAM_nWE, SDRAM_nCAS, SDRAM_nRAS, SDRAM_nCS} = 'Z;
 assign {DDRAM_CLK, DDRAM_BURSTCNT, DDRAM_ADDR, DDRAM_DIN, DDRAM_BE, DDRAM_RD, DDRAM_WE} = '0;  
@@ -51,7 +58,11 @@ assign BUTTONS = 0;
 
 `include "build_id.v"
 localparam CONF_STR = {
+`ifdef FUJINET
 	"Studio-II;UART1562500:921600:3125000:115200;",
+`else
+	"Studio-II;;",
+`endif
 
 
 	// === LOAD ===
@@ -108,8 +119,10 @@ localparam CONF_STR = {
 	"P4-;",	
 	"P4O[40],Info Messages,On,Off;",
 	"P4-;",
+`ifdef FUJINET
 	"D8P4O[41],FujiNet Cartridge,Off,On;",
 	"P4-;",
+`endif
 	"P4R[28],Unload Software;",
 	"P4T[1],Clear (Soft Reset);",
 	"-;",
@@ -355,6 +368,9 @@ wire [1:0] vis_index;   // Visicom
 wire       fn_rx_strobe, fn_tx_valid, fn_tx_ready;
 wire [7:0] fn_rx_byte, fn_tx_byte;
 
+`ifdef FUJINET
+wire fujinet_en = status[41];
+
 fn_uart fn_uart
 (
 	.clk_u     (CLK_50M),
@@ -368,6 +384,14 @@ fn_uart fn_uart
 	.tx_byte   (fn_tx_byte),
 	.tx_ready  (fn_tx_ready)
 );
+`else
+// Cart held disabled with an idle link, so synthesis can prune it.
+wire fujinet_en = 1'b0;
+
+assign fn_rx_strobe = 1'b0;
+assign fn_rx_byte   = 8'h00;
+assign fn_tx_ready  = 1'b0;
+`endif
 
 rcastudioii rcastudio
 (
@@ -401,7 +425,7 @@ rcastudioii rcastudio
 	.joy_override(status[5:2]),
 	.machine(machine_active),
 	.video_bg(video_bg),
-	.fujinet_en(status[41]),
+	.fujinet_en(fujinet_en),
 	.fn_rx_strobe(fn_rx_strobe),
 	.fn_rx_byte(fn_rx_byte),
 	.fn_tx_valid(fn_tx_valid),

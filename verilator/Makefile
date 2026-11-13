@@ -105,7 +105,7 @@ EMU_RESET_DIR = obj_dir_emu_reset
 EMU_RESET_EXE = ./$(EMU_RESET_DIR)/Vemu_reset_test
 EMU_RESET_SRC = $(filter-out sim.v,$(V_SRC)) ../Studio-II.sv $(RTL)/numstick.sv \
 	$(addprefix ../sys/,video_mixer.sv video_freak.sv video_freezer.sv gamma_corr.sv scandoubler.v hq2x.sv scanlines.v math.sv) \
-	test_support/emu_stubs.sv emu_reset_test.sv
+	$(RTL)/fujinet/fn_uart.sv test_support/emu_stubs.sv emu_reset_test.sv
 
 all: $(EXE)
 
