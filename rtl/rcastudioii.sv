@@ -118,16 +118,45 @@ wire [7:0] code    = ps2_key[7:0];
 reg  [9:0] playerA = 10'h0;
 reg  [9:0] playerB = 10'h0;
 reg        chip8_active_d = 1'b0;
+
+// Cursor keys act as a joystick on keypad A: arrows give 2/8/4/6 and a pair of
+// arrows gives the corner key (Up+Left = 1, Down+Right = 9), the same as the
+// MAP_8WAY joystick profile. Enter gives 5 and Backspace gives 0. kbd_dir uses
+// the MiSTer joystick bit order: [0]=right [1]=left [2]=down [3]=up.
+wire       extended = ps2_key[8];
+reg  [3:0] kbd_dir   = 4'h0;
+reg        kbd_enter = 1'b0;
+reg        kbd_bksp  = 1'b0;
+
 always @(posedge clk_sys) begin
 	reg old_state;
 	old_state <= ps2_key[10];
 	chip8_active_d <= chip8_active;
 
 	if(chip8_active_d != chip8_active) begin
-		playerA <= 10'd0;
-		playerB <= 10'd0;
+		playerA   <= 10'd0;
+		playerB   <= 10'd0;
+		kbd_dir   <= 4'h0;
+		kbd_enter <= 1'b0;
+		kbd_bksp  <= 1'b0;
 	end
 	else if(old_state != ps2_key[10]) begin
+		// Cursor keys are E0-prefixed; without E0 the same codes are the
+		// numeric keypad's 8/2/4/6, which stay unmapped.
+		if(extended) case(code)
+			'h75: kbd_dir[3] <= pressed; // Up    → 2
+			'h72: kbd_dir[2] <= pressed; // Down  → 8
+			'h6B: kbd_dir[1] <= pressed; // Left  → 4
+			'h74: kbd_dir[0] <= pressed; // Right → 6
+			default: ;
+		endcase
+
+		case(code)
+			'h5A: kbd_enter <= pressed;  // Enter (main or keypad) → 5
+			'h66: kbd_bksp  <= pressed;  // Backspace → 0
+			default: ;
+		endcase
+
 		case(code)
 			// Keypad A / CHIP-8 digits
 			'h16: playerA[1] <= pressed; // 1 → 1
@@ -165,14 +194,23 @@ always @(posedge clk_sys) begin
 end
 
 
+// Keypad A as typed: digit keys plus the cursor/Enter/Backspace cluster.
+// Assigned below the include, which defines map_8way.
+wire [9:0] kbd_padA;
+
 ////////////////// JOYSTICK -> KEYPAD ///////////////////////////////////////
 `include "studio2_input_mapping.svh"
+
+assign kbd_padA = playerA
+                | map_8way({28'd0, kbd_dir})
+                | (kbd_enter ? 10'b00_0010_0000 : 10'd0)   // 5
+                | (kbd_bksp  ? 10'b00_0000_0001 : 10'd0);  // 0
 
 ////////////////// CPU //////////////////////////////////////////////////////////////////
 
 wire  [3:0] EF;
 wire        key_valid = (keylatch < 4'd10);
-wire  [9:0] padA = playerA | joyA_active | osk_a;
+wire  [9:0] padA = kbd_padA | joyA_active | osk_a;
 wire  [9:0] padB = playerB | joyB_active | osk_b;
 assign EF = {key_valid & padB[keylatch], key_valid & padA[keylatch], 1'b1, EFx};
 

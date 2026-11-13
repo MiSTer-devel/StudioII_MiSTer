@@ -236,7 +236,7 @@ wire [3:0] resident_start_key = (machine == MACHINE_STUDIO2) ? resident_start_s2
                               :                                resident_start_vis;
 
 // Firmware selection accepts both physical and on-screen keypad input.
-wire [9:0] builtin_padA = playerA | osk_a;
+wire [9:0] builtin_padA = kbd_padA | osk_a;
 wire        builtin_start_press = start_press | osk_a[active_start_key];
 
 always @(posedge clk_sys) begin
