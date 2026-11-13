@@ -270,8 +270,9 @@ always @(posedge clk) begin
                 ((vcount >= INT_START) && (vcount < DISPLAY_START) &&
                  !((vcount == DISPLAY_START - 1) && (hcount >= 112 - INT_LEAD))));
 
-        EFx <= display_enabled &&
-               ((((vcount == EFX_TOP_START - 1) && (hcount >= 112 - EFX_LEAD)) ||
+        // EF1 runs whether or not the display is on, as on the 1861. The
+        // datasheet has reset and 6C disable only colour, INT and DMA.
+        EFx <= ((((vcount == EFX_TOP_START - 1) && (hcount >= 112 - EFX_LEAD)) ||
                  ((vcount >= EFX_TOP_START) && (vcount < DISPLAY_START) &&
                   !((vcount == DISPLAY_START - 1) && (hcount >= 112 - EFX_LEAD)))) ||
                 (((vcount == EFX_BOT_START - 1) && (hcount >= 112 - EFX_LEAD)) ||
